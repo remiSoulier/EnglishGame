@@ -8,3 +8,4 @@ package-lock.json
 # orchestrator-managed docs
 PROGRESS.md
 DECISIONS.md
+.claude
