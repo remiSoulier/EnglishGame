@@ -202,7 +202,9 @@ test.describe('new game screen', () => {
   });
 
   test('keyboard: Tab reaches the radios, arrows change them, Enter submits', async ({ page }) => {
-    await page.keyboard.press('Tab');
+    // Focus starts on the screen's h1 (#12); Shift+Tab reaches Back, which sits before it.
+    await expect(newGameHeading(page)).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
     await expect(page.getByRole('button', { name: 'Back' })).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('radio', { name: '2', exact: true })).toBeFocused();
