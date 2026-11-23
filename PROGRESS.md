@@ -21,7 +21,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [ ] #12 Navigation (ui-dev)
 - [x] #13 Popup question (ui-dev)
 - [x] #14 Question + Result (ui-dev)
-- [ ] #15 We have a winner (ui-dev)
+- [x] #15 We have a winner (ui-dev)
 
 ## Priorité 3 — utile
 - [ ] #16 Tests du générateur (tester)
@@ -65,3 +65,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #10 | VALIDÉ (one defect fixed: unknown actions returned undefined). Follow-ups for #13/#14: pick only unasked questions; reuse the engine questions module in the reducer. Merged into main. |
 | 2026-11-23 | #11 | VALIDÉ (no defect). App now opens on Home; the app name lives in src/state/appInfo.ts. Merged into main. |
 | 2026-11-23 | #13, #14 | VALIDÉ both (no defect). Developed on one branch (D9). Merged into main. |
+| 2026-11-23 | #15 | VALIDÉ (no defect). Also adds the New board confirmation (part of #12). Earlier unit/e2e failures were timeouts under heavy machine load; all green once the load dropped. Merged into main. |
