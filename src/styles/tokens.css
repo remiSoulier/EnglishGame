@@ -28,6 +28,8 @@
   --color-disabled-text: #4b5563; /* 6.21:1 on --color-disabled-bg */
   --color-focus: #1d4ed8;
   --shadow-popover: 0 4px 16px rgb(0 0 0 / 18%);
+  /* Dims the screen behind a dialog; decorative, no text on it. */
+  --color-backdrop: rgb(17 24 39 / 60%);
 
   --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --tap-target: 48px;
