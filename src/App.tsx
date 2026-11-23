@@ -3,7 +3,8 @@
  * The full map (each screen → the screens it leads to) is `NAVIGATION` in src/state/navigation.ts.
  * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
  * turn → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
- * to home (confirm, game kept) → Home → Continue game.
+ * to home (confirm, game kept) → Home → Continue game. The browser / Android back button maps to
+ * the in-app Back where there is one (useSystemBack).
  */
 import { useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
@@ -17,7 +18,9 @@ import { QuestionPopupScreen } from './screens/QuestionPopup';
 import { ResultScreen } from './screens/Result';
 import { WinnerScreen } from './screens/Winner';
 import { GameProvider, useGame } from './state/GameContext';
+import { canGoBack } from './state/navigation';
 import { openQuestionAction } from './state/questionFlow';
+import { useSystemBack } from './state/useSystemBack';
 import type { Screen } from './state/types';
 import './styles/tokens.css';
 import './styles/global.css';
@@ -44,6 +47,12 @@ function Screens() {
   // Local UI state: the "Start a new board?" / "Quit this game?" confirmation over the board.
   const [boardDialog, setBoardDialog] = useState<BoardDialog>(null);
   const dialog = screen === 'board' ? boardDialog : null;
+
+  // System back: closes a confirmation, else the in-app Back where there is one.
+  useSystemBack(dialog !== null || canGoBack(state), () => {
+    if (dialog !== null) setBoardDialog(null);
+    else dispatch({ type: 'BACK' });
+  });
 
   if (screen === 'home') {
     return (
