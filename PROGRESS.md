@@ -25,7 +25,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 
 ## Priorité 3 — utile
 - [ ] #16 Tests du générateur (tester)
-- [ ] #17 Questions sans doublon (engine-dev)
+- [x] #17 Questions sans doublon (engine-dev)
 - [ ] #18 PWA (setup-dev)
 - [ ] #19 Parcours e2e (tester)
 
@@ -61,3 +61,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - Cosmétique : un mur qui se termine sur le bord dépasse de quelques pixels (bout arrondi) ; grand espace vide sous la légende à 844 px ; « P » minuscule dans l'icône Start de la légende.
 - Environ 44 % des tirages bruts de murs isolent une zone et sont refaits : sans effet sur la vitesse (≈0,3 ms par plateau).
 - Deux tests e2e vérifient que les ennemis changent d'un tour à l'autre avec un code aléatoire : échec théoriquement possible mais très improbable.
+| 2026-11-23 | #17 | VALIDÉ (advanced from priority 3: needed by #14). Question list passed as a parameter (engine purity). Merged into main. |
