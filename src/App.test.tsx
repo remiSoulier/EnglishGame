@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import App from './App';
 import { cellName, generateBoard, parseCell } from './engine';
 import { APP_NAME } from './state/appInfo';
+import { STORAGE_KEY } from './state/storage';
 
 const players = () =>
   within(screen.getByRole('list', { name: 'Players' })).getAllByRole('listitem');
@@ -16,7 +17,35 @@ function readCode(): string {
   return /^Code (\S+) ·/.exec(text)![1];
 }
 
+/** Everything visible that identifies the game on the board screen. */
+function snapshot() {
+  const text = screen.getByText(/^Code \S+ · (Easy|Medium|Hard)$/).textContent ?? '';
+  const [, code, difficulty] = /^Code (\S+) · (\w+)$/.exec(text)!;
+  const items = players();
+  return {
+    heading: screen.getByRole('heading', { level: 1 }).textContent,
+    code,
+    difficulty,
+    players: items.length,
+    active: items.findIndex((li) => li.getAttribute('aria-current') === 'true'),
+    grid: gridLabel(),
+  };
+}
+
+/** The saved game (or null). */
+function savedGame(): Record<string, unknown> | null {
+  const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as {
+    state: { game: Record<string, unknown> | null };
+  } | null;
+  return saved?.state.game ?? null;
+}
+
 type User = ReturnType<typeof userEvent.setup>;
+
+async function openMenuItem(user: User, name: 'New board' | 'We have a winner') {
+  await user.click(screen.getByRole('button', { name: 'Menu' }));
+  await user.click(screen.getByRole('menuitem', { name }));
+}
 
 const DIFFICULTY_RADIO = {
   Easy: 'Easy — 2 enemies',
@@ -229,15 +258,198 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'We have a winner' })).toBeInTheDocument();
   });
 
-  it('the menu "New board" starts turn 1 with a new code', async () => {
+  it('the menu "New board" asks first, then starts turn 1 with a new code', async () => {
     const { user } = await renderGame();
     const code = readCode();
     await user.click(screen.getByRole('button', { name: 'Next player' }));
-    await user.click(screen.getByRole('button', { name: 'Menu' }));
-    await user.click(screen.getByRole('menuitem', { name: 'New board' }));
+    await openMenuItem(user, 'New board');
+    expect(screen.getByRole('dialog', { name: 'Start a new board?' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'New board' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
     expect(readCode()).not.toBe(code);
     expect(players()).toHaveLength(4);
     expect(players()[0]).toHaveAttribute('aria-current', 'true');
+  });
+
+  describe('New board confirmation (#12, D8)', () => {
+    /** Plays to turn 2, P2 active, on a 3-player Hard game; returns the snapshot. */
+    async function midGame() {
+      const user = userEvent.setup();
+      render(<App />);
+      await startGame(user, { players: 3, difficulty: 'Hard' });
+      for (let i = 0; i < 2; i++) {
+        await user.click(screen.getByRole('button', { name: 'Next player' }));
+      }
+      await user.click(screen.getByRole('button', { name: 'End turn' }));
+      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      return { user, snapshot: snapshot() };
+    }
+
+    it('shows the dialog with the board behind it inert', async () => {
+      const { user } = await midGame();
+      await openMenuItem(user, 'New board');
+      const dialog = screen.getByRole('dialog', { name: 'Start a new board?' });
+      expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+      const board = document.querySelector('[inert]');
+      expect(board).not.toBeNull();
+      expect(board).toContainElement(document.querySelector('h1'));
+      expect(board).not.toContainElement(dialog);
+    });
+
+    it('Cancel keeps the exact same game (code, turn, board, active player)', async () => {
+      const { user, snapshot: before } = await midGame();
+      const saved = localStorage.getItem(STORAGE_KEY);
+      await openMenuItem(user, 'New board');
+      await user.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(snapshot()).toEqual(before);
+      expect(localStorage.getItem(STORAGE_KEY)).toBe(saved);
+      expect(document.querySelector('[inert]')).toBeNull();
+    });
+
+    it('Escape keeps the exact same game', async () => {
+      const { user, snapshot: before } = await midGame();
+      await openMenuItem(user, 'New board');
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(snapshot()).toEqual(before);
+    });
+
+    it('a tap on the backdrop keeps the exact same game', async () => {
+      const { user, snapshot: before } = await midGame();
+      await openMenuItem(user, 'New board');
+      await user.click(screen.getByTestId('modal-backdrop'));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(snapshot()).toEqual(before);
+    });
+
+    it('confirm starts turn 1 with a new code and the same players and difficulty', async () => {
+      const { user, snapshot: before } = await midGame();
+      await openMenuItem(user, 'New board');
+      await user.click(screen.getByRole('button', { name: 'New board' }));
+      const after = snapshot();
+      expect(after.heading).toBe('Turn 1');
+      expect(after.code).not.toBe(before.code);
+      expect(after.difficulty).toBe('Hard');
+      expect(after.players).toBe(3);
+      expect(after.active).toBe(0);
+      const game = savedGame();
+      expect(game).toMatchObject({
+        code: after.code,
+        turn: 1,
+        playerCount: 3,
+        difficulty: 'hard',
+        activePlayer: 1,
+        winner: null,
+        pendingQuestion: null,
+      });
+      expect(gridLabel()).toContain(
+        `Goal on ${cellName(generateBoard(after.code, 1, 'hard').goal)}.`,
+      );
+    });
+  });
+
+  describe('We have a winner (#15)', () => {
+    it.each([2, 3, 4] as const)('lists exactly %i players', async (count) => {
+      const user = userEvent.setup();
+      render(<App />);
+      await startGame(user, { players: count, difficulty: 'Easy' });
+      await openMenuItem(user, 'We have a winner');
+      expect(screen.getAllByRole('button', { name: /^Player \d$/ })).toHaveLength(count);
+    });
+
+    it('Back returns to the same board (same turn, code, grid, active player)', async () => {
+      const { user } = await renderGame();
+      for (let i = 0; i < 3; i++) {
+        await user.click(screen.getByRole('button', { name: 'Next player' }));
+      }
+      await user.click(screen.getByRole('button', { name: 'End turn' }));
+      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      const before = snapshot();
+      await openMenuItem(user, 'We have a winner');
+      expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(snapshot()).toEqual(before);
+      expect(before.heading).toBe('Turn 2');
+      expect(before.active).toBe(1);
+    });
+
+    it.each([1, 2, 3, 4])('declaring Player %i shows "Player %i wins!"', async (n) => {
+      const { user } = await renderGame();
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: `Player ${n}` }));
+      const h1 = screen.getByRole('heading', { level: 1 });
+      expect(h1).toHaveTextContent(new RegExp(`^Player ${n} wins!$`));
+      expect(h1).toHaveFocus();
+      expect(savedGame()).toMatchObject({ winner: n });
+    });
+
+    it('reload on the win screen shows the win screen again', async () => {
+      const { user, unmount } = await renderGame();
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Player 3' }));
+      unmount();
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Player 3 wins!$/);
+      expect(screen.getByRole('button', { name: 'Play again' })).toBeInTheDocument();
+    });
+
+    it('Home goes to the Home screen and clears the saved game (reload → Home)', async () => {
+      const { user, unmount } = await renderGame();
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Player 2' }));
+      await user.click(screen.getByRole('button', { name: 'Home' }));
+      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')).toMatchObject({
+        state: { screen: 'home', game: null },
+      });
+      unmount();
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
+      expect(screen.queryByRole('list', { name: 'Players' })).toBeNull();
+      expect(screen.queryByRole('button', { name: /resume|continue/i })).toBeNull();
+    });
+
+    it('Play again starts turn 1: new code, same players & difficulty, P1, no asked questions', async () => {
+      const user = userEvent.setup();
+      const first = render(<App />);
+      await startGame(user, { players: 3, difficulty: 'Hard' });
+      const code = snapshot().code;
+      // Ask (and answer) one question so askedQuestionIds is not empty before the win.
+      await user.click(screen.getByRole('button', { name: 'Question' }));
+      await user.click(screen.getByRole('button', { name: 'Show the question' }));
+      await user.click(screen.getByRole('button', { name: /^A: / }));
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(savedGame()?.askedQuestionIds).toHaveLength(1);
+
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Player 2' }));
+      await user.click(screen.getByRole('button', { name: 'Play again' }));
+
+      const after = snapshot();
+      expect(after.heading).toBe('Turn 1');
+      expect(after.code).not.toBe(code);
+      expect(after.players).toBe(3);
+      expect(after.difficulty).toBe('Hard');
+      expect(after.active).toBe(0);
+      expect(savedGame()).toMatchObject({
+        code: after.code,
+        turn: 1,
+        playerCount: 3,
+        difficulty: 'hard',
+        activePlayer: 1,
+        askedQuestionIds: [],
+        pendingQuestion: null,
+        winner: null,
+      });
+
+      // The fresh game is what survives a reload.
+      first.unmount();
+      render(<App />);
+      expect(snapshot()).toEqual(after);
+    });
   });
 });
