@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
 
@@ -7,7 +8,7 @@ function players(page: Page): Locator {
 }
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await startGame(page, { players: 4, difficulty: 'Medium' });
 });
 
 test('shows turn, code, difficulty, players, grid, legend and actions', async ({ page }) => {
