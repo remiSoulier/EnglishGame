@@ -254,3 +254,22 @@ describe('screen repair on load', () => {
     expect(loadState()!.screen).toBe(screen);
   });
 });
+
+describe('finished game (#15)', () => {
+  const won = (): GameState => {
+    let s = gameReducer(started(), { type: 'OPEN_WINNER' });
+    s = gameReducer(s, { type: 'DECLARE_WINNER', player: 2 });
+    return s;
+  };
+
+  it('Home saves no game: a reload starts on home', () => {
+    saveState(gameReducer(won(), { type: 'GO_HOME' }));
+    expect(loadState()).toEqual({ screen: 'home', game: null });
+  });
+
+  it('Play again saves a fresh game at turn 1', () => {
+    saveState(gameReducer(won(), { type: 'PLAY_AGAIN', code: 'HJKM-NPQ' }));
+    const game = loadState()!.game!;
+    expect(game).toMatchObject({ code: 'HJKM-NPQ', turn: 1, winner: null, askedQuestionIds: [] });
+  });
+});

@@ -1,12 +1,14 @@
+import { useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
 import { getQuestion, newCode } from './engine';
-import { BoardScreen } from './screens/Board';
+import { BoardScreen, NewBoardConfirm } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
 import { NewGameScreen } from './screens/NewGame';
 import { QuestionScreen } from './screens/Question';
 import { QuestionPopupScreen } from './screens/QuestionPopup';
 import { ResultScreen } from './screens/Result';
+import { WinnerScreen } from './screens/Winner';
 import { GameProvider, useGame } from './state/GameContext';
 import { openQuestionAction } from './state/questionFlow';
 import type { Screen } from './state/types';
@@ -29,6 +31,8 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
 function Screens() {
   const { state, dispatch } = useGame();
   const { screen, game } = state;
+  // Local UI state: the "Start a new board?" confirmation over the board.
+  const [confirmNewBoard, setConfirmNewBoard] = useState(false);
 
   if (screen === 'home') {
     return <HomeScreen onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })} />;
@@ -45,11 +49,13 @@ function Screens() {
 
   if (game && (screen === 'board' || screen === 'questionPopup')) {
     const pending = screen === 'questionPopup' ? game.pendingQuestion : null;
+    const confirming = confirmNewBoard && screen === 'board';
+    const covered = pending !== null || confirming;
     // Same tree for both screens, so the board is not remounted under the popup and focus can
     // return to the Question button on Cancel.
     return (
       <>
-        <div inert={pending !== null} aria-hidden={pending !== null || undefined}>
+        <div inert={covered} aria-hidden={covered || undefined}>
           <BoardScreen
             board={game.board}
             playerCount={game.playerCount}
@@ -57,8 +63,7 @@ function Screens() {
             onQuestion={() => dispatch(openQuestionAction(game.askedQuestionIds))}
             onNextPlayer={() => dispatch({ type: 'NEXT_PLAYER' })}
             onEndTurn={() => dispatch({ type: 'END_TURN' })}
-            // TODO(#12): ask for confirmation first.
-            onNewBoard={() => dispatch({ type: 'NEW_BOARD', code: newCode() })}
+            onNewBoard={() => setConfirmNewBoard(true)}
             onWinner={() => dispatch({ type: 'OPEN_WINNER' })}
           />
         </div>
@@ -70,7 +75,29 @@ function Screens() {
             onCancel={() => dispatch({ type: 'CANCEL_QUESTION' })}
           />
         )}
+        {confirming && (
+          <NewBoardConfirm
+            onConfirm={() => {
+              setConfirmNewBoard(false);
+              dispatch({ type: 'NEW_BOARD', code: newCode() });
+            }}
+            onCancel={() => setConfirmNewBoard(false)}
+          />
+        )}
       </>
+    );
+  }
+
+  if (game && screen === 'winner') {
+    return (
+      <WinnerScreen
+        playerCount={game.playerCount}
+        winner={game.winner}
+        onDeclare={(player) => dispatch({ type: 'DECLARE_WINNER', player })}
+        onBack={() => dispatch({ type: 'BACK' })}
+        onPlayAgain={() => dispatch({ type: 'PLAY_AGAIN', code: newCode() })}
+        onHome={() => dispatch({ type: 'GO_HOME' })}
+      />
     );
   }
 
