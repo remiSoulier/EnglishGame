@@ -18,7 +18,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #9 Code de plateau et graine (engine-dev)
 - [x] #10 État de la partie (ui-dev)
 - [x] #11 Home + New game (ui-dev)
-- [ ] #12 Navigation (ui-dev)
+- [x] #12 Navigation (ui-dev)
 - [x] #13 Popup question (ui-dev)
 - [x] #14 Question + Result (ui-dev)
 - [x] #15 We have a winner (ui-dev)
@@ -66,3 +66,18 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #11 | VALIDÉ (no defect). App now opens on Home; the app name lives in src/state/appInfo.ts. Merged into main. |
 | 2026-11-23 | #13, #14 | VALIDÉ both (no defect). Developed on one branch (D9). Merged into main. |
 | 2026-11-23 | #15 | VALIDÉ (no defect). Also adds the New board confirmation (part of #12). Earlier unit/e2e failures were timeouts under heavy machine load; all green once the load dropped. Merged into main. |
+| 2026-11-23 | #12 | VALIDÉ (no defect). Quit to home + Continue game, system back, heading focus (D10). Merged into main. |
+
+## Point de fin de priorité 2 — 2026-11-23
+
+**Validées (7/7) :** #9 Code de plateau, #10 État de la partie, #11 Home + New game, #12 Navigation, #13 Popup question, #14 Question + Result, #15 We have a winner. La tâche #17 (questions sans doublon, priorité 3) a été avancée car #14 en dépendait ; elle est aussi validée.
+
+**Bloquées :** aucune. Aucun refus du validateur. Défauts trouvés par les testeurs et corrigés avant validation : `parseCode` acceptait `ß`/ligatures (#9), le reducer renvoyait `undefined` pour une action inconnue (#10).
+
+**État :** l'application est jouable de bout en bout : Home → New game (joueurs, difficulté, code aléatoire ou saisi) → plateau → questions (sans doublon, un essai) → fin de tour → nouveau plateau → gagnant → rejouer / accueil. Partie sauvegardée et reprise (*Quit to home* / *Continue game*). 1428 tests unitaires et 64 tests e2e passent ; lint, typecheck, build et format OK.
+
+**Risques / dette :**
+- Le test « 30 questions sans doublon » dans `App.test.tsx` est lent : il a dépassé 60 s quand la machine était très chargée (charge ~15–18) ; tout passe quand la charge est normale.
+- Le nom du jeu reste un placeholder (`APP_NAME = 'Board Game Companion'` dans `src/state/appInfo.ts`).
+- Cosmétique (P1) : mur qui dépasse de quelques pixels au bord, « P » minuscule dans l'icône Start de la légende.
+- Reste à faire : priorité 3 (#16 tests du générateur, #18 PWA, #19 parcours e2e), priorité 4 (#20), puis README et validation finale de l'ensemble.
