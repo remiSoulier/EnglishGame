@@ -9,7 +9,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #2 Modèle de données (engine-dev)
 - [x] #3 Murs (engine-dev)
 - [x] #4 Aucune case isolée (engine-dev)
-- [ ] #5 Objectif, départs, ennemis (engine-dev)
+- [x] #5 Objectif, départs, ennemis (engine-dev)
 - [x] #6 Grille SVG (ui-dev)
 - [x] #7 Écran Board (ui-dev)
 - [ ] #8 Fin de tour (ui-dev + engine-dev)
@@ -44,3 +44,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #7 | VALIDÉ (cosmetic: large gap between legend and actions at 844 px). Merged into main. |
 | 2026-11-23 | #4 | VALIDÉ (one doc/ordering defect fixed before validation). ~44% of raw wall draws are disconnected and get redrawn. Merged into main. |
 | 2026-11-23 | #9 | VALIDÉ (one defect fixed: unicode letters like ß were mapped into valid codes). Merged into main. |
+| 2026-11-23 | #5 | VALIDÉ (no defect). Merged into main. |
