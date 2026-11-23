@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { APP_NAME, startGame } from './helpers';
 
 const codeLine = (page: Page) => page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/);
 const grid = (page: Page, turn: number) =>
@@ -13,8 +14,7 @@ test.beforeEach(async ({ page }) => {
       sessionStorage.setItem('e2e-cleared', '1');
     }
   });
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
+  await startGame(page, { players: 4, difficulty: 'Medium' });
 });
 
 test('turn 2 survives a reload: same code, turn, active player and grid', async ({ page }) => {
@@ -62,9 +62,17 @@ test('the game is saved in localStorage under bgc.game.v1', async ({ page }) => 
   });
 });
 
-test('corrupted storage falls back to a fresh game', async ({ page }) => {
+test('corrupted storage falls back to the home screen', async ({ page }) => {
   await page.evaluate(() => localStorage.setItem('bgc.game.v1', '{corrupted'));
   await page.reload();
-  await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: APP_NAME })).toBeVisible();
+  await expect(players(page)).toHaveCount(0);
+  await startGame(page, { goto: false });
   await expect(players(page).nth(0)).toHaveAttribute('aria-current', 'true');
+});
+
+test('a saved board-code game resumes after a reload', async ({ page }) => {
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
+  await expect(players(page)).toHaveCount(4);
 });

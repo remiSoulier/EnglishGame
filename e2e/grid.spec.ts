@@ -1,7 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { startGame } from './helpers';
 
 test('shows the board grid without horizontal scroll at 390 px', async ({ page }) => {
-  await page.goto('/');
+  await startGame(page);
   const grid = page.getByRole('img', { name: /^Board, turn \d+\./ });
   await expect(grid).toBeVisible();
 
@@ -16,7 +17,7 @@ test('shows the board grid without horizontal scroll at 390 px', async ({ page }
 });
 
 test('shows the legend with all four symbols', async ({ page }) => {
-  await page.goto('/');
+  await startGame(page);
   const legend = page.getByRole('list', { name: 'Legend' });
   await expect(legend).toBeVisible();
   const items = legend.getByRole('listitem');

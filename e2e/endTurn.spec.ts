@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
 
@@ -18,7 +19,7 @@ const goalOf = (label: string) => /Goal on ([A-I][1-9])\./.exec(label)![1];
 const enemiesOf = (label: string) => /Enem(?:y|ies) on ([^.]+)\./.exec(label)?.[1];
 
 test.beforeEach(async ({ page }) => {
-  await page.goto('/');
+  await startGame(page, { players: 4, difficulty: 'Medium' });
 });
 
 test('two full turns: goal and code stay, enemies move', async ({ page }) => {
