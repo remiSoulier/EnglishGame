@@ -35,6 +35,12 @@ test('Next player x3 then End turn starts turn 2 with P1 active', async ({ page 
   await expect(endTurn).toBeVisible();
   await endTurn.click();
 
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Walls and enemies have moved' }),
+  ).toBeVisible();
+  await expect(players(page)).toHaveCount(0);
+  await page.getByRole('button', { name: 'Start turn 2' }).click();
+
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 2' })).toBeVisible();
   await expect(page.getByRole('img', { name: /^Board, turn 2\./ })).toBeVisible();
   await expect(players(page).nth(0)).toHaveAttribute('aria-current', 'true');
