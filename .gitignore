@@ -1,0 +1,27 @@
+# dependencies
+node_modules
+
+# build output
+dist
+dev-dist
+
+# test artifacts
+coverage
+playwright-report
+test-results
+blob-report
+playwright/.cache
+
+# logs
+*.log
+npm-debug.log*
+
+# env / local
+.env*
+*.local
+
+# OS / editor
+.DS_Store
+.idea
+.vscode/*
+!.vscode/extensions.json
