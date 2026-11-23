@@ -19,8 +19,11 @@ const SOUTH_KEYS: readonly SideKey[] = Array.from({ length: CELL_COUNT }, (_, i)
   return y < BOARD_SIZE - 1 ? `${cellName({ x: i % BOARD_SIZE, y })}-S` : '';
 });
 
-/** BFS from cell index `start`; returns the visited flags and the number of visited cells. */
-function flood(start: number, blocked: ReadonlySet<SideKey>): { seen: Uint8Array; count: number } {
+/**
+ * BFS from cell index `start`; returns the visited cell indices in BFS order (`order`, valid up
+ * to `count`) and the number of visited cells.
+ */
+function flood(start: number, blocked: ReadonlySet<SideKey>): { order: Int32Array; count: number } {
   const seen = new Uint8Array(CELL_COUNT);
   const queue = new Int32Array(CELL_COUNT);
   let head = 0;
@@ -42,7 +45,7 @@ function flood(start: number, blocked: ReadonlySet<SideKey>): { seen: Uint8Array
     if (y < BOARD_SIZE - 1) visit(i + BOARD_SIZE, SOUTH_KEYS[i]);
     if (x > 0) visit(i - 1, EAST_KEYS[i - 1]);
   }
-  return { seen, count: tail };
+  return { order: queue, count: tail };
 }
 
 /**
@@ -54,12 +57,11 @@ export function reachableCells(from: Cell, walls: readonly Wall[]): Cell[] {
   if (!isInside(from)) {
     throw new Error(`Cell outside the board: (${from.x}, ${from.y})`);
   }
-  const { seen } = flood(from.y * BOARD_SIZE + from.x, wallSideSet(walls));
+  const { order, count } = flood(from.y * BOARD_SIZE + from.x, wallSideSet(walls));
   const cells: Cell[] = [];
-  for (let i = 0; i < CELL_COUNT; i++) {
-    if (seen[i] === 1) {
-      cells.push({ x: i % BOARD_SIZE, y: Math.floor(i / BOARD_SIZE) });
-    }
+  for (let k = 0; k < count; k++) {
+    const i = order[k];
+    cells.push({ x: i % BOARD_SIZE, y: Math.floor(i / BOARD_SIZE) });
   }
   return cells;
 }
