@@ -1,0 +1,256 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { generateBoard } from '../engine';
+import { gameReducer, initialState } from './gameReducer';
+import { STORAGE_KEY, STORAGE_VERSION, loadState, saveState } from './storage';
+import type { GameState, Screen } from './types';
+
+const CODE = 'ABCD-EFG';
+
+function started(): GameState {
+  return gameReducer(initialState, {
+    type: 'START_GAME',
+    playerCount: 3,
+    difficulty: 'hard',
+    code: CODE,
+  });
+}
+
+const writeRaw = (value: string) => localStorage.setItem(STORAGE_KEY, value);
+const write = (value: unknown) => writeRaw(JSON.stringify(value));
+const wrap = (state: unknown) => ({ version: STORAGE_VERSION, state });
+
+/** A saved game, as a plain JSON object that tests can break. */
+function savedGame(): Record<string, unknown> {
+  return JSON.parse(JSON.stringify(started().game)) as Record<string, unknown>;
+}
+
+beforeEach(() => {
+  localStorage.clear();
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('constants', () => {
+  it('uses the bgc.game.v1 key and version 1', () => {
+    expect(STORAGE_KEY).toBe('bgc.game.v1');
+    expect(STORAGE_VERSION).toBe(1);
+  });
+});
+
+describe('saveState / loadState round trip', () => {
+  it('returns null when nothing is saved', () => {
+    expect(loadState()).toBeNull();
+  });
+
+  it('saves { version, state } under the key', () => {
+    const s = started();
+    saveState(s);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ version: 1, state: s });
+  });
+
+  it('restores a game in progress', () => {
+    const s = started();
+    saveState(s);
+    expect(loadState()).toEqual(s);
+  });
+
+  it('restores a later turn with questions, answers and a winner', () => {
+    let s = started();
+    s = gameReducer(s, { type: 'OPEN_QUESTION', questionId: 1, cards: 2 });
+    s = gameReducer(s, { type: 'SHOW_QUESTION' });
+    s = gameReducer(s, { type: 'ANSWER_QUESTION', answer: 'C' });
+    saveState(s);
+    expect(loadState()).toEqual(s);
+
+    s = gameReducer(s, { type: 'CONTINUE' });
+    s = gameReducer(s, { type: 'NEXT_PLAYER' });
+    s = gameReducer(s, { type: 'END_TURN' });
+    saveState(s);
+    expect(loadState()).toEqual(s);
+    expect(loadState()!.screen).toBe('newBoard');
+
+    s = gameReducer(s, { type: 'START_TURN' });
+    s = gameReducer(s, { type: 'OPEN_WINNER' });
+    s = gameReducer(s, { type: 'DECLARE_WINNER', player: 3 });
+    saveState(s);
+    expect(loadState()).toEqual(s);
+  });
+
+  it.each<GameState>([
+    { screen: 'home', game: null },
+    { screen: 'newGame', game: null },
+  ])('restores $screen without a game', (s) => {
+    saveState(s);
+    expect(loadState()).toEqual(s);
+  });
+
+  it('the restored board equals the engine board for the same code and turn', () => {
+    let s = started();
+    for (let i = 0; i < 2; i++) s = gameReducer(s, { type: 'NEXT_PLAYER' });
+    s = gameReducer(s, { type: 'END_TURN' });
+    saveState(s);
+    expect(loadState()!.game!.board).toEqual(generateBoard(CODE, 2, 'hard'));
+  });
+});
+
+describe('loadState rejects bad data', () => {
+  it.each(['{', 'not json', '', 'undefined', 'null', '42', '"text"', '[]'])(
+    'corrupted JSON %j → null',
+    (raw) => {
+      writeRaw(raw);
+      expect(loadState()).toBeNull();
+    },
+  );
+
+  it.each([0, 2, '1', null, undefined])('wrong version %j → null', (version) => {
+    write({ version, state: started() });
+    expect(loadState()).toBeNull();
+  });
+
+  it('missing state → null', () => {
+    write({ version: 1 });
+    expect(loadState()).toBeNull();
+  });
+
+  it.each([null, 'board', [], 3])('state %j → null', (state) => {
+    write({ version: 1, state });
+    expect(loadState()).toBeNull();
+  });
+
+  it.each(['menu', '', undefined, 3])('unknown screen %j → null', (screen) => {
+    write(wrap({ screen, game: null }));
+    expect(loadState()).toBeNull();
+  });
+
+  it('game not an object → null', () => {
+    write(wrap({ screen: 'board', game: 'game' }));
+    expect(loadState()).toBeNull();
+    write(wrap({ screen: 'board', game: [] }));
+    expect(loadState()).toBeNull();
+  });
+
+  it('missing game key → null', () => {
+    write(wrap({ screen: 'board' }));
+    expect(loadState()).toBeNull();
+  });
+
+  const breakages: [string, (g: Record<string, unknown>) => void][] = [
+    ['invalid code', (g) => (g.code = 'nope')],
+    ['numeric code', (g) => (g.code = 1234567)],
+    ['unknown difficulty', (g) => (g.difficulty = 'insane')],
+    ['prototype difficulty', (g) => (g.difficulty = 'constructor')],
+    ['playerCount 1', (g) => (g.playerCount = 1)],
+    ['playerCount 5', (g) => (g.playerCount = 5)],
+    ['playerCount string', (g) => (g.playerCount = '3')],
+    ['turn 0', (g) => (g.turn = 0)],
+    ['turn 1.5', (g) => (g.turn = 1.5)],
+    ['activePlayer 0', (g) => (g.activePlayer = 0)],
+    ['activePlayer > playerCount', (g) => (g.activePlayer = 4)],
+    ['board missing', (g) => delete g.board],
+    ['board of another code', (g) => (g.board = generateBoard('HJKM-NPQ', 1, 'hard'))],
+    ['board of another turn', (g) => (g.board = generateBoard(CODE, 2, 'hard'))],
+    ['board of another difficulty', (g) => (g.board = generateBoard(CODE, 1, 'easy'))],
+    ['walls not an array', (g) => ((g.board as Record<string, unknown>).walls = {})],
+    ['wall without sides', (g) => ((g.board as Record<string, unknown>).walls = [{}])],
+    ['enemies not an array', (g) => ((g.board as Record<string, unknown>).enemies = null)],
+    [
+      'enemy off the board',
+      (g) => ((g.board as Record<string, unknown>).enemies = [{ x: 9, y: 0 }]),
+    ],
+    ['goal missing', (g) => delete (g.board as Record<string, unknown>).goal],
+    ['goal off the board', (g) => ((g.board as Record<string, unknown>).goal = { x: -1, y: 0 })],
+    ['askedQuestionIds not an array', (g) => (g.askedQuestionIds = '1,2')],
+    ['askedQuestionIds with a string', (g) => (g.askedQuestionIds = [1, 'x'])],
+    ['askedQuestionIds negative', (g) => (g.askedQuestionIds = [-1])],
+    ['pendingQuestion missing', (g) => delete g.pendingQuestion],
+    ['pendingQuestion not an object', (g) => (g.pendingQuestion = 5)],
+    ['pending cards 4', (g) => (g.pendingQuestion = { questionId: 1, cards: 4 })],
+    ['pending id string', (g) => (g.pendingQuestion = { questionId: '1', cards: 1 })],
+    ['pending answer E', (g) => (g.pendingQuestion = { questionId: 1, cards: 1, answer: 'E' })],
+    [
+      'pending correct not boolean',
+      (g) => (g.pendingQuestion = { questionId: 1, cards: 1, correct: 'yes' }),
+    ],
+    ['winner missing', (g) => delete g.winner],
+    ['winner 0', (g) => (g.winner = 0)],
+    ['winner > playerCount', (g) => (g.winner = 4)],
+  ];
+
+  it.each(breakages)('malformed game (%s) → null', (_, breakIt) => {
+    const game = savedGame();
+    breakIt(game);
+    write(wrap({ screen: 'board', game }));
+    expect(loadState()).toBeNull();
+  });
+
+  it('a valid saved game still loads (control for the malformed cases)', () => {
+    write(wrap({ screen: 'board', game: savedGame() }));
+    expect(loadState()).toEqual(started());
+  });
+});
+
+describe('localStorage unavailable', () => {
+  it('loadState returns null when getItem throws', () => {
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('SecurityError');
+    });
+    expect(() => loadState()).not.toThrow();
+    expect(loadState()).toBeNull();
+  });
+
+  it('saveState does not throw when setItem throws (quota / disabled)', () => {
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new DOMException('full', 'QuotaExceededError');
+    });
+    expect(() => saveState(started())).not.toThrow();
+  });
+
+  it('loadState returns null when localStorage itself is missing', () => {
+    vi.stubGlobal('localStorage', undefined);
+    try {
+      expect(loadState()).toBeNull();
+      expect(() => saveState(started())).not.toThrow();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('screen repair on load', () => {
+  it.each<Screen>(['board', 'questionPopup', 'question', 'result', 'newBoard', 'winner'])(
+    'without a game, %s → home',
+    (screen) => {
+      write(wrap({ screen, game: null }));
+      expect(loadState()).toEqual({ screen: 'home', game: null });
+    },
+  );
+
+  it.each<Screen>(['home', 'newGame'])('with a game, %s → board', (screen) => {
+    write(wrap({ screen, game: savedGame() }));
+    expect(loadState()).toEqual({ screen: 'board', game: started().game });
+  });
+
+  it.each<Screen>(['questionPopup', 'question', 'result'])(
+    'question screen %s without a pending question → board',
+    (screen) => {
+      write(wrap({ screen, game: savedGame() }));
+      expect(loadState()).toEqual({ screen: 'board', game: started().game });
+    },
+  );
+
+  it.each<Screen>(['questionPopup', 'question', 'result'])(
+    'question screen %s with a pending question is kept',
+    (screen) => {
+      const game = { ...savedGame(), pendingQuestion: { questionId: 1, cards: 2 } };
+      write(wrap({ screen, game }));
+      expect(loadState()!.screen).toBe(screen);
+    },
+  );
+
+  it.each<Screen>(['board', 'newBoard', 'winner'])('%s with a game is kept', (screen) => {
+    write(wrap({ screen, game: savedGame() }));
+    expect(loadState()!.screen).toBe(screen);
+  });
+});

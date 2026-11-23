@@ -1,0 +1,47 @@
+import type { Board, Difficulty } from '../engine';
+
+/** Screen currently shown. Navigation is driven by the game reducer (decision D8), no router. */
+export type Screen =
+  'home' | 'newGame' | 'board' | 'questionPopup' | 'question' | 'result' | 'newBoard' | 'winner';
+
+/** A multiple-choice answer letter. */
+export type AnswerLetter = 'A' | 'B' | 'C' | 'D';
+
+/** Number of players at the table. */
+export type PlayerCount = 2 | 3 | 4;
+
+/** Number of cards at stake for a question. */
+export type QuestionCards = 1 | 2 | 3;
+
+/** The question currently being asked (popup → question → result). */
+export interface PendingQuestion {
+  questionId: number;
+  cards: QuestionCards;
+  /** Set once answered. */
+  answer?: AnswerLetter;
+  /** Set once answered: whether `answer` is the right one. */
+  correct?: boolean;
+}
+
+/** A game in progress. */
+export interface Game {
+  code: string;
+  difficulty: Difficulty;
+  playerCount: PlayerCount;
+  turn: number;
+  /** Active player, 1-based. */
+  activePlayer: number;
+  /** Current board (`board.turn === turn`). */
+  board: Board;
+  /** Ids of the questions already asked in this game. */
+  askedQuestionIds: number[];
+  pendingQuestion: null | PendingQuestion;
+  /** Winning player (1-based) once declared. */
+  winner: null | number;
+}
+
+/** Whole app state: the current screen and the game in progress (if any). */
+export interface GameState {
+  screen: Screen;
+  game: null | Game;
+}

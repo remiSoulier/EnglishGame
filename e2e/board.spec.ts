@@ -71,7 +71,7 @@ test('menu opens, closes on Escape (focus on trigger) and on outside click', asy
   await trigger.click();
   await page.getByRole('menuitem', { name: 'We have a winner' }).click();
   await expect(menu).toHaveCount(0);
-  await expect(trigger).toBeFocused();
+  await expect(page.getByRole('heading', { level: 1, name: 'We have a winner' })).toBeVisible();
 });
 
 test('every button is at least 44x44 px (menu open and closed)', async ({ page }) => {

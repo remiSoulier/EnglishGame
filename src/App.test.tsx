@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import App from './App';
 import { cellName, generateBoard, parseCell } from './engine';
 
@@ -16,6 +16,10 @@ function readCode(): string {
 }
 
 describe('App (board screen demo)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it('renders the board screen with a "Turn N" heading', () => {
     render(<App />);
     expect(screen.getByRole('heading', { level: 1, name: /^Turn \d+$/ })).toBeInTheDocument();
@@ -74,5 +78,78 @@ describe('App (board screen demo)', () => {
       expect(gridLabel()).toBe(label);
       previous = label;
     }
+  });
+
+  it('restores code, turn, active player and board after a reload', async () => {
+    const user = userEvent.setup();
+    const first = render(<App />);
+    for (let i = 0; i < 2; i++) {
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+    }
+    const code = readCode();
+    const label = gridLabel();
+    expect(players()[2]).toHaveAttribute('aria-current', 'true');
+    first.unmount();
+
+    render(<App />);
+    expect(readCode()).toBe(code);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+    expect(players()[2]).toHaveAttribute('aria-current', 'true');
+    expect(players()[0]).not.toHaveAttribute('aria-current');
+    expect(gridLabel()).toBe(label);
+  });
+
+  it('restores a later turn and the new board screen after a reload', async () => {
+    const user = userEvent.setup();
+    const first = render(<App />);
+    const code = readCode();
+    for (let i = 0; i < 3; i++) {
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+    }
+    await user.click(screen.getByRole('button', { name: 'End turn' }));
+    const label = gridLabel();
+    first.unmount();
+
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /^Walls and enemies have moved$/,
+    );
+    expect(gridLabel()).toBe(label);
+    await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+    expect(readCode()).toBe(code);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 2$/);
+    expect(gridLabel()).toBe(label);
+    expect(players()[0]).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('starts a fresh game when nothing is saved', () => {
+    const first = render(<App />);
+    const code = readCode();
+    first.unmount();
+    localStorage.clear();
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+    expect(readCode()).not.toBe(code);
+  });
+
+  it('the menu "We have a winner" shows the winner screen', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'We have a winner' }));
+    expect(screen.getByRole('heading', { level: 1, name: 'We have a winner' })).toBeInTheDocument();
+  });
+
+  it('the menu "New board" starts turn 1 with a new code', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    const code = readCode();
+    await user.click(screen.getByRole('button', { name: 'Next player' }));
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'New board' }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+    expect(readCode()).not.toBe(code);
+    expect(players()).toHaveLength(4);
+    expect(players()[0]).toHaveAttribute('aria-current', 'true');
   });
 });
