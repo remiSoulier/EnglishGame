@@ -11,6 +11,7 @@ describe('engine purity', () => {
   it('finds the engine source files', () => {
     expect(Object.keys(sources).sort()).toEqual(
       [
+        './boardCode.ts',
         './cell.ts',
         './connectivity.ts',
         './index.ts',
