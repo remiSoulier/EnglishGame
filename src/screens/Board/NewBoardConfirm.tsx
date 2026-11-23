@@ -19,7 +19,9 @@ export function NewBoardConfirm({ onConfirm, onCancel }: NewBoardConfirmProps) {
       <h2 id={titleId} className={styles.title}>
         Start a new board?
       </h2>
-      <p className={styles.text}>The current game will end. Players keep their pawns.</p>
+      <p className={styles.text}>
+        The current game ends. A new board starts at turn 1 with the same players.
+      </p>
       <div className={styles.actions}>
         <Button variant="primary" fullWidth onClick={onConfirm}>
           New board
