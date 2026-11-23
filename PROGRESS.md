@@ -17,7 +17,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 ## Priorité 2 — important
 - [x] #9 Code de plateau et graine (engine-dev)
 - [x] #10 État de la partie (ui-dev)
-- [ ] #11 Home + New game (ui-dev)
+- [x] #11 Home + New game (ui-dev)
 - [ ] #12 Navigation (ui-dev)
 - [ ] #13 Popup question (ui-dev)
 - [ ] #14 Question + Result (ui-dev)
@@ -63,3 +63,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - Deux tests e2e vérifient que les ennemis changent d'un tour à l'autre avec un code aléatoire : échec théoriquement possible mais très improbable.
 | 2026-11-23 | #17 | VALIDÉ (advanced from priority 3: needed by #14). Question list passed as a parameter (engine purity). Merged into main. |
 | 2026-11-23 | #10 | VALIDÉ (one defect fixed: unknown actions returned undefined). Follow-ups for #13/#14: pick only unasked questions; reuse the engine questions module in the reducer. Merged into main. |
+| 2026-11-23 | #11 | VALIDÉ (no defect). App now opens on Home; the app name lives in src/state/appInfo.ts. Merged into main. |
