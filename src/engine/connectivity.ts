@@ -1,8 +1,11 @@
 import { cellName, isInside } from './cell';
-import { BOARD_SIZE, type Cell, type SideKey, type Wall } from './types';
-import { wallSideSet } from './walls';
+import { BOARD_SIZE, type Cell, type Rng, type SideKey, type Wall } from './types';
+import { placeWalls, wallSideSet } from './walls';
 
 const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
+
+/** Maximum number of `placeWalls` draws tried by `placeConnectedWalls` before giving up. */
+export const MAX_CONNECTED_ATTEMPTS = 10_000;
 
 /** Canonical key of the E side of each cell (index `y * BOARD_SIZE + x`); empty on column I. */
 const EAST_KEYS: readonly SideKey[] = Array.from({ length: CELL_COUNT }, (_, i) => {
@@ -64,4 +67,19 @@ export function reachableCells(from: Cell, walls: readonly Wall[]): Cell[] {
 /** True if all 81 cells are reachable from A1 (hence from any cell) without crossing a wall. */
 export function isFullyConnected(walls: readonly Wall[]): boolean {
   return flood(0, wallSideSet(walls)).count === CELL_COUNT;
+}
+
+/**
+ * Draws walls with `placeWalls` until the board is fully connected (no isolated cell or zone).
+ * Deterministic for a given `rng` sequence.
+ * @throws if no connected layout is found after `MAX_CONNECTED_ATTEMPTS` draws.
+ */
+export function placeConnectedWalls(rng: Rng): Wall[] {
+  for (let attempt = 0; attempt < MAX_CONNECTED_ATTEMPTS; attempt++) {
+    const walls = placeWalls(rng);
+    if (isFullyConnected(walls)) {
+      return walls;
+    }
+  }
+  throw new Error(`Could not place fully connected walls after ${MAX_CONNECTED_ATTEMPTS} attempts`);
 }
