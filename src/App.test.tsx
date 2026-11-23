@@ -2,7 +2,8 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from './App';
-import { cellName, generateBoard, parseCell } from './engine';
+import { ALL_QUESTIONS } from './data/questions';
+import { cellName, choiceKeys, generateBoard, parseCell, type Question } from './engine';
 import { APP_NAME } from './state/appInfo';
 import { STORAGE_KEY } from './state/storage';
 
@@ -451,5 +452,203 @@ describe('App', () => {
       render(<App />);
       expect(snapshot()).toEqual(after);
     });
+  });
+});
+
+describe('App question flow (spec #13 / #14)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  const activeIndex = () => players().findIndex((li) => li.getAttribute('aria-current') === 'true');
+
+  const savedAsked = (): number[] =>
+    JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').state.game.askedQuestionIds;
+
+  /** Board → Question → popup; returns the dialog and X read from its title. */
+  async function openPopup(user: User, player: number) {
+    await user.click(screen.getByRole('button', { name: 'Question' }));
+    const dialog = screen.getByRole('dialog', {
+      name: new RegExp(`^Player ${player} — Question for [123] cards?$`),
+    });
+    const title = dialog.getAttribute('aria-labelledby')!;
+    const text = document.getElementById(title)!.textContent ?? '';
+    const cards = Number(/Question for (\d) card/.exec(text)![1]);
+    expect(text).toMatch(cards === 1 ? /for 1 card$/ : new RegExp(`for ${cards} cards$`));
+    return { dialog, cards };
+  }
+
+  /** On the question screen: the matching question from the data, by its text. */
+  function currentQuestion(): Question {
+    const text = screen.getByRole('heading', { level: 1 }).textContent;
+    const matches = ALL_QUESTIONS.filter((q) => q.question === text);
+    expect(matches).toHaveLength(1);
+    return matches[0];
+  }
+
+  const choice = (q: Question, key: string) =>
+    screen.getByRole('button', { name: `${key}: ${q.choices[key as 'A']}` });
+
+  async function askAndAnswer(user: User, player: number, right: boolean) {
+    const { cards } = await openPopup(user, player);
+    await user.click(screen.getByRole('button', { name: 'Show the question' }));
+    const q = currentQuestion();
+    const key = right ? q.answer : choiceKeys(q).find((k) => k !== q.answer)!;
+    await user.click(choice(q, key));
+    return { q, key, cards };
+  }
+
+  it('the popup names the active player and X in 1–3; the board is inert behind it', async () => {
+    const { user } = await renderGame();
+    await user.click(screen.getByRole('button', { name: 'Next player' }));
+    const { dialog } = await openPopup(user, 2);
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+    expect(screen.getByRole('button', { name: 'Show the question' })).toHaveFocus();
+    const board = screen.getByRole('heading', { level: 1, hidden: true }).closest('[inert]');
+    expect(board).not.toBeNull();
+    expect(board).toHaveAttribute('aria-hidden', 'true');
+    // Only the dialog's buttons are exposed.
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Show the question',
+      'Cancel',
+    ]);
+  });
+
+  it.each(['button', 'Escape'] as const)(
+    'Cancel (%s) → board, same player, question not marked asked, focus back on Question',
+    async (how) => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      await openPopup(user, 2);
+      if (how === 'button') await user.click(screen.getByRole('button', { name: 'Cancel' }));
+      else await user.keyboard('{Escape}');
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+      expect(activeIndex()).toBe(1);
+      expect(savedAsked()).toEqual([]);
+      expect(screen.getByRole('button', { name: 'Question' })).toHaveFocus();
+      expect(document.querySelector('[inert]')).toBeNull();
+    },
+  );
+
+  it('Show the question → the question screen with 2–4 choice buttons and the popup X', async () => {
+    const { user } = await renderGame();
+    const { cards } = await openPopup(user, 1);
+    await user.click(screen.getByRole('button', { name: 'Show the question' }));
+    const q = currentQuestion();
+    const buttons = within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('button');
+    expect(buttons.length).toBeGreaterThanOrEqual(2);
+    expect(buttons.length).toBeLessThanOrEqual(4);
+    expect(buttons).toHaveLength(choiceKeys(q).length);
+    expect(
+      screen.getByText(`Player 1 — for ${cards} ${cards === 1 ? 'card' : 'cards'}`),
+    ).toBeInTheDocument();
+  });
+
+  it('correct answer: "Correct!", "Draw X cards" with the popup X, explanation; Continue → P2', async () => {
+    const { user } = await renderGame();
+    const { q, cards } = await askAndAnswer(user, 1, true);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Correct!$/);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
+    expect(screen.getByText(`Draw ${cards} ${cards === 1 ? 'card' : 'cards'}`)).toBeInTheDocument();
+    expect(screen.getByText(q.explanation)).toBeInTheDocument();
+    expect(savedAsked()).toEqual([q.id]);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+    expect(activeIndex()).toBe(1);
+  });
+
+  it('wrong answer: "Wrong answer", right choice shown with text, pick marked, no cards', async () => {
+    const { user } = await renderGame();
+    const { q, key } = await askAndAnswer(user, 1, false);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Wrong answer$/);
+    expect(screen.getByText('No cards this time.')).toBeInTheDocument();
+    expect(screen.queryByText(/^Draw \d/)).not.toBeInTheDocument();
+    const items = within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('listitem');
+    const right = items.find((li) => li.textContent?.includes('Correct answer'))!;
+    expect(right).toHaveTextContent(q.choices[q.answer]!);
+    const pick = items.find((li) => li.textContent?.includes('Your answer'))!;
+    expect(pick).toHaveTextContent(q.choices[key as 'A']!);
+    expect(pick).not.toBe(right);
+    expect(screen.getByText(q.explanation)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(activeIndex()).toBe(1);
+  });
+
+  it("last player's Continue keeps them active; End turn is available (D8)", async () => {
+    const { user } = await renderGame();
+    for (let i = 0; i < 3; i++) {
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+    }
+    await askAndAnswer(user, 4, true);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(activeIndex()).toBe(3);
+    expect(screen.queryByRole('button', { name: 'Next player' })).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'End turn' }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      /^Walls and enemies have moved$/,
+    );
+  });
+
+  it('30 questions in a game are all different; the 31st works (new cycle)', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await startGame(user, { players: 2 });
+    const texts: string[] = [];
+    const total = ALL_QUESTIONS.length;
+    expect(total).toBe(30);
+    for (let i = 0; i < total + 1; i++) {
+      const player = activeIndex() + 1;
+      const { q } = await askAndAnswer(user, player, i % 2 === 0);
+      texts.push(q.question);
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      if (player === 2) {
+        await user.click(screen.getByRole('button', { name: 'End turn' }));
+        await user.click(screen.getByRole('button', { name: /^Start turn \d+$/ }));
+      }
+    }
+    expect(new Set(texts.slice(0, total)).size).toBe(total);
+    expect(texts[total]).not.toBe(texts[total - 1]);
+    expect(savedAsked()).toHaveLength(1);
+  }, 60_000);
+
+  it('a reload keeps the popup (same player and X)', async () => {
+    const { user, unmount } = await renderGame();
+    const { cards } = await openPopup(user, 1);
+    unmount();
+    render(<App />);
+    expect(
+      screen.getByRole('dialog', {
+        name: `Player 1 — Question for ${cards} ${cards === 1 ? 'card' : 'cards'}`,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('a reload on the question screen keeps the same question', async () => {
+    const { user, unmount } = await renderGame();
+    await openPopup(user, 1);
+    await user.click(screen.getByRole('button', { name: 'Show the question' }));
+    const q = currentQuestion();
+    unmount();
+    render(<App />);
+    expect(currentQuestion().id).toBe(q.id);
+    for (const b of within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('button')) {
+      expect(b).toBeEnabled();
+    }
+  });
+
+  it('a reload on the result screen keeps the same question and answer', async () => {
+    const { user, unmount } = await renderGame();
+    const { q, key, cards } = await askAndAnswer(user, 1, false);
+    unmount();
+    render(<App />);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Wrong answer$/);
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(q.question);
+    const items = within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('listitem');
+    const pick = items.find((li) => li.textContent?.includes('Your answer'))!;
+    expect(pick).toHaveTextContent(q.choices[key as 'A']!);
+    expect(screen.queryByText(new RegExp(`^Draw ${cards}`))).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(activeIndex()).toBe(1);
   });
 });
