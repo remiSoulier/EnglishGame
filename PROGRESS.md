@@ -10,7 +10,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #3 Murs (engine-dev)
 - [ ] #4 Aucune case isolée (engine-dev)
 - [ ] #5 Objectif, départs, ennemis (engine-dev)
-- [ ] #6 Grille SVG (ui-dev)
+- [x] #6 Grille SVG (ui-dev)
 - [ ] #7 Écran Board (ui-dev)
 - [ ] #8 Fin de tour (ui-dev + engine-dev)
 
@@ -40,3 +40,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #1 | VALIDÉ par le validator (tester PASS). `main` créée depuis `feat/1-setup` et poussée. Vraies questions (30) intégrées. |
 | 2026-11-23 | #2 | VALIDÉ (tester PASS after the lint fix for .claude/). Merged into main. |
 | 2026-11-23 | #3 | VALIDÉ (validator asked for a rebase onto main; done, 323 tests pass). Merged into main. |
+| 2026-11-23 | #6 | VALIDÉ (optional: the P in the Start legend icon is small). Merged into main. |
