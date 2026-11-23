@@ -1,0 +1,49 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 12px 12px 0;
+  padding-top: max(12px, env(safe-area-inset-top));
+}
+
+.header {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.intro {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 15px;
+}
+
+.board {
+  flex: 1 0 auto;
+}
+
+.reminder {
+  margin: 8px 0 0;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  margin: 0 -12px;
+  padding: 10px 12px;
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--color-grid-line);
+  background: var(--color-bg);
+}
