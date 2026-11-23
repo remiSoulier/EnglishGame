@@ -1,9 +1,12 @@
-import { newCode } from './engine';
+import { ALL_QUESTIONS } from './data/questions';
+import { getQuestion, newCode } from './engine';
 import { BoardScreen } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
 import { NewGameScreen } from './screens/NewGame';
+import { QuestionScreen } from './screens/Question';
 import { QuestionPopupScreen } from './screens/QuestionPopup';
+import { ResultScreen } from './screens/Result';
 import { GameProvider, useGame } from './state/GameContext';
 import { openQuestionAction } from './state/questionFlow';
 import type { Screen } from './state/types';
@@ -77,6 +80,33 @@ function Screens() {
         board={game.board}
         playerCount={game.playerCount}
         onStartTurn={() => dispatch({ type: 'START_TURN' })}
+      />
+    );
+  }
+
+  const pending = game?.pendingQuestion;
+  const question = pending ? getQuestion(pending.questionId, ALL_QUESTIONS) : undefined;
+
+  if (game && pending && question && screen === 'question') {
+    return (
+      <QuestionScreen
+        question={question}
+        player={game.activePlayer}
+        cards={pending.cards}
+        onAnswer={(answer) => dispatch({ type: 'ANSWER_QUESTION', answer })}
+      />
+    );
+  }
+
+  if (game && pending?.answer && question && screen === 'result') {
+    return (
+      <ResultScreen
+        question={question}
+        player={game.activePlayer}
+        cards={pending.cards}
+        answer={pending.answer}
+        correct={pending.correct === true}
+        onContinue={() => dispatch({ type: 'CONTINUE' })}
       />
     );
   }
