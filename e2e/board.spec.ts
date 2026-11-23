@@ -57,7 +57,11 @@ test('menu opens, closes on Escape (focus on trigger) and on outside click', asy
   await trigger.click();
   const menu = page.getByRole('menu');
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem')).toHaveText(['New board', 'We have a winner']);
+  await expect(menu.getByRole('menuitem')).toHaveText([
+    'New board',
+    'We have a winner',
+    'Quit to home',
+  ]);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
   await page.keyboard.press('Escape');

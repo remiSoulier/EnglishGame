@@ -15,3 +15,13 @@ body {
   font-family: var(--font-family);
   line-height: 1.4;
 }
+
+/* Screen headings receive focus on navigation (tabindex="-1"): no ring for a pointer user. */
+h1[tabindex='-1']:focus {
+  outline: none;
+}
+
+h1[tabindex='-1']:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+}

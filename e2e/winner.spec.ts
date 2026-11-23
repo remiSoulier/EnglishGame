@@ -182,7 +182,9 @@ test('New board: Cancel and Escape keep the game, confirm starts a new board', a
   await openMenuItem(page, 'New board');
   const dialog = page.getByRole('dialog', { name: 'Start a new board?' });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText('The current game will end. Players keep their pawns.');
+  await expect(dialog).toContainText(
+    'The current game ends. A new board starts at turn 1 with the same players.',
+  );
   await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
   await checkButtons(dialog.getByRole('button'));
   await noHorizontalScroll(page);

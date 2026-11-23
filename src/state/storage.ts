@@ -1,5 +1,6 @@
 import { ENEMY_COUNT, isValidCode } from '../engine';
-import type { GameState, Screen } from './types';
+import { resumeScreen } from './gameReducer';
+import type { Game, GameState, Screen } from './types';
 
 /** localStorage key of the saved game. */
 export const STORAGE_KEY = 'bgc.game.v1';
@@ -26,7 +27,7 @@ const SCREENS: readonly Screen[] = [
 /** Screens that need a pending question. */
 const QUESTION_SCREENS: readonly Screen[] = ['questionPopup', 'question', 'result'];
 
-/** Screens that only make sense without a game in progress. */
+/** Screens that do not need a game in progress (with a saved game, Home offers "Continue game"). */
 const NO_GAME_SCREENS: readonly Screen[] = ['home', 'newGame'];
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
@@ -77,24 +78,40 @@ function isValidGame(v: unknown): boolean {
     Array.isArray(v.askedQuestionIds) &&
     v.askedQuestionIds.every((id) => isInt(id, 0)) &&
     isValidPending(v.pendingQuestion) &&
-    (v.winner === null || isInt(v.winner, 1, playerCount))
+    (v.winner === null || isInt(v.winner, 1, playerCount)) &&
+    (v.lastScreen === undefined ||
+      (SCREENS.includes(v.lastScreen as Screen) &&
+        !NO_GAME_SCREENS.includes(v.lastScreen as Screen)))
   );
 }
 
-/** Makes the screen consistent with the game (e.g. no question screen without a question). */
+/**
+ * Makes the screen consistent with the game (e.g. no question screen without a question).
+ * 'home' / 'newGame' with a game stay as they are (the game was quit to home and is kept), with a
+ * `lastScreen` that `CONTINUE_GAME` can resume; on a game screen `lastScreen` is dropped.
+ */
 function normalize(state: GameState): GameState {
   const { screen, game } = state;
   if (game === null) return NO_GAME_SCREENS.includes(screen) ? state : { screen: 'home', game };
-  if (NO_GAME_SCREENS.includes(screen)) return { screen: 'board', game };
-  if (QUESTION_SCREENS.includes(screen) && game.pendingQuestion === null) {
-    return { screen: 'board', game };
+  if (NO_GAME_SCREENS.includes(screen)) {
+    if (game.lastScreen === undefined) return state;
+    const lastScreen = resumeScreen(game.lastScreen, game);
+    return lastScreen === game.lastScreen ? state : { screen, game: { ...game, lastScreen } };
   }
-  return state;
+  const playing: Game = { ...game };
+  delete playing.lastScreen;
+  const fixed = game.lastScreen === undefined ? state : { screen, game: playing };
+  if (QUESTION_SCREENS.includes(screen) && game.pendingQuestion === null) {
+    return { screen: 'board', game: fixed.game };
+  }
+  return fixed;
 }
 
 /**
  * Loads the saved state, or `null` when there is none, it is corrupted / of another version, or
- * localStorage is unavailable. A saved state without a game starts on 'home' / 'newGame'.
+ * localStorage is unavailable. A saved state without a game starts on 'home' / 'newGame'; one with
+ * a game is restored on its screen, 'home' / 'newGame' included (the game is then resumed with
+ * "Continue game").
  */
 export function loadState(): GameState | null {
   try {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { generateBoard } from '../engine';
 import { gameReducer, initialState } from './gameReducer';
 import { STORAGE_KEY, STORAGE_VERSION, loadState, saveState } from './storage';
-import type { GameState, Screen } from './types';
+import type { GameScreen, GameState, Screen } from './types';
 
 const CODE = 'ABCD-EFG';
 
@@ -227,9 +227,17 @@ describe('screen repair on load', () => {
     },
   );
 
-  it.each<Screen>(['home', 'newGame'])('with a game, %s → board', (screen) => {
+  it.each<Screen>(['home', 'newGame'])(
+    'with a game, %s is kept with the game (quit to home, #12 D10)',
+    (screen) => {
+      write(wrap({ screen, game: { ...savedGame(), lastScreen: 'board' } }));
+      expect(loadState()).toEqual({ screen, game: { ...started().game, lastScreen: 'board' } });
+    },
+  );
+
+  it.each<Screen>(['home', 'newGame'])('with a game without lastScreen, %s is kept', (screen) => {
     write(wrap({ screen, game: savedGame() }));
-    expect(loadState()).toEqual({ screen: 'board', game: started().game });
+    expect(loadState()).toEqual({ screen, game: started().game });
   });
 
   it.each<Screen>(['questionPopup', 'question', 'result'])(
@@ -271,5 +279,79 @@ describe('finished game (#15)', () => {
     saveState(gameReducer(won(), { type: 'PLAY_AGAIN', code: 'HJKM-NPQ' }));
     const game = loadState()!.game!;
     expect(game).toMatchObject({ code: 'HJKM-NPQ', turn: 1, winner: null, askedQuestionIds: [] });
+  });
+});
+
+describe('lastScreen (quit to home, #12 D10)', () => {
+  it.each<GameScreen>(['board', 'newBoard', 'winner'])(
+    'home with lastScreen %s round-trips unchanged',
+    (lastScreen) => {
+      const s: GameState = { screen: 'home', game: { ...started().game!, lastScreen } };
+      saveState(s);
+      expect(loadState()).toEqual(s);
+    },
+  );
+
+  it.each<GameScreen>(['questionPopup', 'question', 'result'])(
+    'home with lastScreen %s and the needed pending question round-trips unchanged',
+    (lastScreen) => {
+      const pendingQuestion = { questionId: 1, cards: 2 as const, answer: 'A' as const };
+      const s: GameState = {
+        screen: 'home',
+        game: { ...started().game!, pendingQuestion, lastScreen },
+      };
+      saveState(s);
+      expect(loadState()).toEqual(s);
+    },
+  );
+
+  it.each<Screen>(['questionPopup', 'question', 'result'])(
+    'home with lastScreen %s but no pending question → lastScreen board',
+    (lastScreen) => {
+      write(wrap({ screen: 'home', game: { ...savedGame(), lastScreen } }));
+      expect(loadState()).toEqual({
+        screen: 'home',
+        game: { ...started().game, lastScreen: 'board' },
+      });
+    },
+  );
+
+  it('home with lastScreen result and an unanswered question → lastScreen board', () => {
+    const pendingQuestion = { questionId: 1, cards: 2 };
+    write(
+      wrap({ screen: 'home', game: { ...savedGame(), pendingQuestion, lastScreen: 'result' } }),
+    );
+    expect(loadState()!.game!.lastScreen).toBe('board');
+  });
+
+  it.each<Screen>(['board', 'newBoard', 'winner'])(
+    'a game screen (%s) drops a stray lastScreen',
+    (screen) => {
+      write(wrap({ screen, game: { ...savedGame(), lastScreen: 'winner' } }));
+      const loaded = loadState()!;
+      expect(loaded.screen).toBe(screen);
+      expect(loaded.game).toEqual(started().game);
+      expect(loaded.game).not.toHaveProperty('lastScreen');
+    },
+  );
+
+  it.each<unknown>(['home', 'newGame', 'menu', '', 3, null, true, {}])(
+    'invalid lastScreen %j → null',
+    (lastScreen) => {
+      write(wrap({ screen: 'home', game: { ...savedGame(), lastScreen } }));
+      expect(loadState()).toBeNull();
+    },
+  );
+
+  it('QUIT_TO_HOME then save/load then CONTINUE_GAME returns to the same screen and game', () => {
+    let s = started();
+    s = gameReducer(s, { type: 'NEXT_PLAYER' });
+    s = gameReducer(s, { type: 'OPEN_QUESTION', questionId: 1, cards: 3 });
+    s = gameReducer(s, { type: 'SHOW_QUESTION' });
+    const playing = s;
+    saveState(gameReducer(s, { type: 'QUIT_TO_HOME' }));
+    const loaded = loadState()!;
+    expect(loaded.screen).toBe('home');
+    expect(gameReducer(loaded, { type: 'CONTINUE_GAME' })).toEqual(playing);
   });
 });

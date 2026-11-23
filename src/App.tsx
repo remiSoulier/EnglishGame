@@ -1,7 +1,15 @@
-import { useState } from 'react';
+/*
+ * Navigation (backlog #12, decision D8): the game reducer owns `screen`, there is no router.
+ * The full map (each screen → the screens it leads to) is `NAVIGATION` in src/state/navigation.ts.
+ * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
+ * turn → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
+ * to home (confirm, game kept) → Home → Continue game. The browser / Android back button maps to
+ * the in-app Back where there is one (useSystemBack), and focus moves to the new screen's <h1>.
+ */
+import { useEffect, useRef, useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
 import { getQuestion, newCode } from './engine';
-import { BoardScreen, NewBoardConfirm } from './screens/Board';
+import { BoardScreen, NewBoardConfirm, QuitConfirm } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
 import { NewGameScreen } from './screens/NewGame';
@@ -10,7 +18,9 @@ import { QuestionPopupScreen } from './screens/QuestionPopup';
 import { ResultScreen } from './screens/Result';
 import { WinnerScreen } from './screens/Winner';
 import { GameProvider, useGame } from './state/GameContext';
+import { canGoBack } from './state/navigation';
 import { openQuestionAction } from './state/questionFlow';
+import { useSystemBack } from './state/useSystemBack';
 import type { Screen } from './state/types';
 import './styles/tokens.css';
 import './styles/global.css';
@@ -27,15 +37,55 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
   winner: 'We have a winner',
 };
 
+/** Confirmation dialogs of the board menu (local UI state, not saved). */
+type BoardDialog = null | 'newBoard' | 'quit';
+
+/**
+ * Moves focus to the new screen's <h1> when the screen changes, unless something on the new
+ * screen already has it (a dialog, or a screen that focuses its own heading such as Result and
+ * Winner, or the Question button the popup returns focus to on Cancel).
+ */
+function useHeadingFocus(screen: string): void {
+  const previous = useRef(screen);
+  useEffect(() => {
+    if (previous.current === screen) return;
+    previous.current = screen;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected && !active.closest('[inert]')) {
+      return;
+    }
+    const heading = Array.from(document.querySelectorAll<HTMLElement>('main h1')).find(
+      (h1) => !h1.closest('[inert]'),
+    );
+    if (!heading) return;
+    if (!heading.hasAttribute('tabindex')) heading.tabIndex = -1;
+    heading.focus();
+  }, [screen]);
+}
+
 /** Renders the screen chosen by the game reducer. */
 function Screens() {
   const { state, dispatch } = useGame();
   const { screen, game } = state;
-  // Local UI state: the "Start a new board?" confirmation over the board.
-  const [confirmNewBoard, setConfirmNewBoard] = useState(false);
+  // Local UI state: the "Start a new board?" / "Quit this game?" confirmation over the board.
+  const [boardDialog, setBoardDialog] = useState<BoardDialog>(null);
+  const dialog = screen === 'board' ? boardDialog : null;
+
+  // System back: closes a confirmation, else the in-app Back where there is one.
+  useSystemBack(dialog !== null || canGoBack(state), () => {
+    if (dialog !== null) setBoardDialog(null);
+    else dispatch({ type: 'BACK' });
+  });
+  useHeadingFocus(screen);
 
   if (screen === 'home') {
-    return <HomeScreen onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })} />;
+    return (
+      <HomeScreen
+        onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })}
+        savedGame={game && { turn: game.turn, code: game.code }}
+        onContinue={() => dispatch({ type: 'CONTINUE_GAME' })}
+      />
+    );
   }
 
   if (screen === 'newGame') {
@@ -43,14 +93,14 @@ function Screens() {
       <NewGameScreen
         onStart={(settings) => dispatch({ type: 'START_GAME', ...settings })}
         onBack={() => dispatch({ type: 'BACK' })}
+        replacesGame={game !== null}
       />
     );
   }
 
   if (game && (screen === 'board' || screen === 'questionPopup')) {
     const pending = screen === 'questionPopup' ? game.pendingQuestion : null;
-    const confirming = confirmNewBoard && screen === 'board';
-    const covered = pending !== null || confirming;
+    const covered = pending !== null || dialog !== null;
     // Same tree for both screens, so the board is not remounted under the popup and focus can
     // return to the Question button on Cancel.
     return (
@@ -63,8 +113,9 @@ function Screens() {
             onQuestion={() => dispatch(openQuestionAction(game.askedQuestionIds))}
             onNextPlayer={() => dispatch({ type: 'NEXT_PLAYER' })}
             onEndTurn={() => dispatch({ type: 'END_TURN' })}
-            onNewBoard={() => setConfirmNewBoard(true)}
+            onNewBoard={() => setBoardDialog('newBoard')}
             onWinner={() => dispatch({ type: 'OPEN_WINNER' })}
+            onQuit={() => setBoardDialog('quit')}
           />
         </div>
         {pending && (
@@ -75,13 +126,22 @@ function Screens() {
             onCancel={() => dispatch({ type: 'CANCEL_QUESTION' })}
           />
         )}
-        {confirming && (
+        {dialog === 'newBoard' && (
           <NewBoardConfirm
             onConfirm={() => {
-              setConfirmNewBoard(false);
+              setBoardDialog(null);
               dispatch({ type: 'NEW_BOARD', code: newCode() });
             }}
-            onCancel={() => setConfirmNewBoard(false)}
+            onCancel={() => setBoardDialog(null)}
+          />
+        )}
+        {dialog === 'quit' && (
+          <QuitConfirm
+            onConfirm={() => {
+              setBoardDialog(null);
+              dispatch({ type: 'QUIT_TO_HOME' });
+            }}
+            onCancel={() => setBoardDialog(null)}
           />
         )}
       </>
