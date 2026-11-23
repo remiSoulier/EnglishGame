@@ -5,3 +5,4 @@ export * from './walls';
 export * from './rng';
 export * from './connectivity';
 export * from './boardCode';
+export * from './generator';

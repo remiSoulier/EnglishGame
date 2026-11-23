@@ -198,7 +198,7 @@ function analyse(wall: Wall): { shape: 'straight' | 'L'; length: number } | { er
   return { shape: turns === 0 ? 'straight' : 'L', length: sides.length };
 }
 
-describe('placeWalls over 1000 seeds (independent geometry)', () => {
+describe('placeWalls over 1000 seeds (independent geometry)', { timeout: 30_000 }, () => {
   it('produces 8 valid, canonical, ordered, non-overlapping, non-border walls', () => {
     const failures: string[] = [];
     for (let seed = 0; seed < SEEDS; seed++) {

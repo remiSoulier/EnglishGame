@@ -14,6 +14,7 @@ describe('engine purity', () => {
         './boardCode.ts',
         './cell.ts',
         './connectivity.ts',
+        './generator.ts',
         './index.ts',
         './rng.ts',
         './side.ts',
