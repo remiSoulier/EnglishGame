@@ -1,6 +1,13 @@
 import { ALL_QUESTIONS } from '../data/questions';
 import { checkAnswer, ENEMY_COUNT, generateBoard, getQuestion, type Difficulty } from '../engine';
-import type { AnswerLetter, Game, GameState, PlayerCount, QuestionCards } from './types';
+import type {
+  AnswerLetter,
+  Game,
+  GameScreen,
+  GameState,
+  PlayerCount,
+  QuestionCards,
+} from './types';
 
 /**
  * Game actions. Every action that does not make sense in the current state (wrong screen, no game,
@@ -43,9 +50,25 @@ export type GameAction =
   | { type: 'DECLARE_WINNER'; player: number }
   /** 'winner' once declared → new game with this code, same players and difficulty. */
   | { type: 'PLAY_AGAIN'; code: string }
-  /** Any screen → 'home', game dropped. */
+  /**
+   * Any screen → 'home', game dropped. Used by the winner screen's Home button once the game is
+   * over; to leave a game that goes on, use `QUIT_TO_HOME`.
+   */
   | { type: 'GO_HOME' }
-  /** 'home' → 'newGame'. */
+  /**
+   * Any game screen → 'home', game KEPT (saved) with `lastScreen` set to the screen it was on.
+   * On 'home' / 'newGame' or without a game, a no-op.
+   */
+  | { type: 'QUIT_TO_HOME' }
+  /**
+   * 'home' with a game → back to `game.lastScreen` ('board' when absent, or when it is a question
+   * screen without a pending question); `lastScreen` is cleared. Elsewhere a no-op.
+   */
+  | { type: 'CONTINUE_GAME' }
+  /**
+   * 'home' → 'newGame'. A game in progress is kept until START_GAME replaces it (Back returns to
+   * 'home' with the game still there).
+   */
   | { type: 'GO_NEW_GAME' }
   /**
    * Back: 'newGame' → 'home'; 'questionPopup' → 'board' (like CANCEL_QUESTION);
@@ -88,6 +111,18 @@ function newGame(playerCount: PlayerCount, difficulty: Difficulty, code: string)
   };
 }
 
+/**
+ * Screen to resume a saved game on: `lastScreen`, unless it is missing or needs a pending
+ * question (or an answer) the game does not have, in which case 'board'.
+ */
+export function resumeScreen(lastScreen: GameScreen | undefined, game: Game): GameScreen {
+  if (!lastScreen) return 'board';
+  const pending = game.pendingQuestion;
+  if ((lastScreen === 'questionPopup' || lastScreen === 'question') && !pending) return 'board';
+  if (lastScreen === 'result' && !pending?.answer) return 'board';
+  return lastScreen;
+}
+
 function startGame(
   state: GameState,
   playerCount: PlayerCount,
@@ -108,6 +143,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'GO_HOME':
       return screen === 'home' && game === null ? state : { screen: 'home', game: null };
+
+    case 'QUIT_TO_HOME':
+      if (!game || screen === 'home' || screen === 'newGame') return state;
+      return { screen: 'home', game: { ...game, lastScreen: screen } };
+
+    case 'CONTINUE_GAME': {
+      if (!game || screen !== 'home') return state;
+      const { lastScreen, ...rest } = game;
+      return { screen: resumeScreen(lastScreen, rest), game: rest };
+    }
 
     case 'GO_NEW_GAME':
       return screen === 'home' ? { ...state, screen: 'newGame' } : state;

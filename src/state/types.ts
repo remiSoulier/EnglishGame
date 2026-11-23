@@ -4,6 +4,9 @@ import type { Board, Difficulty } from '../engine';
 export type Screen =
   'home' | 'newGame' | 'board' | 'questionPopup' | 'question' | 'result' | 'newBoard' | 'winner';
 
+/** Screens that belong to a game in progress (every screen but 'home' and 'newGame'). */
+export type GameScreen = Exclude<Screen, 'home' | 'newGame'>;
+
 /** A multiple-choice answer letter. */
 export type AnswerLetter = 'A' | 'B' | 'C' | 'D';
 
@@ -38,6 +41,11 @@ export interface Game {
   pendingQuestion: null | PendingQuestion;
   /** Winning player (1-based) once declared. */
   winner: null | number;
+  /**
+   * Screen the game was on when the players quit to home (`QUIT_TO_HOME`), so that "Continue
+   * game" (`CONTINUE_GAME`) returns to it. Absent while the game is being played.
+   */
+  lastScreen?: GameScreen;
 }
 
 /** Whole app state: the current screen and the game in progress (if any). */
