@@ -30,3 +30,10 @@ Les 4 coins A1, I1, A9, I9 sont toujours exclus pour l'objectif et les ennemis, 
 - Ordre fixe du tirage d'un tour : murs (redessinés tant qu'une case est isolée), puis objectif, puis ennemis.
 - Tour 1 : l'objectif est tiré ; le passer en paramètre ne change pas le plateau.
 - Tours suivants : l'objectif passé est conservé ; s'il est omis, le moteur recalcule celui du tour 1. Un appareil qui rejoint la partie n'a besoin que du code et du numéro de tour.
+
+## D8 — État de la partie et écrans (2026-11-23, tâches #10–#15)
+- L'état de la partie (reducer + Context) porte aussi l'écran courant (`screen`) : la navigation (#12) est pilotée par le reducer, sans routeur.
+- Menu *New board* : nouvelle partie avec un **nouveau code aléatoire**, mêmes joueurs et même difficulté, retour au tour 1, après confirmation. (L'écran « New board » de fin de tour reste l'écran 7.)
+- Le nombre de cartes X d'une question (1 à 3) est tiré avec `Math.random` : il ne fait pas partie du plateau partagé, donc pas besoin de graine.
+- Une question est tirée parmi celles non encore posées dans la partie ; quand toutes l'ont été, on recommence (#17).
+- *Continue* après une question passe au joueur suivant (ou, après le dernier joueur, mène à *End turn*).
