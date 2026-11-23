@@ -113,7 +113,16 @@ export function loadState(): GameState | null {
   }
 }
 
-/** Saves the whole state (errors such as a full or disabled storage are ignored). */
+/**
+ * Saves the whole state (errors such as a full or disabled storage are ignored).
+ *
+ * Finished games (#15): the state is saved as is, so a reload on "Player X wins!" shows the win
+ * screen again (the game has `winner` set and `END_TURN` is refused, so it cannot go on). Leaving
+ * that screen clears it: Home (`GO_HOME`) saves `{ screen: 'home', game: null }`, i.e. no game at
+ * all, and Play again saves a fresh game (turn 1, new code, no asked questions). We keep writing
+ * the key rather than removing it when `game` is null, so that 'newGame' survives a reload too;
+ * a saved state without a game never restores one.
+ */
 export function saveState(state: GameState): void {
   try {
     const saved: Saved = { version: STORAGE_VERSION, state };
