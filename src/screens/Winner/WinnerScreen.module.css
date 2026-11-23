@@ -1,0 +1,71 @@
+.screen {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100dvh;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.won {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.trophy {
+  flex: none;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.won .title {
+  color: var(--color-success); /* 5.48:1 on --color-bg */
+}
+
+.title:focus {
+  outline: none;
+}
+
+.title:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+}
+
+.text {
+  margin: 0;
+  font-size: 18px;
+}
+
+.players {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.player {
+  min-height: 56px;
+  font-size: 20px;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.won .actions {
+  margin-top: 16px;
+}

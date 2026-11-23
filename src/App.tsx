@@ -7,6 +7,7 @@ import { NewGameScreen } from './screens/NewGame';
 import { QuestionScreen } from './screens/Question';
 import { QuestionPopupScreen } from './screens/QuestionPopup';
 import { ResultScreen } from './screens/Result';
+import { WinnerScreen } from './screens/Winner';
 import { GameProvider, useGame } from './state/GameContext';
 import { openQuestionAction } from './state/questionFlow';
 import type { Screen } from './state/types';
@@ -71,6 +72,19 @@ function Screens() {
           />
         )}
       </>
+    );
+  }
+
+  if (game && screen === 'winner') {
+    return (
+      <WinnerScreen
+        playerCount={game.playerCount}
+        winner={game.winner}
+        onDeclare={(player) => dispatch({ type: 'DECLARE_WINNER', player })}
+        onBack={() => dispatch({ type: 'BACK' })}
+        onPlayAgain={() => dispatch({ type: 'PLAY_AGAIN', code: newCode() })}
+        onHome={() => dispatch({ type: 'GO_HOME' })}
+      />
     );
   }
 
