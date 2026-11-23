@@ -8,7 +8,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #1 Setup (setup-dev)
 - [x] #2 Modèle de données (engine-dev)
 - [x] #3 Murs (engine-dev)
-- [ ] #4 Aucune case isolée (engine-dev)
+- [x] #4 Aucune case isolée (engine-dev)
 - [ ] #5 Objectif, départs, ennemis (engine-dev)
 - [x] #6 Grille SVG (ui-dev)
 - [x] #7 Écran Board (ui-dev)
@@ -42,3 +42,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #3 | VALIDÉ (validator asked for a rebase onto main; done, 323 tests pass). Merged into main. |
 | 2026-11-23 | #6 | VALIDÉ (optional: the P in the Start legend icon is small). Merged into main. |
 | 2026-11-23 | #7 | VALIDÉ (cosmetic: large gap between legend and actions at 844 px). Merged into main. |
+| 2026-11-23 | #4 | VALIDÉ (one doc/ordering defect fixed before validation). ~44% of raw wall draws are disconnected and get redrawn. Merged into main. |
