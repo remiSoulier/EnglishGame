@@ -4,161 +4,359 @@
     "category": "History",
     "difficulty": "easy",
     "question": "Who is often called the first computer programmer?",
-    "choices": {
-      "A": "Alan Turing",
-      "B": "Ada Lovelace",
-      "C": "Grace Hopper",
-      "D": "Charles Babbage"
-    },
+    "choices": { "A": "Marie Curie", "B": "Ada Lovelace", "C": "Grace Hopper", "D": "Alan Turing" },
     "answer": "B",
-    "explanation": "Ada Lovelace wrote an algorithm for Charles Babbage's Analytical Engine in the 1840s."
+    "explanation": "In 1843, Ada Lovelace wrote an algorithm for Charles Babbage's Analytical Engine."
   },
   {
     "id": 2,
-    "category": "Concepts",
-    "difficulty": "easy",
-    "question": "What is an algorithm?",
-    "choices": {
-      "A": "A list of steps to solve a problem",
-      "B": "A type of computer screen",
-      "C": "A programming language",
-      "D": "A kind of virus"
-    },
+    "category": "History",
+    "difficulty": "medium",
+    "question": "Ada Lovelace wrote her algorithm for which machine?",
+    "choices": { "A": "The Analytical Engine", "B": "ENIAC", "C": "Enigma", "D": "Apple I" },
     "answer": "A",
-    "explanation": "An algorithm is a clear, ordered list of steps that solves a problem."
+    "explanation": "The Analytical Engine was a mechanical computer designed by Charles Babbage. It was never fully built."
   },
   {
     "id": 3,
-    "category": "Board",
+    "category": "History",
     "difficulty": "easy",
-    "question": "Can two players stand on the same square?",
+    "question": "Who helped break the Enigma code during World War II and imagined the \"Turing machine\"?",
     "choices": {
-      "A": "Yes",
-      "B": "No"
+      "A": "Albert Einstein",
+      "B": "Isaac Newton",
+      "C": "Alan Turing",
+      "D": "Bill Gates"
     },
-    "answer": "A",
-    "explanation": "In this placeholder rule set, several players may share one square."
+    "answer": "C",
+    "explanation": "Alan Turing is one of the fathers of computer science. The Turing machine is a simple model of a computer."
   },
   {
     "id": 4,
-    "category": "Concepts",
-    "difficulty": "medium",
-    "question": "What does a loop do in a program?",
-    "choices": {
-      "A": "It stops the program",
-      "B": "It deletes a variable",
-      "C": "It repeats instructions",
-      "D": "It draws a circle"
-    },
-    "answer": "C",
-    "explanation": "A loop repeats a block of instructions while a condition is true or a set number of times."
+    "category": "History",
+    "difficulty": "easy",
+    "question": "In 1947, a moth was found inside a computer. Which word did this story make famous?",
+    "choices": { "A": "Virus", "B": "Spam", "C": "Cookie", "D": "Bug" },
+    "answer": "D",
+    "explanation": "Grace Hopper's team found a moth in the Harvard Mark II. A \"bug\" now means an error in a program."
   },
   {
     "id": 5,
     "category": "History",
     "difficulty": "medium",
-    "question": "Which machine did Alan Turing describe in 1936?",
-    "choices": {
-      "A": "The Turing machine",
-      "B": "The steam engine",
-      "C": "The telephone"
-    },
-    "answer": "A",
-    "explanation": "Alan Turing described an abstract machine, now called the Turing machine, to define computation."
+    "question": "The word \"algorithm\" comes from the name of which mathematician?",
+    "choices": { "A": "Euclid", "B": "Al-Khwarizmi", "C": "Pythagoras", "D": "Newton" },
+    "answer": "B",
+    "explanation": "Al-Khwarizmi was a Persian mathematician of the 9th century. His name in Latin became \"algorithm\"."
   },
   {
     "id": 6,
-    "category": "Concepts",
+    "category": "History",
     "difficulty": "hard",
-    "question": "Binary search works on a list that is…",
+    "question": "Euclid's algorithm, more than 2,000 years old, is used to find...",
     "choices": {
-      "A": "empty",
-      "B": "random",
-      "C": "very short only",
-      "D": "sorted"
+      "A": "The greatest common divisor of two numbers",
+      "B": "The area of a circle",
+      "C": "The shortest path in a maze",
+      "D": "The square root of a number"
     },
-    "answer": "D",
-    "explanation": "Binary search halves a sorted list at each step, so the list must be sorted first."
+    "answer": "A",
+    "explanation": "Euclid's algorithm finds the greatest common divisor (GCD). It is still used today."
   },
   {
     "id": 7,
-    "category": "Board",
+    "category": "History",
     "difficulty": "medium",
-    "question": "What happens when you answer a question correctly?",
-    "choices": {
-      "A": "You go back to the start",
-      "B": "You move forward",
-      "C": "You lose your turn",
-      "D": "Nothing happens"
-    },
-    "answer": "B",
-    "explanation": "In this placeholder rule set, a correct answer lets you move forward on the board."
+    "question": "Which was one of the first general-purpose electronic computers, completed in 1945?",
+    "choices": { "A": "Commodore 64", "B": "Minitel", "C": "ENIAC", "D": "iPhone" },
+    "answer": "C",
+    "explanation": "ENIAC filled a large room and weighed about 27 tons."
   },
   {
     "id": 8,
     "category": "History",
-    "difficulty": "hard",
-    "question": "Grace Hopper is famous for finding the first computer…",
+    "difficulty": "easy",
+    "question": "Who invented the World Wide Web?",
     "choices": {
-      "A": "screen",
-      "B": "mouse",
-      "C": "bug",
-      "D": "keyboard"
+      "A": "Steve Jobs",
+      "B": "Linus Torvalds",
+      "C": "Bill Gates",
+      "D": "Tim Berners-Lee"
     },
-    "answer": "C",
-    "explanation": "In 1947 her team found a real moth inside a computer and called it the first 'bug'."
+    "answer": "D",
+    "explanation": "Tim Berners-Lee invented the Web in 1989 at CERN, near Geneva."
   },
   {
     "id": 9,
-    "category": "Concepts",
-    "difficulty": "easy",
-    "question": "Is a variable a named place to store a value?",
+    "category": "History",
+    "difficulty": "hard",
+    "question": "Logo is a language where a turtle moves forward and turns, like the pawns in this game. When was it created?",
     "choices": {
-      "A": "Yes",
-      "B": "No"
+      "A": "In the 1960s",
+      "B": "In the 1980s",
+      "C": "In the 1990s",
+      "D": "In the 2010s"
     },
     "answer": "A",
-    "explanation": "A variable has a name and holds a value that the program can read and change."
+    "explanation": "Logo was created in 1967 to teach programming to children."
   },
   {
     "id": 10,
-    "category": "Board",
-    "difficulty": "hard",
-    "question": "How many dice do you roll at the start of your turn?",
+    "category": "History",
+    "difficulty": "medium",
+    "question": "What does the word \"bit\" stand for?",
     "choices": {
-      "A": "None",
-      "B": "One",
-      "C": "Two"
+      "A": "Big integer",
+      "B": "Binary digit",
+      "C": "Basic instruction",
+      "D": "Byte item"
     },
     "answer": "B",
-    "explanation": "In this placeholder rule set, each player rolls one die at the start of the turn."
+    "explanation": "A bit is a binary digit: 0 or 1. It is the smallest unit of information in a computer."
   },
   {
     "id": 11,
     "category": "Concepts",
-    "difficulty": "medium",
-    "question": "What does an 'if' statement do?",
+    "difficulty": "easy",
+    "question": "What is an algorithm?",
     "choices": {
-      "A": "It repeats code forever",
-      "B": "It chooses what to do based on a condition",
-      "C": "It saves a file",
-      "D": "It prints the date"
+      "A": "A type of computer",
+      "B": "A programming language",
+      "C": "A list of steps to solve a problem",
+      "D": "A computer virus"
     },
-    "answer": "B",
-    "explanation": "An 'if' statement runs some code only when its condition is true."
+    "answer": "C",
+    "explanation": "An algorithm is a list of clear steps. A cooking recipe is also a kind of algorithm."
   },
   {
     "id": 12,
-    "category": "History",
+    "category": "Concepts",
     "difficulty": "easy",
-    "question": "What was ENIAC?",
+    "question": "What is a loop in a program?",
     "choices": {
-      "A": "A video game",
-      "B": "A phone company",
-      "C": "A programming language",
-      "D": "One of the first electronic computers"
+      "A": "An instruction that repeats other instructions",
+      "B": "An error in the code",
+      "C": "The end of the program",
+      "D": "A type of screen"
+    },
+    "answer": "A",
+    "explanation": "A loop repeats instructions several times, so you don't have to write them again."
+  },
+  {
+    "id": 13,
+    "category": "Concepts",
+    "difficulty": "easy",
+    "question": "In this game, which card creates a loop?",
+    "choices": { "A": "Move forward", "B": "Turn left", "C": "Turn right", "D": "Repeat" },
+    "answer": "D",
+    "explanation": "The Repeat card repeats the next cards several times: it is a loop."
+  },
+  {
+    "id": 14,
+    "category": "Concepts",
+    "difficulty": "easy",
+    "question": "What does \"debugging\" mean?",
+    "choices": {
+      "A": "Deleting a program",
+      "B": "Finding and fixing errors",
+      "C": "Making a program faster",
+      "D": "Installing a game"
+    },
+    "answer": "B",
+    "explanation": "Debugging means finding the bugs (errors) in a program and fixing them."
+  },
+  {
+    "id": 15,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "What does an IF instruction do?",
+    "choices": {
+      "A": "It repeats instructions forever",
+      "B": "It stops the computer",
+      "C": "It runs instructions only when something is true",
+      "D": "It prints text on the screen"
+    },
+    "answer": "C",
+    "explanation": "IF is a condition: \"IF there is a wall, THEN turn right\"."
+  },
+  {
+    "id": 16,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "What is a variable?",
+    "choices": {
+      "A": "A named box that stores a value",
+      "B": "A computer that changes color",
+      "C": "An error that changes",
+      "D": "A type of loop"
+    },
+    "answer": "A",
+    "explanation": "A variable has a name and stores a value, for example score = 10. The value can change."
+  },
+  {
+    "id": 17,
+    "category": "Concepts",
+    "difficulty": "easy",
+    "question": "Computers store information with only two digits. Which ones?",
+    "choices": { "A": "1 and 2", "B": "0 and 9", "C": "A and B", "D": "0 and 1" },
+    "answer": "D",
+    "explanation": "Computers use binary: everything is made of 0s and 1s."
+  },
+  {
+    "id": 18,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "In programming, what is a \"sequence\"?",
+    "choices": {
+      "A": "Instructions that run one after another, in order",
+      "B": "A list of numbers",
+      "C": "A random choice",
+      "D": "A broken program"
+    },
+    "answer": "A",
+    "explanation": "A sequence is the simplest structure: the computer does step 1, then step 2, then step 3..."
+  },
+  {
+    "id": 19,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "What is a function?",
+    "choices": {
+      "A": "A computer part",
+      "B": "A named group of instructions you can reuse",
+      "C": "A type of error",
+      "D": "A website"
+    },
+    "answer": "B",
+    "explanation": "A function groups instructions under a name. You can use it many times without rewriting it."
+  },
+  {
+    "id": 20,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "What do we call a loop that never stops?",
+    "choices": {
+      "A": "A short loop",
+      "B": "A smart loop",
+      "C": "An infinite loop",
+      "D": "A closed loop"
+    },
+    "answer": "C",
+    "explanation": "An infinite loop never ends. It is often a bug: the program gets stuck."
+  },
+  {
+    "id": 21,
+    "category": "Concepts",
+    "difficulty": "hard",
+    "question": "What is recursion?",
+    "choices": {
+      "A": "When a function calls itself",
+      "B": "When a program is deleted",
+      "C": "When two computers talk",
+      "D": "When a loop runs only once"
+    },
+    "answer": "A",
+    "explanation": "A recursive function calls itself on a smaller problem, until the problem is very simple."
+  },
+  {
+    "id": 22,
+    "category": "Concepts",
+    "difficulty": "hard",
+    "question": "You look for a name in a sorted list of 1,000 names. Which method is usually the fastest?",
+    "choices": {
+      "A": "Read every name from the start",
+      "B": "Read every name from the end",
+      "C": "Pick names at random",
+      "D": "Open the list in the middle and cut it in half each time"
     },
     "answer": "D",
-    "explanation": "ENIAC, finished in 1945, was one of the first general-purpose electronic computers."
+    "explanation": "This is binary search. With 1,000 names, about 10 steps are enough."
+  },
+  {
+    "id": 23,
+    "category": "Board",
+    "difficulty": "easy",
+    "question": "Repeat 3 times: Move forward 1. How many squares does the pawn move?",
+    "choices": { "A": "1", "B": "3", "C": "4", "D": "6" },
+    "answer": "B",
+    "explanation": "Move forward 1 is done 3 times: 1 + 1 + 1 = 3 squares."
+  },
+  {
+    "id": 24,
+    "category": "Board",
+    "difficulty": "easy",
+    "question": "The pawn faces North. It plays Turn left. Where does it face now?",
+    "choices": { "A": "West", "B": "East", "C": "South", "D": "North" },
+    "answer": "A",
+    "explanation": "Turning left from North makes the pawn face West."
+  },
+  {
+    "id": 25,
+    "category": "Board",
+    "difficulty": "easy",
+    "question": "The pawn plays Turn right, then Turn right again. Where does it face?",
+    "choices": {
+      "A": "The same direction",
+      "B": "To its left",
+      "C": "The opposite direction",
+      "D": "To its right"
+    },
+    "answer": "C",
+    "explanation": "Two quarter turns make a half turn: the pawn now faces the opposite direction."
+  },
+  {
+    "id": 26,
+    "category": "Board",
+    "difficulty": "medium",
+    "question": "With no walls around: Repeat 4 times: Move forward 2, Turn right. Where does the pawn finish?",
+    "choices": {
+      "A": "8 squares away",
+      "B": "2 squares to the right",
+      "C": "In a corner of the board",
+      "D": "Back on its starting square"
+    },
+    "answer": "D",
+    "explanation": "The pawn draws a square and comes back to where it started."
+  },
+  {
+    "id": 27,
+    "category": "Board",
+    "difficulty": "medium",
+    "question": "Repeat 2 times: (Repeat 3 times: Move forward 1). How many squares does the pawn move?",
+    "choices": { "A": "5", "B": "6", "C": "3", "D": "9" },
+    "answer": "B",
+    "explanation": "The inner loop moves 3 squares, and it runs 2 times: 2 x 3 = 6."
+  },
+  {
+    "id": 28,
+    "category": "Board",
+    "difficulty": "medium",
+    "question": "x = 5, then x = x + 3. What is the value of x?",
+    "choices": { "A": "8", "B": "5", "C": "3", "D": "53" },
+    "answer": "A",
+    "explanation": "x starts at 5, then we add 3: x is now 8."
+  },
+  {
+    "id": 29,
+    "category": "Board",
+    "difficulty": "hard",
+    "question": "Repeat 3 times: Turn right. Which single card gives the same result?",
+    "choices": { "A": "Turn right", "B": "Move forward 3", "C": "Turn left", "D": "Repeat 3" },
+    "answer": "C",
+    "explanation": "Three quarter turns to the right are the same as one quarter turn to the left."
+  },
+  {
+    "id": 30,
+    "category": "Board",
+    "difficulty": "hard",
+    "question": "The pawn is 2 squares in front of a wall. It plays Move forward 3. What happens?",
+    "choices": {
+      "A": "It jumps over the wall",
+      "B": "It stops in front of the wall",
+      "C": "It goes back to its starting square",
+      "D": "It turns around"
+    },
+    "answer": "B",
+    "explanation": "In this game, a wall stops the pawn. The rest of the move is lost."
   }
 ]
