@@ -15,7 +15,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [ ] #8 Fin de tour (ui-dev + engine-dev)
 
 ## Priorité 2 — important
-- [ ] #9 Code de plateau et graine (engine-dev)
+- [x] #9 Code de plateau et graine (engine-dev)
 - [ ] #10 État de la partie (ui-dev)
 - [ ] #11 Home + New game (ui-dev)
 - [ ] #12 Navigation (ui-dev)
@@ -43,3 +43,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #6 | VALIDÉ (optional: the P in the Start legend icon is small). Merged into main. |
 | 2026-11-23 | #7 | VALIDÉ (cosmetic: large gap between legend and actions at 844 px). Merged into main. |
 | 2026-11-23 | #4 | VALIDÉ (one doc/ordering defect fixed before validation). ~44% of raw wall draws are disconnected and get redrawn. Merged into main. |
+| 2026-11-23 | #9 | VALIDÉ (one defect fixed: unicode letters like ß were mapped into valid codes). Merged into main. |
