@@ -227,5 +227,12 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return screen === 'winner' && game.winner !== null
         ? startGame(state, game.playerCount, game.difficulty, action.code)
         : state;
+
+    default: {
+      // Exhaustiveness check; at runtime an unknown action is a no-op.
+      const unknownAction: never = action;
+      void unknownAction;
+      return state;
+    }
   }
 }
