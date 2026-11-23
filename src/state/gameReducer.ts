@@ -1,5 +1,5 @@
-import { ENEMY_COUNT, generateBoard, type Difficulty } from '../engine';
-import questions from '../data/questions.json';
+import { ALL_QUESTIONS } from '../data/questions';
+import { checkAnswer, ENEMY_COUNT, generateBoard, getQuestion, type Difficulty } from '../engine';
 import type { AnswerLetter, Game, GameState, PlayerCount, QuestionCards } from './types';
 
 /**
@@ -20,8 +20,12 @@ export type GameAction =
   | { type: 'START_TURN' }
   /** 'board' (menu "New board") → new game with this code, same players and difficulty, turn 1. */
   | { type: 'NEW_BOARD'; code: string }
-  /** 'board', no pending question, known id, 1–3 cards → pending question set, 'questionPopup'. */
-  | { type: 'OPEN_QUESTION'; questionId: number; cards: QuestionCards }
+  /**
+   * 'board', no pending question, known id, 1–3 cards → pending question set, 'questionPopup'.
+   * The id must not have been asked yet, unless `resetAsked` is set: that starts a new cycle (only
+   * allowed once every question has been asked) and clears `askedQuestionIds`.
+   */
+  | { type: 'OPEN_QUESTION'; questionId: number; cards: QuestionCards; resetAsked?: boolean }
   /** 'questionPopup' → 'board', pending question cleared (the question is NOT marked as asked). */
   | { type: 'CANCEL_QUESTION' }
   /** 'questionPopup' → 'question'. */
@@ -51,11 +55,15 @@ export type GameAction =
 
 export const initialState: GameState = { screen: 'home', game: null };
 
-const ANSWERS: ReadonlyMap<number, string> = new Map(questions.map((q) => [q.id, q.answer]));
-
 const PLAYER_COUNTS: readonly number[] = [2, 3, 4];
 const CARD_COUNTS: readonly number[] = [1, 2, 3];
 const LETTERS: readonly string[] = ['A', 'B', 'C', 'D'];
+
+/** True once every question of the game has been asked in the current cycle. */
+function allAsked(asked: readonly number[]): boolean {
+  const askedSet = new Set(asked);
+  return ALL_QUESTIONS.every((q) => askedSet.has(q.id));
+}
 
 /** Builds a fresh game at turn 1, or `null` if the settings or the code are invalid. */
 function newGame(playerCount: PlayerCount, difficulty: Difficulty, code: string): Game | null {
@@ -151,12 +159,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ? startGame(state, game.playerCount, game.difficulty, action.code)
         : state;
 
-    case 'OPEN_QUESTION':
+    case 'OPEN_QUESTION': {
+      const reset = action.resetAsked === true;
       if (
         screen !== 'board' ||
         game.pendingQuestion !== null ||
-        !ANSWERS.has(action.questionId) ||
-        !CARD_COUNTS.includes(action.cards)
+        !getQuestion(action.questionId, ALL_QUESTIONS) ||
+        !CARD_COUNTS.includes(action.cards) ||
+        (reset
+          ? !allAsked(game.askedQuestionIds)
+          : game.askedQuestionIds.includes(action.questionId))
       ) {
         return state;
       }
@@ -164,9 +176,11 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         screen: 'questionPopup',
         game: {
           ...game,
+          askedQuestionIds: reset ? [] : game.askedQuestionIds,
           pendingQuestion: { questionId: action.questionId, cards: action.cards },
         },
       };
+    }
 
     case 'CANCEL_QUESTION':
       return screen === 'questionPopup'
@@ -179,6 +193,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'ANSWER_QUESTION': {
       const pending = game.pendingQuestion;
       if (screen !== 'question' || !pending || !LETTERS.includes(action.answer)) return state;
+      const question = getQuestion(pending.questionId, ALL_QUESTIONS);
+      if (!question) return state;
       const asked = game.askedQuestionIds;
       return {
         screen: 'result',
@@ -187,7 +203,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           pendingQuestion: {
             ...pending,
             answer: action.answer,
-            correct: ANSWERS.get(pending.questionId) === action.answer,
+            correct: checkAnswer(question, action.answer),
           },
           askedQuestionIds: asked.includes(pending.questionId)
             ? asked
