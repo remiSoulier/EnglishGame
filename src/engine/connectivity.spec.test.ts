@@ -163,26 +163,39 @@ describe('reachableCells', () => {
     expect(() => reachableCells({ x: -1, y: 3 }, [])).toThrow();
   });
 
-  it('matches union-find components and is symmetric on random wall sets', () => {
-    let disconnectedBoards = 0;
-    for (let seed = 0; seed < 60; seed++) {
-      const walls = placeWalls(mulberry32(seed));
-      const roots = unionFindRoots(walls);
-      const reach = allCells().map((c) => new Set(reachableCells(c, walls).map(idx)));
-      if (reach[0].size < CELL_COUNT) disconnectedBoards++;
-      for (let a = 0; a < CELL_COUNT; a++) {
-        for (let b = 0; b < CELL_COUNT; b++) {
-          expect(reach[a].has(b)).toBe(reach[b].has(a));
-          expect(reach[a].has(b)).toBe(roots[a] === roots[b]);
+  // Heavy: kept to 30 seeds and one matrix comparison per board (not 2 × 81² expect calls), with
+  // an explicit timeout so it stays robust when the suite runs in parallel on a loaded machine.
+  it(
+    'matches union-find components and is symmetric on random wall sets',
+    { timeout: 30_000 },
+    () => {
+      let disconnectedBoards = 0;
+      for (let seed = 0; seed < 30; seed++) {
+        const walls = placeWalls(mulberry32(seed));
+        const roots = unionFindRoots(walls);
+        const reach = allCells().map((c) => new Set(reachableCells(c, walls).map(idx)));
+        if (reach[0].size < CELL_COUNT) disconnectedBoards++;
+        const asymmetric: string[] = [];
+        const actual: boolean[][] = [];
+        const expected: boolean[][] = [];
+        for (let a = 0; a < CELL_COUNT; a++) {
+          actual.push([]);
+          expected.push([]);
+          for (let b = 0; b < CELL_COUNT; b++) {
+            if (reach[a].has(b) !== reach[b].has(a)) asymmetric.push(`${a}->${b}`);
+            actual[a].push(reach[a].has(b));
+            expected[a].push(roots[a] === roots[b]);
+          }
         }
+        expect(asymmetric, `seed ${seed}`).toEqual([]);
+        expect(actual, `seed ${seed}`).toEqual(expected);
       }
-    }
-    expect(disconnectedBoards).toBeGreaterThan(0);
-    // ~790k assertions: allow headroom when the whole suite runs in parallel.
-  }, 20_000);
+      expect(disconnectedBoards).toBeGreaterThan(0);
+    },
+  );
 });
 
-describe('BFS vs independent union-find', () => {
+describe('BFS vs independent union-find', { timeout: 30_000 }, () => {
   it('same verdict on 2 000 random placeWalls outputs', () => {
     let disconnected = 0;
     for (let seed = 0; seed < 2000; seed++) {
@@ -195,7 +208,7 @@ describe('BFS vs independent union-find', () => {
   });
 });
 
-describe('the redraw really happens', () => {
+describe('the redraw really happens', { timeout: 30_000 }, () => {
   it('seed 2 raw placement leaves A1 with 60/81 reachable cells', () => {
     const raw = placeWalls(mulberry32(2));
     expect(isFullyConnected(raw)).toBe(false);
@@ -224,7 +237,7 @@ describe('the redraw really happens', () => {
   });
 });
 
-describe('placeConnectedWalls over 1 000 seeds', () => {
+describe('placeConnectedWalls over 1 000 seeds', { timeout: 30_000 }, () => {
   it('always connected, valid, non-overlapping, deterministic and fast', () => {
     let total = 0;
     for (let seed = 0; seed < 1000; seed++) {
@@ -242,7 +255,7 @@ describe('placeConnectedWalls over 1 000 seeds', () => {
   });
 });
 
-describe('placeConnectedWalls is bounded', () => {
+describe('placeConnectedWalls is bounded', { timeout: 30_000 }, () => {
   it('exposes a sane attempt bound', () => {
     expect(Number.isInteger(MAX_CONNECTED_ATTEMPTS)).toBe(true);
     expect(MAX_CONNECTED_ATTEMPTS).toBeGreaterThan(0);

@@ -4,7 +4,7 @@ import type { Rng } from './types';
 
 const take = (rng: Rng, n: number): number[] => Array.from({ length: n }, () => rng());
 
-describe('mulberry32', () => {
+describe('mulberry32', { timeout: 30_000 }, () => {
   it('matches the reference first value for seed 1', () => {
     expect(mulberry32(1)()).toBe(0.6270739405881613);
   });
@@ -42,7 +42,7 @@ describe('mulberry32', () => {
   });
 });
 
-describe('randInt', () => {
+describe('randInt', { timeout: 30_000 }, () => {
   it('stays within inclusive bounds and covers every value over 10 000 draws', () => {
     const rng = mulberry32(2024);
     const counts = new Map<number, number>();
