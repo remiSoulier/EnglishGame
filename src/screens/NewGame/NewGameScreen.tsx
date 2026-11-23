@@ -15,6 +15,8 @@ export interface NewGameSettings {
 export interface NewGameScreenProps {
   onStart: (settings: NewGameSettings) => void;
   onBack: () => void;
+  /** A game is saved: warn that starting replaces it (no confirmation). */
+  replacesGame?: boolean;
 }
 
 type BoardChoice = 'random' | 'code';
@@ -63,7 +65,7 @@ function Segment<T extends string | number>({
 }
 
 /** New game screen: players, difficulty and board (random or entered code). */
-export function NewGameScreen({ onStart, onBack }: NewGameScreenProps) {
+export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGameScreenProps) {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(2);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [board, setBoard] = useState<BoardChoice>('random');
@@ -105,6 +107,7 @@ export function NewGameScreen({ onStart, onBack }: NewGameScreenProps) {
           <span aria-hidden="true">←</span> Back
         </Button>
         <h1 className={styles.title}>New game</h1>
+        {replacesGame && <p className={styles.notice}>This will replace your current game.</p>}
       </header>
 
       <form className={styles.form} onSubmit={handleSubmit} noValidate>

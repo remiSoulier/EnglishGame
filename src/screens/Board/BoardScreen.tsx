@@ -16,6 +16,8 @@ export interface BoardScreenProps {
   onEndTurn: () => void;
   onNewBoard: () => void;
   onWinner: () => void;
+  /** Menu "Quit to home" (shown when provided). */
+  onQuit?: () => void;
 }
 
 const DIFFICULTY_LABEL: Readonly<Record<Difficulty, string>> = {
@@ -34,6 +36,7 @@ export function BoardScreen({
   onEndTurn,
   onNewBoard,
   onWinner,
+  onQuit,
 }: BoardScreenProps) {
   const isLastPlayer = activePlayer >= playerCount;
 
@@ -50,6 +53,7 @@ export function BoardScreen({
           items={[
             { label: 'New board', onSelect: onNewBoard },
             { label: 'We have a winner', onSelect: onWinner },
+            ...(onQuit ? [{ label: 'Quit to home', onSelect: onQuit }] : []),
           ]}
         />
       </header>

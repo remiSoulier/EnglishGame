@@ -1,7 +1,14 @@
+/*
+ * Navigation (backlog #12, decision D8): the game reducer owns `screen`, there is no router.
+ * The full map (each screen → the screens it leads to) is `NAVIGATION` in src/state/navigation.ts.
+ * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
+ * turn → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
+ * to home (confirm, game kept) → Home → Continue game.
+ */
 import { useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
 import { getQuestion, newCode } from './engine';
-import { BoardScreen, NewBoardConfirm } from './screens/Board';
+import { BoardScreen, NewBoardConfirm, QuitConfirm } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
 import { NewGameScreen } from './screens/NewGame';
@@ -27,15 +34,25 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
   winner: 'We have a winner',
 };
 
+/** Confirmation dialogs of the board menu (local UI state, not saved). */
+type BoardDialog = null | 'newBoard' | 'quit';
+
 /** Renders the screen chosen by the game reducer. */
 function Screens() {
   const { state, dispatch } = useGame();
   const { screen, game } = state;
-  // Local UI state: the "Start a new board?" confirmation over the board.
-  const [confirmNewBoard, setConfirmNewBoard] = useState(false);
+  // Local UI state: the "Start a new board?" / "Quit this game?" confirmation over the board.
+  const [boardDialog, setBoardDialog] = useState<BoardDialog>(null);
+  const dialog = screen === 'board' ? boardDialog : null;
 
   if (screen === 'home') {
-    return <HomeScreen onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })} />;
+    return (
+      <HomeScreen
+        onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })}
+        savedGame={game && { turn: game.turn, code: game.code }}
+        onContinue={() => dispatch({ type: 'CONTINUE_GAME' })}
+      />
+    );
   }
 
   if (screen === 'newGame') {
@@ -43,14 +60,14 @@ function Screens() {
       <NewGameScreen
         onStart={(settings) => dispatch({ type: 'START_GAME', ...settings })}
         onBack={() => dispatch({ type: 'BACK' })}
+        replacesGame={game !== null}
       />
     );
   }
 
   if (game && (screen === 'board' || screen === 'questionPopup')) {
     const pending = screen === 'questionPopup' ? game.pendingQuestion : null;
-    const confirming = confirmNewBoard && screen === 'board';
-    const covered = pending !== null || confirming;
+    const covered = pending !== null || dialog !== null;
     // Same tree for both screens, so the board is not remounted under the popup and focus can
     // return to the Question button on Cancel.
     return (
@@ -63,8 +80,9 @@ function Screens() {
             onQuestion={() => dispatch(openQuestionAction(game.askedQuestionIds))}
             onNextPlayer={() => dispatch({ type: 'NEXT_PLAYER' })}
             onEndTurn={() => dispatch({ type: 'END_TURN' })}
-            onNewBoard={() => setConfirmNewBoard(true)}
+            onNewBoard={() => setBoardDialog('newBoard')}
             onWinner={() => dispatch({ type: 'OPEN_WINNER' })}
+            onQuit={() => setBoardDialog('quit')}
           />
         </div>
         {pending && (
@@ -75,13 +93,22 @@ function Screens() {
             onCancel={() => dispatch({ type: 'CANCEL_QUESTION' })}
           />
         )}
-        {confirming && (
+        {dialog === 'newBoard' && (
           <NewBoardConfirm
             onConfirm={() => {
-              setConfirmNewBoard(false);
+              setBoardDialog(null);
               dispatch({ type: 'NEW_BOARD', code: newCode() });
             }}
-            onCancel={() => setConfirmNewBoard(false)}
+            onCancel={() => setBoardDialog(null)}
+          />
+        )}
+        {dialog === 'quit' && (
+          <QuitConfirm
+            onConfirm={() => {
+              setBoardDialog(null);
+              dispatch({ type: 'QUIT_TO_HOME' });
+            }}
+            onCancel={() => setBoardDialog(null)}
           />
         )}
       </>
