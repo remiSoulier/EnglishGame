@@ -37,3 +37,6 @@ Les 4 coins A1, I1, A9, I9 sont toujours exclus pour l'objectif et les ennemis, 
 - Le nombre de cartes X d'une question (1 à 3) est tiré avec `Math.random` : il ne fait pas partie du plateau partagé, donc pas besoin de graine.
 - Une question est tirée parmi celles non encore posées dans la partie ; quand toutes l'ont été, on recommence (#17).
 - *Continue* après une question passe au joueur suivant (ou, après le dernier joueur, mène à *End turn*).
+
+## D9 — Tâches #13 et #14 sur une seule branche (2026-11-23)
+La popup (#13) et les écrans Question/Result (#14) forment un seul parcours et touchent les mêmes fichiers (`App.tsx`, reducer). Ils sont développés sur une seule branche `feat/13-14-question-flow`, chaque commit portant la référence de sa tâche ; testeur et validateur vérifient les deux tâches séparément.
