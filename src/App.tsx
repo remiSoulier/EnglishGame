@@ -1,28 +1,33 @@
-import { useState } from 'react';
 import { BoardScreen } from './screens/Board';
-import { FIXTURE_BOARD } from './state/fixtureBoard';
+import { NewBoardScreen } from './screens/NewBoard';
+import { useDemoGame } from './state/useDemoGame';
 import './styles/tokens.css';
 import './styles/global.css';
 
-const PLAYER_COUNT = 4;
 const noop = () => {};
 
-/** Temporary local demo of the Board screen (task #7) until game state (#10) and navigation (#12). */
+/** Temporary demo game (task #8) until game state (#10) and navigation (#12). */
 function App() {
-  const [activePlayer, setActivePlayer] = useState(1);
-  const [turn, setTurn] = useState(FIXTURE_BOARD.turn);
+  const game = useDemoGame();
+
+  if (game.screen === 'newBoard') {
+    return (
+      <NewBoardScreen
+        board={game.board}
+        playerCount={game.playerCount}
+        onStartTurn={game.startTurn}
+      />
+    );
+  }
 
   return (
     <BoardScreen
-      board={{ ...FIXTURE_BOARD, turn }}
-      playerCount={PLAYER_COUNT}
-      activePlayer={activePlayer}
+      board={game.board}
+      playerCount={game.playerCount}
+      activePlayer={game.activePlayer}
       onQuestion={noop}
-      onNextPlayer={() => setActivePlayer((p) => Math.min(p + 1, PLAYER_COUNT))}
-      onEndTurn={() => {
-        setActivePlayer(1);
-        setTurn((t) => t + 1);
-      }}
+      onNextPlayer={game.nextPlayer}
+      onEndTurn={game.endTurn}
       onNewBoard={noop}
       onWinner={noop}
     />
