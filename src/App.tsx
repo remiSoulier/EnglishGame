@@ -1,24 +1,12 @@
 import { newCode } from './engine';
 import { BoardScreen } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
+import { HomeScreen } from './screens/Home';
+import { NewGameScreen } from './screens/NewGame';
 import { GameProvider, useGame } from './state/GameContext';
-import { gameReducer, initialState } from './state/gameReducer';
-import type { GameState, Screen } from './state/types';
+import type { Screen } from './state/types';
 import './styles/tokens.css';
 import './styles/global.css';
-
-/**
- * TEMPORARY (to be removed in #11, once Home / New game exist): with no saved game, start a
- * 4-player medium game right away so the app stays usable.
- */
-function autoStartGame(): GameState {
-  return gameReducer(initialState, {
-    type: 'START_GAME',
-    playerCount: 4,
-    difficulty: 'medium',
-    code: newCode(),
-  });
-}
 
 /** Titles of the screens not built yet (placeholders). */
 const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
@@ -38,6 +26,19 @@ const noop = () => {};
 function Screens() {
   const { state, dispatch } = useGame();
   const { screen, game } = state;
+
+  if (screen === 'home') {
+    return <HomeScreen onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })} />;
+  }
+
+  if (screen === 'newGame') {
+    return (
+      <NewGameScreen
+        onStart={(settings) => dispatch({ type: 'START_GAME', ...settings })}
+        onBack={() => dispatch({ type: 'BACK' })}
+      />
+    );
+  }
 
   if (game && screen === 'board') {
     return (
@@ -75,7 +76,7 @@ function Screens() {
 
 function App() {
   return (
-    <GameProvider fallbackState={autoStartGame}>
+    <GameProvider>
       <Screens />
     </GameProvider>
   );
