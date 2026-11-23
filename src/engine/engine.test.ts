@@ -10,7 +10,15 @@ const sources = import.meta.glob<string>(['./*.ts', '!./*.test.ts'], {
 describe('engine purity', () => {
   it('finds the engine source files', () => {
     expect(Object.keys(sources).sort()).toEqual(
-      ['./cell.ts', './index.ts', './rng.ts', './side.ts', './types.ts', './walls.ts'].sort(),
+      [
+        './cell.ts',
+        './connectivity.ts',
+        './index.ts',
+        './rng.ts',
+        './side.ts',
+        './types.ts',
+        './walls.ts',
+      ].sort(),
     );
   });
 
