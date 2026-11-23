@@ -1,4 +1,4 @@
-import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import styles from './Modal.module.css';
 
 export interface ModalProps {
@@ -22,9 +22,11 @@ const FOCUSABLE =
  */
 export function Modal({ labelledBy, onCancel, children, className }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  // Read while rendering: by the time effects run, making the background inert has already
+  // blurred the element that opened the dialog.
+  const [previous] = useState(() => document.activeElement as HTMLElement | null);
 
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
     const dialog = dialogRef.current;
     const target =
       dialog?.querySelector<HTMLElement>('[data-autofocus]') ??
@@ -34,7 +36,7 @@ export function Modal({ labelledBy, onCancel, children, className }: ModalProps)
     return () => {
       if (previous?.isConnected) previous.focus();
     };
-  }, []);
+  }, [previous]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'Escape') {

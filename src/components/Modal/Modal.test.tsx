@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
@@ -43,5 +44,34 @@ describe('Modal', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     await user.click(screen.getByTestId('modal-backdrop'));
     expect(onCancel).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('Modal focus return', () => {
+  it('returns focus to the element focused before it opened', async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [open, setOpen] = useState(false);
+      return (
+        <>
+          <div inert={open}>
+            <button type="button" onClick={() => setOpen(true)}>
+              Open
+            </button>
+          </div>
+          {open && (
+            <Modal labelledBy="t" onCancel={() => setOpen(false)}>
+              <h2 id="t">Title</h2>
+              <button type="button">Inside</button>
+            </Modal>
+          )}
+        </>
+      );
+    }
+    render(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Open' }));
+    expect(screen.getByRole('button', { name: 'Inside' })).toHaveFocus();
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('button', { name: 'Open' })).toHaveFocus();
   });
 });
