@@ -16,4 +16,20 @@
   --color-enemy-mark: #ffffff; /* 6.47:1 on --color-enemy */
   --color-goal: #047857; /* 5.48:1 */
   --color-start: #1d4ed8; /* 6.70:1 */
+
+  /* UI chrome. Ratios against --color-bg (#ffffff) unless noted. */
+  --color-text-muted: #4b5563; /* 7.56:1 */
+  --color-primary: #1d4ed8; /* 6.70:1 */
+  --color-primary-hover: #1e40af; /* 8.72:1 */
+  --color-on-primary: #ffffff; /* 6.70:1 on --color-primary */
+  --color-surface: #f3f4f6; /* panels; --color-text on it: 13.43:1 */
+  --color-border: #6b7280; /* 4.83:1, non-text UI boundary (>= 3:1) */
+  --color-disabled-bg: #e5e7eb;
+  --color-disabled-text: #4b5563; /* 6.21:1 on --color-disabled-bg */
+  --color-focus: #1d4ed8;
+  --shadow-popover: 0 4px 16px rgb(0 0 0 / 18%);
+
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --tap-target: 48px;
+  --radius: 10px;
 }
