@@ -39,6 +39,11 @@ export function newCode(random: () => number = Math.random): string {
  * Input is case-insensitive; spaces and dashes are ignored. Ambiguous characters are rejected.
  */
 export function parseCode(input: string): ParseCodeResult {
+  // Reject non-ASCII letters/digits before uppercasing: Unicode case mapping would otherwise
+  // turn e.g. `ß` into `SS`, `ſ` into `S` or `ﬀ` into `FF`.
+  if (/[^A-Za-z0-9\s-]/.test(input)) {
+    return { ok: false, error: 'Code contains invalid characters' };
+  }
   const chars = input.toUpperCase().replace(/[\s-]/g, '');
   if (chars.length !== CODE_LENGTH) {
     return { ok: false, error: `Code must have ${CODE_LENGTH} characters` };
