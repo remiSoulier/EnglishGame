@@ -178,7 +178,8 @@ describe('reachableCells', () => {
       }
     }
     expect(disconnectedBoards).toBeGreaterThan(0);
-  });
+    // ~790k assertions: allow headroom when the whole suite runs in parallel.
+  }, 20_000);
 });
 
 describe('BFS vs independent union-find', () => {
