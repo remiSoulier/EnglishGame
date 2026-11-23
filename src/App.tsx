@@ -4,9 +4,9 @@
  * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
  * turn → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
  * to home (confirm, game kept) → Home → Continue game. The browser / Android back button maps to
- * the in-app Back where there is one (useSystemBack).
+ * the in-app Back where there is one (useSystemBack), and focus moves to the new screen's <h1>.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
 import { getQuestion, newCode } from './engine';
 import { BoardScreen, NewBoardConfirm, QuitConfirm } from './screens/Board';
@@ -40,6 +40,29 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
 /** Confirmation dialogs of the board menu (local UI state, not saved). */
 type BoardDialog = null | 'newBoard' | 'quit';
 
+/**
+ * Moves focus to the new screen's <h1> when the screen changes, unless something on the new
+ * screen already has it (a dialog, or a screen that focuses its own heading such as Result and
+ * Winner, or the Question button the popup returns focus to on Cancel).
+ */
+function useHeadingFocus(screen: string): void {
+  const previous = useRef(screen);
+  useEffect(() => {
+    if (previous.current === screen) return;
+    previous.current = screen;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected && !active.closest('[inert]')) {
+      return;
+    }
+    const heading = Array.from(document.querySelectorAll<HTMLElement>('main h1')).find(
+      (h1) => !h1.closest('[inert]'),
+    );
+    if (!heading) return;
+    if (!heading.hasAttribute('tabindex')) heading.tabIndex = -1;
+    heading.focus();
+  }, [screen]);
+}
+
 /** Renders the screen chosen by the game reducer. */
 function Screens() {
   const { state, dispatch } = useGame();
@@ -53,6 +76,7 @@ function Screens() {
     if (dialog !== null) setBoardDialog(null);
     else dispatch({ type: 'BACK' });
   });
+  useHeadingFocus(screen);
 
   if (screen === 'home') {
     return (
