@@ -40,3 +40,10 @@ Les 4 coins A1, I1, A9, I9 sont toujours exclus pour l'objectif et les ennemis, 
 
 ## D9 — Tâches #13 et #14 sur une seule branche (2026-11-23)
 La popup (#13) et les écrans Question/Result (#14) forment un seul parcours et touchent les mêmes fichiers (`App.tsx`, reducer). Ils sont développés sur une seule branche `feat/13-14-question-flow`, chaque commit portant la référence de sa tâche ; testeur et validateur vérifient les deux tâches séparément.
+
+## D10 — Navigation (2026-11-23, tâche #12)
+- « Retour possible là où c'est utile » est interprété ainsi : menu *Quit to home* (avec confirmation) qui **garde** la partie sauvegardée ; l'accueil propose alors *Continue game* (tour et code), qui ramène à l'écran où l'on était.
+- Lancer une nouvelle partie remplace la partie sauvegardée (l'écran New game le signale).
+- Le bouton retour du téléphone ou du navigateur déclenche le retour de l'application uniquement là où il existe (New game, popup de question, choix du gagnant, boîtes de confirmation) ; ailleurs il garde son comportement normal.
+- À chaque changement d'écran, le focus clavier va sur le titre de l'écran.
+- La carte de navigation est documentée dans `src/state/navigation.ts`.
