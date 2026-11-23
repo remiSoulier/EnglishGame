@@ -11,7 +11,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [ ] #4 Aucune case isolée (engine-dev)
 - [ ] #5 Objectif, départs, ennemis (engine-dev)
 - [x] #6 Grille SVG (ui-dev)
-- [ ] #7 Écran Board (ui-dev)
+- [x] #7 Écran Board (ui-dev)
 - [ ] #8 Fin de tour (ui-dev + engine-dev)
 
 ## Priorité 2 — important
@@ -41,3 +41,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | #2 | VALIDÉ (tester PASS after the lint fix for .claude/). Merged into main. |
 | 2026-11-23 | #3 | VALIDÉ (validator asked for a rebase onto main; done, 323 tests pass). Merged into main. |
 | 2026-11-23 | #6 | VALIDÉ (optional: the P in the Start legend icon is small). Merged into main. |
+| 2026-11-23 | #7 | VALIDÉ (cosmetic: large gap between legend and actions at 844 px). Merged into main. |
