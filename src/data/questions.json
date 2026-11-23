@@ -1,0 +1,164 @@
+[
+  {
+    "id": 1,
+    "category": "History",
+    "difficulty": "easy",
+    "question": "Who is often called the first computer programmer?",
+    "choices": {
+      "A": "Alan Turing",
+      "B": "Ada Lovelace",
+      "C": "Grace Hopper",
+      "D": "Charles Babbage"
+    },
+    "answer": "B",
+    "explanation": "Ada Lovelace wrote an algorithm for Charles Babbage's Analytical Engine in the 1840s."
+  },
+  {
+    "id": 2,
+    "category": "Concepts",
+    "difficulty": "easy",
+    "question": "What is an algorithm?",
+    "choices": {
+      "A": "A list of steps to solve a problem",
+      "B": "A type of computer screen",
+      "C": "A programming language",
+      "D": "A kind of virus"
+    },
+    "answer": "A",
+    "explanation": "An algorithm is a clear, ordered list of steps that solves a problem."
+  },
+  {
+    "id": 3,
+    "category": "Board",
+    "difficulty": "easy",
+    "question": "Can two players stand on the same square?",
+    "choices": {
+      "A": "Yes",
+      "B": "No"
+    },
+    "answer": "A",
+    "explanation": "In this placeholder rule set, several players may share one square."
+  },
+  {
+    "id": 4,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "What does a loop do in a program?",
+    "choices": {
+      "A": "It stops the program",
+      "B": "It deletes a variable",
+      "C": "It repeats instructions",
+      "D": "It draws a circle"
+    },
+    "answer": "C",
+    "explanation": "A loop repeats a block of instructions while a condition is true or a set number of times."
+  },
+  {
+    "id": 5,
+    "category": "History",
+    "difficulty": "medium",
+    "question": "Which machine did Alan Turing describe in 1936?",
+    "choices": {
+      "A": "The Turing machine",
+      "B": "The steam engine",
+      "C": "The telephone"
+    },
+    "answer": "A",
+    "explanation": "Alan Turing described an abstract machine, now called the Turing machine, to define computation."
+  },
+  {
+    "id": 6,
+    "category": "Concepts",
+    "difficulty": "hard",
+    "question": "Binary search works on a list that is…",
+    "choices": {
+      "A": "empty",
+      "B": "random",
+      "C": "very short only",
+      "D": "sorted"
+    },
+    "answer": "D",
+    "explanation": "Binary search halves a sorted list at each step, so the list must be sorted first."
+  },
+  {
+    "id": 7,
+    "category": "Board",
+    "difficulty": "medium",
+    "question": "What happens when you answer a question correctly?",
+    "choices": {
+      "A": "You go back to the start",
+      "B": "You move forward",
+      "C": "You lose your turn",
+      "D": "Nothing happens"
+    },
+    "answer": "B",
+    "explanation": "In this placeholder rule set, a correct answer lets you move forward on the board."
+  },
+  {
+    "id": 8,
+    "category": "History",
+    "difficulty": "hard",
+    "question": "Grace Hopper is famous for finding the first computer…",
+    "choices": {
+      "A": "screen",
+      "B": "mouse",
+      "C": "bug",
+      "D": "keyboard"
+    },
+    "answer": "C",
+    "explanation": "In 1947 her team found a real moth inside a computer and called it the first 'bug'."
+  },
+  {
+    "id": 9,
+    "category": "Concepts",
+    "difficulty": "easy",
+    "question": "Is a variable a named place to store a value?",
+    "choices": {
+      "A": "Yes",
+      "B": "No"
+    },
+    "answer": "A",
+    "explanation": "A variable has a name and holds a value that the program can read and change."
+  },
+  {
+    "id": 10,
+    "category": "Board",
+    "difficulty": "hard",
+    "question": "How many dice do you roll at the start of your turn?",
+    "choices": {
+      "A": "None",
+      "B": "One",
+      "C": "Two"
+    },
+    "answer": "B",
+    "explanation": "In this placeholder rule set, each player rolls one die at the start of the turn."
+  },
+  {
+    "id": 11,
+    "category": "Concepts",
+    "difficulty": "medium",
+    "question": "What does an 'if' statement do?",
+    "choices": {
+      "A": "It repeats code forever",
+      "B": "It chooses what to do based on a condition",
+      "C": "It saves a file",
+      "D": "It prints the date"
+    },
+    "answer": "B",
+    "explanation": "An 'if' statement runs some code only when its condition is true."
+  },
+  {
+    "id": 12,
+    "category": "History",
+    "difficulty": "easy",
+    "question": "What was ENIAC?",
+    "choices": {
+      "A": "A video game",
+      "B": "A phone company",
+      "C": "A programming language",
+      "D": "One of the first electronic computers"
+    },
+    "answer": "D",
+    "explanation": "ENIAC, finished in 1945, was one of the first general-purpose electronic computers."
+  }
+]
