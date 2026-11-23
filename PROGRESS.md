@@ -5,7 +5,7 @@ Suivi du backlog tenu par l'orchestrateur. Une tâche n'est cochée qu'après le
 Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée (3 refus)
 
 ## Priorité 1 — indispensable pour la démo
-- [ ] #1 Setup (setup-dev)
+- [x] #1 Setup (setup-dev)
 - [ ] #2 Modèle de données (engine-dev)
 - [ ] #3 Murs (engine-dev)
 - [ ] #4 Aucune case isolée (engine-dev)
@@ -37,3 +37,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | Date | Tâche | Événement |
 | --- | --- | --- |
 | 2026-11-23 | — | Dépôt cloné (vide). Backlog créé. |
+| 2026-11-23 | #1 | VALIDÉ par le validator (tester PASS). `main` créée depuis `feat/1-setup` et poussée. Vraies questions (30) intégrées. |
