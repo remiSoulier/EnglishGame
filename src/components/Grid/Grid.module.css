@@ -1,0 +1,76 @@
+.svg {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  margin: 0 auto;
+}
+
+.boardBg {
+  fill: var(--color-board-bg);
+}
+
+.gridLine {
+  stroke: var(--color-grid-line);
+  stroke-width: 1;
+}
+
+.border {
+  fill: none;
+  stroke: var(--color-board-border);
+  stroke-width: 2;
+}
+
+.label {
+  fill: var(--color-label);
+  font-family: system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.wall {
+  fill: none;
+  stroke: var(--color-wall);
+  stroke-width: 6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.enemyBody {
+  fill: var(--color-enemy);
+}
+
+.enemyMark {
+  stroke: var(--color-enemy-mark);
+  stroke-width: 3.2;
+  stroke-linecap: round;
+}
+
+.enemyDot {
+  fill: var(--color-enemy-mark);
+}
+
+.goal {
+  fill: var(--color-goal);
+  stroke: var(--color-goal);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.start {
+  fill: none;
+  stroke: var(--color-start);
+  stroke-width: 2;
+  stroke-dasharray: 5 3;
+}
+
+.startLabel {
+  fill: var(--color-start);
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}

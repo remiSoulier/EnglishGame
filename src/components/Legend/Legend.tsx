@@ -1,0 +1,57 @@
+import type { ReactNode } from 'react';
+import { CELL } from '../Grid/geometry';
+import { EnemyShape, GoalShape, StartShape, WallShape } from '../Grid/shapes';
+import styles from './Legend.module.css';
+
+export interface LegendProps {
+  className?: string;
+}
+
+const PAD = 4;
+
+function Icon({ children }: { children: ReactNode }) {
+  return (
+    <svg
+      className={styles.icon}
+      viewBox={`${-PAD} ${-PAD} ${CELL + PAD * 2} ${CELL + PAD * 2}`}
+      aria-hidden="true"
+      focusable="false"
+    >
+      {children}
+    </svg>
+  );
+}
+
+const C = CELL / 2;
+
+/** Legend of the board symbols, using the same shapes as `Grid`. */
+export function Legend({ className }: LegendProps) {
+  return (
+    <ul className={className ? `${styles.legend} ${className}` : styles.legend} aria-label="Legend">
+      <li className={styles.item}>
+        <Icon>
+          <WallShape segments={[{ x1: C, y1: 2, x2: C, y2: CELL - 2 }]} />
+        </Icon>
+        Wall
+      </li>
+      <li className={styles.item}>
+        <Icon>
+          <EnemyShape cx={C} cy={C} />
+        </Icon>
+        Enemy
+      </li>
+      <li className={styles.item}>
+        <Icon>
+          <GoalShape cx={C} cy={C} />
+        </Icon>
+        Goal
+      </li>
+      <li className={styles.item}>
+        <Icon>
+          <StartShape x={0} y={0} label="P" />
+        </Icon>
+        Start
+      </li>
+    </ul>
+  );
+}
