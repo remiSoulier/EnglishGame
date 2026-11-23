@@ -16,7 +16,9 @@ describe('NewBoardConfirm (decision D8, #12)', () => {
     const dialog = screen.getByRole('dialog', { name: 'Start a new board?' });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(
-      screen.getByText('The current game will end. Players keep their pawns.'),
+      screen.getByText(
+        'The current game ends. A new board starts at turn 1 with the same players.',
+      ),
     ).toBeInTheDocument();
   });
 

@@ -650,6 +650,126 @@ describe('BACK', () => {
   });
 });
 
+describe('QUIT_TO_HOME (#12 D10)', () => {
+  const pendingFor: Partial<Record<Screen, Partial<Game>>> = {
+    questionPopup: { pendingQuestion: { questionId: q1.id, cards: 2 } },
+    question: { pendingQuestion: { questionId: q1.id, cards: 2 } },
+    result: { pendingQuestion: { questionId: q1.id, cards: 2, answer: 'A', correct: false } },
+  };
+  const GAME_SCREENS = ALL_SCREENS.filter((s) => s !== 'home' && s !== 'newGame');
+
+  it.each(GAME_SCREENS)('%s → home, game kept with lastScreen', (screen) => {
+    const game = makeGame({
+      turn: 3,
+      activePlayer: 2,
+      askedQuestionIds: [4],
+      ...pendingFor[screen],
+    });
+    const next = reduce(state(screen, game), { type: 'QUIT_TO_HOME' });
+    expect(next).toEqual({ screen: 'home', game: { ...game, lastScreen: screen } });
+  });
+
+  it('keeps a declared winner (winner step 2)', () => {
+    const game = makeGame({ winner: 2 });
+    const next = reduce(state('winner', game), { type: 'QUIT_TO_HOME' });
+    expect(next).toEqual({ screen: 'home', game: { ...game, lastScreen: 'winner' } });
+  });
+
+  it.each(['home', 'newGame'] as const)('is a no-op on %s with a game', (screen) => {
+    const prev = state(screen, makeGame({ lastScreen: 'board' }));
+    expect(reduce(prev, { type: 'QUIT_TO_HOME' })).toBe(prev);
+  });
+
+  it.each(ALL_SCREENS)('is a no-op on %s without a game', (screen) => {
+    const prev = state(screen, null);
+    expect(reduce(prev, { type: 'QUIT_TO_HOME' })).toBe(prev);
+  });
+});
+
+describe('CONTINUE_GAME (#12 D10)', () => {
+  it.each<[Screen, Partial<Game>]>([
+    ['board', { activePlayer: 3 }],
+    ['newBoard', { turn: 2 }],
+    ['questionPopup', { pendingQuestion: { questionId: q1.id, cards: 1 } }],
+    ['question', { pendingQuestion: { questionId: q1.id, cards: 3 } }],
+    ['result', { pendingQuestion: { questionId: q1.id, cards: 2, answer: 'B', correct: true } }],
+    ['winner', {}],
+    ['winner', { winner: 4 }],
+  ])('home with lastScreen %s → back on it, lastScreen cleared', (lastScreen, overrides) => {
+    const game = makeGame(overrides);
+    const quit = reduce(state(lastScreen, game), { type: 'QUIT_TO_HOME' });
+    const next = reduce(quit, { type: 'CONTINUE_GAME' });
+    expect(next).toEqual({ screen: lastScreen, game });
+    expect(next.game).not.toHaveProperty('lastScreen');
+  });
+
+  it('home with a game but no lastScreen → board', () => {
+    const game = makeGame();
+    expect(reduce(state('home', game), { type: 'CONTINUE_GAME' })).toEqual({
+      screen: 'board',
+      game,
+    });
+  });
+
+  it.each(['questionPopup', 'question', 'result'] as const)(
+    'lastScreen %s without a pending question → board',
+    (lastScreen) => {
+      const game = makeGame();
+      const next = reduce(state('home', { ...game, lastScreen }), { type: 'CONTINUE_GAME' });
+      expect(next).toEqual({ screen: 'board', game });
+    },
+  );
+
+  it('lastScreen result with an unanswered question → board', () => {
+    const game = makeGame({ pendingQuestion: { questionId: q1.id, cards: 1 } });
+    const next = reduce(state('home', { ...game, lastScreen: 'result' }), {
+      type: 'CONTINUE_GAME',
+    });
+    expect(next).toEqual({ screen: 'board', game });
+  });
+
+  it('is a no-op on home without a game', () => {
+    const prev = state('home', null);
+    expect(reduce(prev, { type: 'CONTINUE_GAME' })).toBe(prev);
+  });
+
+  it.each(ALL_SCREENS.filter((s) => s !== 'home'))('is a no-op on %s', (screen) => {
+    const prev = state(screen, makeGame({ lastScreen: 'board' }));
+    expect(reduce(prev, { type: 'CONTINUE_GAME' })).toBe(prev);
+  });
+});
+
+describe('saved game and New game (#12 D10)', () => {
+  const saved = () => state('home', makeGame({ turn: 4, lastScreen: 'newBoard' }));
+
+  it('GO_NEW_GAME keeps the saved game; BACK returns home with it', () => {
+    const prev = saved();
+    const newGame = reduce(prev, { type: 'GO_NEW_GAME' });
+    expect(newGame).toEqual({ screen: 'newGame', game: prev.game });
+    expect(newGame.game).toBe(prev.game);
+    const back = reduce(newGame, { type: 'BACK' });
+    expect(back).toEqual(prev);
+    expect(reduce(back, { type: 'CONTINUE_GAME' }).screen).toBe('newBoard');
+  });
+
+  it('START_GAME replaces the saved game (turn 1, no lastScreen)', () => {
+    const newGame = reduce(saved(), { type: 'GO_NEW_GAME' });
+    const next = reduce(newGame, {
+      type: 'START_GAME',
+      playerCount: 2,
+      difficulty: 'easy',
+      code: OTHER_CODE,
+    });
+    expect(next.screen).toBe('board');
+    expect(next.game).toMatchObject({ code: OTHER_CODE, turn: 1, playerCount: 2 });
+    expect(next.game).not.toHaveProperty('lastScreen');
+  });
+
+  it('GO_HOME from home drops a saved game', () => {
+    expect(reduce(saved(), { type: 'GO_HOME' })).toEqual(initialState);
+  });
+});
+
 describe('purity', () => {
   it('returns the same state for an unknown action', () => {
     const prev = state('board');

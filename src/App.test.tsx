@@ -1,11 +1,13 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from './App';
 import { ALL_QUESTIONS } from './data/questions';
 import { cellName, choiceKeys, generateBoard, parseCell, type Question } from './engine';
 import { APP_NAME } from './state/appInfo';
-import { STORAGE_KEY } from './state/storage';
+import { gameReducer, initialState, type GameAction } from './state/gameReducer';
+import { STORAGE_KEY, saveState } from './state/storage';
+import type { GameState } from './state/types';
 
 const players = () =>
   within(screen.getByRole('list', { name: 'Players' })).getAllByRole('listitem');
@@ -43,7 +45,7 @@ function savedGame(): Record<string, unknown> | null {
 
 type User = ReturnType<typeof userEvent.setup>;
 
-async function openMenuItem(user: User, name: 'New board' | 'We have a winner') {
+async function openMenuItem(user: User, name: 'New board' | 'We have a winner' | 'Quit to home') {
   await user.click(screen.getByRole('button', { name: 'Menu' }));
   await user.click(screen.getByRole('menuitem', { name }));
 }
@@ -652,3 +654,387 @@ describe('App question flow (spec #13 / #14)', () => {
     expect(activeIndex()).toBe(1);
   });
 });
+
+describe('Navigation (#12, D10)', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  const h1 = () => screen.getByRole('heading', { level: 1 });
+  const continueButton = () => screen.queryByRole('button', { name: /^Continue game/ });
+
+  /** Builds a state through the reducer from a fresh 3-player Medium game (code K7F2-9QX). */
+  function play(...actions: GameAction[]): GameState {
+    let s = gameReducer(initialState, {
+      type: 'START_GAME',
+      playerCount: 3,
+      difficulty: 'medium',
+      code: 'K7F2-9QX',
+    });
+    for (const a of actions) s = gameReducer(s, a);
+    return s;
+  }
+
+  const q = ALL_QUESTIONS[0];
+  const toPopup: GameAction[] = [{ type: 'OPEN_QUESTION', questionId: q.id, cards: 2 }];
+  const toQuestion: GameAction[] = [...toPopup, { type: 'SHOW_QUESTION' }];
+  const toResult: GameAction[] = [...toQuestion, { type: 'ANSWER_QUESTION', answer: q.answer }];
+
+  describe('Quit to home', () => {
+    async function onTurn2() {
+      const { user, ...rest } = await renderGame();
+      for (let i = 0; i < 3; i++) {
+        await user.click(screen.getByRole('button', { name: 'Next player' }));
+      }
+      await user.click(screen.getByRole('button', { name: 'End turn' }));
+      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      return { user, ...rest, before: snapshot() };
+    }
+
+    it('the board menu lists New board, We have a winner, Quit to home', async () => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual([
+        'New board',
+        'We have a winner',
+        'Quit to home',
+      ]);
+    });
+
+    it('asks "Quit this game?" with Cancel focused and the board inert', async () => {
+      const { user } = await renderGame();
+      await openMenuItem(user, 'Quit to home');
+      const dialog = screen.getByRole('dialog', { name: 'Quit this game?' });
+      expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+      const board = document.querySelector('[inert]');
+      expect(board).not.toBeNull();
+      expect(board).not.toContainElement(dialog);
+    });
+
+    it.each(['Cancel', 'Escape', 'backdrop'] as const)(
+      '%s keeps the exact same game on the board',
+      async (how) => {
+        const { user, before } = await onTurn2();
+        const saved = localStorage.getItem(STORAGE_KEY);
+        await openMenuItem(user, 'Quit to home');
+        if (how === 'Cancel') await user.click(screen.getByRole('button', { name: 'Cancel' }));
+        else if (how === 'Escape') await user.keyboard('{Escape}');
+        else await user.click(screen.getByTestId('modal-backdrop'));
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(snapshot()).toEqual(before);
+        expect(localStorage.getItem(STORAGE_KEY)).toBe(saved);
+        expect(document.querySelector('[inert]')).toBeNull();
+      },
+    );
+
+    it('Quit → Home with "Continue game · Turn N · code"; the game is saved', async () => {
+      const { user, before } = await onTurn2();
+      const game = savedGame();
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(h1()).toHaveFocus();
+      expect(continueButton()).toHaveTextContent(`Turn 2 · ${before.code}`);
+      expect(savedGame()).toEqual({ ...game, lastScreen: 'board' });
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state.screen).toBe('home');
+    });
+
+    it('reload on Home keeps Continue game; Continue returns to the same board', async () => {
+      const { user, before, unmount } = await onTurn2();
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      unmount();
+      render(<App />);
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(continueButton()).toHaveTextContent(`Turn 2 · ${before.code}`);
+      await user.click(continueButton()!);
+      expect(snapshot()).toEqual(before);
+      expect(h1()).toHaveFocus();
+      expect(savedGame()).not.toHaveProperty('lastScreen');
+    });
+
+    it('New game shows the replace notice; Back keeps the saved game', async () => {
+      const { user, before } = await onTurn2();
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      const game = savedGame();
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      expect(screen.getByText('This will replace your current game.')).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(savedGame()).toEqual(game);
+      await user.click(continueButton()!);
+      expect(snapshot()).toEqual(before);
+    });
+
+    it('reload on New game keeps the saved game and the notice', async () => {
+      const { user, unmount } = await onTurn2();
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      const game = savedGame();
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      unmount();
+      render(<App />);
+      expect(h1()).toHaveTextContent('New game');
+      expect(screen.getByText('This will replace your current game.')).toBeInTheDocument();
+      expect(savedGame()).toEqual(game);
+    });
+
+    it('Start game replaces the saved game (turn 1, new settings, no Continue)', async () => {
+      const { user, before } = await onTurn2();
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      await startGame(user, { players: 2, difficulty: 'Easy', code: 'HJKM-NPQ' });
+      expect(readCodeAny()).toBe('HJKM-NPQ');
+      expect(readCodeAny()).not.toBe(before.code);
+      expect(players()).toHaveLength(2);
+      expect(savedGame()).toMatchObject({ code: 'HJKM-NPQ', turn: 1, playerCount: 2 });
+      expect(savedGame()).not.toHaveProperty('lastScreen');
+    });
+
+    it('without a saved game, New game has no replace notice', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      expect(continueButton()).toBeNull();
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      expect(screen.queryByText('This will replace your current game.')).toBeNull();
+    });
+
+    it('winner → Home clears the game: no Continue, even after a reload', async () => {
+      const { user, unmount } = await renderGame();
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Player 1' }));
+      await user.click(screen.getByRole('button', { name: 'Home' }));
+      expect(continueButton()).toBeNull();
+      expect(savedGame()).toBeNull();
+      unmount();
+      render(<App />);
+      expect(continueButton()).toBeNull();
+    });
+  });
+
+  describe('Continue game returns to the exact screen (saved home state)', () => {
+    const cases: [string, GameAction[], RegExp][] = [
+      ['board', [{ type: 'NEXT_PLAYER' }], /^Turn 1$/],
+      [
+        'newBoard',
+        [{ type: 'NEXT_PLAYER' }, { type: 'NEXT_PLAYER' }, { type: 'END_TURN' }],
+        /^Walls and enemies have moved$/,
+      ],
+      ['questionPopup', toPopup, /^Turn 1$/],
+      ['question', toQuestion, new RegExp(`^${escape(q.question)}$`)],
+      ['result', toResult, /Correct!$/],
+      ['winner', [{ type: 'OPEN_WINNER' }], /^We have a winner$/],
+      [
+        'winner',
+        [{ type: 'OPEN_WINNER' }, { type: 'DECLARE_WINNER', player: 2 }],
+        /^Player 2 wins!$/,
+      ],
+    ];
+
+    it.each(cases)('%s (%#)', async (screenName, actions, heading) => {
+      const playing = play(...actions);
+      expect(playing.screen).toBe(screenName);
+      saveState(gameReducer(playing, { type: 'QUIT_TO_HOME' }));
+      const user = userEvent.setup();
+      render(<App />);
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(continueButton()).toHaveTextContent(`Turn ${playing.game!.turn} · K7F2-9QX`);
+      await user.click(continueButton()!);
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state).toEqual(playing);
+      if (screenName === 'questionPopup') {
+        expect(screen.getByRole('dialog', { name: /^Player 1 — Question for 2 cards$/ }));
+        expect(screen.getByRole('button', { name: 'Show the question' })).toHaveFocus();
+      } else {
+        expect(h1()).toHaveTextContent(heading);
+        expect(h1()).toHaveFocus();
+      }
+    });
+  });
+
+  describe('every exit of NAVIGATION works through the UI', () => {
+    it('home: New game → newGame; newGame: Back → home, Start game → board', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      expect(h1()).toHaveTextContent('New game');
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      await startGame(user);
+    });
+
+    it('board: Question / Next player / End turn / menu items', async () => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Question' }));
+      expect(screen.getByRole('dialog', { name: /Question for/ })).toBeInTheDocument();
+      await user.click(screen.getByRole('button', { name: 'Cancel' }));
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      expect(players()[1]).toHaveAttribute('aria-current', 'true');
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      await user.click(screen.getByRole('button', { name: 'End turn' }));
+      expect(h1()).toHaveTextContent('Walls and enemies have moved');
+      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+      expect(h1()).toHaveTextContent('Turn 2');
+      await openMenuItem(user, 'New board');
+      await user.click(screen.getByRole('button', { name: 'New board' }));
+      expect(h1()).toHaveTextContent('Turn 1');
+      await openMenuItem(user, 'We have a winner');
+      expect(h1()).toHaveTextContent('We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(h1()).toHaveTextContent('Turn 1');
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+    });
+
+    it('questionPopup → question → result → board; winner steps 1 and 2', async () => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Question' }));
+      await user.click(screen.getByRole('button', { name: 'Show the question' }));
+      const choices = within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('button');
+      // One try: no Back / Cancel on the question screen.
+      expect(screen.queryByRole('button', { name: /^(Back|Cancel|Menu)$/ })).toBeNull();
+      await user.click(choices[0]);
+      expect(h1()).toHaveTextContent(/(Correct!|Wrong answer)$/);
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(h1()).toHaveTextContent('Turn 1');
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Player 2' }));
+      expect(h1()).toHaveTextContent('Player 2 wins!');
+      await user.click(screen.getByRole('button', { name: 'Play again' }));
+      expect(h1()).toHaveTextContent('Turn 1');
+    });
+  });
+
+  describe('focus moves to the new screen h1', () => {
+    it('on every screen change of a whole game', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      expect(h1()).toHaveTextContent('New game');
+      expect(h1()).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(h1()).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      await user.click(screen.getByRole('radio', { name: '2' }));
+      await user.click(screen.getByRole('button', { name: 'Start game' }));
+      expect(h1()).toHaveTextContent('Turn 1');
+      expect(h1()).toHaveFocus();
+
+      await user.click(screen.getByRole('button', { name: 'Question' }));
+      expect(screen.getByRole('button', { name: 'Show the question' })).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Show the question' }));
+      expect(h1()).toHaveFocus();
+      await user.click(
+        within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('button')[0],
+      );
+      expect(h1()).toHaveTextContent(/(Correct!|Wrong answer)$/);
+      expect(h1()).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Continue' }));
+      expect(h1()).toHaveTextContent('Turn 1');
+      expect(h1()).toHaveFocus();
+
+      await user.click(screen.getByRole('button', { name: 'End turn' }));
+      expect(h1()).toHaveTextContent('Walls and enemies have moved');
+      expect(h1()).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+      expect(h1()).toHaveTextContent('Turn 2');
+      expect(h1()).toHaveFocus();
+
+      await openMenuItem(user, 'We have a winner');
+      expect(h1()).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Back' }));
+      expect(h1()).toHaveTextContent('Turn 2');
+      expect(h1()).toHaveFocus();
+
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(h1()).toHaveFocus();
+      await user.click(continueButton()!);
+      expect(h1()).toHaveTextContent('Turn 2');
+      expect(h1()).toHaveFocus();
+
+      await openMenuItem(user, 'We have a winner');
+      await user.click(screen.getByRole('button', { name: 'Player 1' }));
+      expect(h1()).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Home' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(h1()).toHaveFocus();
+    });
+
+    it('Cancel of the popup returns focus to Question, not the h1', async () => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Question' }));
+      await user.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(screen.getByRole('button', { name: 'Question' })).toHaveFocus();
+    });
+  });
+
+  describe('system back (History API)', () => {
+    /** Fires the browser back button and lets React settle. */
+    async function systemBack() {
+      await act(async () => {
+        window.history.back();
+        await new Promise((r) => setTimeout(r, 30));
+      });
+    }
+
+    it('on New game → Home, saved game kept', async () => {
+      saveState(gameReducer(play({ type: 'NEXT_PLAYER' }), { type: 'QUIT_TO_HOME' }));
+      const game = savedGame();
+      const user = userEvent.setup();
+      render(<App />);
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      await systemBack();
+      await waitFor(() => expect(h1()).toHaveTextContent(APP_NAME));
+      expect(savedGame()).toEqual(game);
+      expect(continueButton()).not.toBeNull();
+    });
+
+    it('on the question popup → board, question not asked, focus on Question', async () => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Question' }));
+      await systemBack();
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(h1()).toHaveTextContent('Turn 1');
+      expect(savedGame()).toMatchObject({ pendingQuestion: null, askedQuestionIds: [] });
+      expect(screen.getByRole('button', { name: 'Question' })).toHaveFocus();
+    });
+
+    it('on winner step 1 → board', async () => {
+      const { user } = await renderGame();
+      await openMenuItem(user, 'We have a winner');
+      await systemBack();
+      await waitFor(() => expect(h1()).toHaveTextContent('Turn 1'));
+    });
+
+    it.each(['Quit to home', 'New board'] as const)(
+      'with the %s dialog open → the dialog closes, game unchanged',
+      async (item) => {
+        const { user } = await renderGame();
+        const before = snapshot();
+        const saved = localStorage.getItem(STORAGE_KEY);
+        await openMenuItem(user, item);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        await systemBack();
+        await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+        expect(snapshot()).toEqual(before);
+        expect(localStorage.getItem(STORAGE_KEY)).toBe(saved);
+      },
+    );
+  });
+});
+
+/** Code of the board screen, whatever the difficulty. */
+function readCodeAny(): string {
+  const text = screen.getByText(/^Code \S+ · (Easy|Medium|Hard)$/).textContent ?? '';
+  return /^Code (\S+) ·/.exec(text)![1];
+}
+
+function escape(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
