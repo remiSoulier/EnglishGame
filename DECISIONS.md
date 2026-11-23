@@ -20,3 +20,13 @@ Le fichier `questions.json` n'était ni à la racine du dépôt ni dans le dép�
 
 ## D5 — Cases de départ (2026-11-23)
 Les 4 coins A1, I1, A9, I9 sont toujours exclus pour l'objectif et les ennemis, quel que soit le nombre de joueurs (plus simple, et le plateau reste valable si on change de nombre de joueurs). Attribution : P1 = A1, P2 = I9, P3 = I1, P4 = A9 (à 2 joueurs, coins opposés).
+
+## D6 — Code de plateau (2026-11-23, tâche #9)
+- 7 caractères affichés `XXXX-XXX` (ex. `K7F2-9QX`), alphabet sans caractères ambigus : `ABCDEFGHJKMNPQRSTUVWXYZ23456789` (pas de 0, O, 1, I, L).
+- Saisie tolérante : minuscules, espaces et tirets acceptés ; tout autre caractère (y compris `ß`, ligatures, accents) est refusé, jamais converti.
+- Graine : `turnSeed(code, tour)` = FNV-1a + murmur3 fmix32 sur `CODE#tour`, puis `mulberry32`. Même code + même tour = même plateau partout.
+
+## D7 — Objectif et ordre du tirage (2026-11-23, tâche #5)
+- Ordre fixe du tirage d'un tour : murs (redessinés tant qu'une case est isolée), puis objectif, puis ennemis.
+- Tour 1 : l'objectif est tiré ; le passer en paramètre ne change pas le plateau.
+- Tours suivants : l'objectif passé est conservé ; s'il est omis, le moteur recalcule celui du tour 1. Un appareil qui rejoint la partie n'a besoin que du code et du numéro de tour.
