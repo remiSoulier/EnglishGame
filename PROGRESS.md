@@ -7,7 +7,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 ## Priorité 1 — indispensable pour la démo
 - [x] #1 Setup (setup-dev)
 - [x] #2 Modèle de données (engine-dev)
-- [ ] #3 Murs (engine-dev)
+- [x] #3 Murs (engine-dev)
 - [ ] #4 Aucune case isolée (engine-dev)
 - [ ] #5 Objectif, départs, ennemis (engine-dev)
 - [ ] #6 Grille SVG (ui-dev)
@@ -39,3 +39,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-23 | — | Dépôt cloné (vide). Backlog créé. |
 | 2026-11-23 | #1 | VALIDÉ par le validator (tester PASS). `main` créée depuis `feat/1-setup` et poussée. Vraies questions (30) intégrées. |
 | 2026-11-23 | #2 | VALIDÉ (tester PASS after the lint fix for .claude/). Merged into main. |
+| 2026-11-23 | #3 | VALIDÉ (validator asked for a rebase onto main; done, 323 tests pass). Merged into main. |
