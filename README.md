@@ -153,8 +153,9 @@ pour toute navigation (`navigateFallback`).
 1. Sur https://vercel.com, **Add New… → Project**, importer le dépôt GitHub.
 2. Vérifier les valeurs (lues depuis `vercel.json`) : Framework Preset **Vite**, Build Command
    `npm run build`, Output Directory `dist`, Install Command `npm ci`.
-3. Dans **Settings → Build and Deployment → Node.js Version**, choisir **22.x** (le champ
-   `engines` de `package.json` l'impose déjà).
+3. Node.js : le champ `engines` de `package.json` (`>=22`) a priorité sur le réglage du tableau
+   de bord, et Vercel choisit alors sa version la plus récente compatible (22 ou plus, avec un
+   avertissement). Le build fonctionne avec ces versions ; aucun réglage n'est nécessaire.
 4. **Deploy**. Chaque push sur `main` redéploie la production ; chaque autre branche obtient une
    preview.
 
@@ -177,7 +178,8 @@ En ligne de commande : `npx netlify-cli deploy --build` (brouillon) puis
 src/
   engine/       logique pure en TypeScript, sans React : types, rng (mulberry32), boardCode,
                 walls, connectivity, generator, questions
-  components/   composants réutilisables (Button, Grid, Legend, Logo, Menu, Modal, PlayerBar)
+  components/   composants réutilisables (Button, Grid, Legend, Logo, Menu, Modal, PlayerBar,
+                PositionsList)
   screens/      écrans (Home, NewGame, Board, QuestionPopup, Question, Result, NewBoard, Winner)
   state/        gameReducer, GameContext, storage (localStorage), navigation, appInfo
   data/         questions.json + questions.ts (chargement et validation)
