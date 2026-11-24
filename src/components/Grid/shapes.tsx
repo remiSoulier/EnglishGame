@@ -79,6 +79,17 @@ export function WallShape({ segments }: { segments: Segment[] }) {
   return <path className={styles.wall} d={d} />;
 }
 
+/** Radius of a wall end mark, in SVG user units (outer edge = radius + half the 2-unit stroke). */
+export const WALL_END_RADIUS = 4.5;
+
+/**
+ * Wall end mark ("rivet"): a small board-coloured disc ringed in the wall colour, drawn on each
+ * free end of a piece so two pieces touching end to end read as two pieces.
+ */
+export function WallEnd({ x, y }: { x: number; y: number }) {
+  return <circle className={styles.wallEnd} cx={x} cy={y} r={WALL_END_RADIUS} />;
+}
+
 /** Wall name badge (e.g. "W6"): dark bold text on a small white rounded box, centred on (x, y). */
 export function WallLabel({ id, x, y }: { id: string; x: number; y: number }) {
   return (

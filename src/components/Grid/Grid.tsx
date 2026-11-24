@@ -9,7 +9,8 @@ import {
 import { describeBoard } from './describeBoard';
 import { CELL } from './geometry';
 import styles from './Grid.module.css';
-import { EnemyShape, GoalShape, StartShape, WallLabel, WallShape } from './shapes';
+import { EnemyShape, GoalShape, StartShape, WallEnd, WallLabel, WallShape } from './shapes';
+import { wallEnds } from './wallEnds';
 import { placeWallLabels, wallTitle } from './wallLabels';
 
 export interface GridProps {
@@ -106,6 +107,15 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
             </g>
           );
         })}
+      </g>
+
+      {/* Above every wall (so a later piece never hides an earlier piece's end), below badges. */}
+      <g data-testid="wall-ends" aria-hidden="true">
+        {board.walls.flatMap((wall) =>
+          wallEnds(wall).map((p) => (
+            <WallEnd key={`${wall.sides.join(' ')}@${p.x},${p.y}`} x={p.x} y={p.y} />
+          )),
+        )}
       </g>
 
       <g data-testid="wall-labels" aria-hidden="true">
