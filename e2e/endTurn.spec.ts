@@ -8,7 +8,6 @@ function grid(page: Page, turn: number) {
 }
 
 async function endTurn(page: Page) {
-  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Next player' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Walls and enemies have moved' }),
@@ -40,9 +39,8 @@ test('two full turns: goal and code stay, enemies move', async ({ page }) => {
     await expect(page.getByRole('heading', { level: 1, name: `Turn ${turn}` })).toBeVisible();
     await expect(codeLine).toHaveText(code!);
     await expect(grid(page, turn)).toHaveAttribute('aria-label', label);
-    await expect(
-      page.getByRole('list', { name: 'Players' }).getByRole('listitem').first(),
-    ).toHaveAttribute('aria-current', 'true');
+    await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
+    await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
     previous = label;
   }
 });

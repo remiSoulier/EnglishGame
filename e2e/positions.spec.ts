@@ -18,7 +18,6 @@ async function panel(page: Page): Promise<Locator> {
 }
 
 async function endTurn(page: Page) {
-  for (let i = 0; i < 3; i++) await page.getByRole('button', { name: 'Next player' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await expect(
     page.getByRole('heading', { level: 1, name: 'Walls and enemies have moved' }),

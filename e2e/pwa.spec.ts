@@ -174,9 +174,7 @@ test.describe('service worker and offline', () => {
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
 
-    // Next player until End turn.
-    const next = page.getByRole('button', { name: 'Next player' });
-    for (let i = 0; i < 5 && (await next.isVisible()); i++) await next.click();
+    // End turn is always available (D11: no turn order).
     await page.getByRole('button', { name: 'End turn' }).click();
     await expect(h1(page)).toHaveText('Walls and enemies have moved');
     await page.getByRole('button', { name: 'Start turn 2' }).click();

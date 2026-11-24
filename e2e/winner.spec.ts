@@ -2,7 +2,12 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { APP_NAME, startGame } from './helpers';
 
 const codeLine = (page: Page) => page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/);
-const players = (page: Page) => page.getByRole('list', { name: 'Players' }).getByRole('listitem');
+/** Start cells of the positions list: one per player (D11: no player bar any more). */
+const startCells = (page: Page) =>
+  page.locator('dt', { hasText: /^Start:$/ }).locator('xpath=following-sibling::dd[1]');
+/** "P1 A1, P2 I9, …": exactly `count` players. */
+const startsRe = (count: number) =>
+  new RegExp(`^${Array.from({ length: count }, (_, i) => `P${i + 1} [A-I][1-9]`).join(', ')}$`);
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
 
 async function openMenuItem(page: Page, name: 'New board' | 'We have a winner') {
@@ -70,13 +75,12 @@ async function checkContrast(page: Page) {
   }
 }
 
-/** Board state shown on screen (heading, code line, active player, grid label). */
+/** Board state shown on screen (heading, code line, start cells, grid label). */
 async function boardSnapshot(page: Page) {
-  const current = page.locator('[aria-current="true"]');
   return {
     heading: await h1(page).textContent(),
     code: await codeLine(page).textContent(),
-    active: await current.textContent(),
+    starts: await startCells(page).textContent(),
     grid: await page.getByRole('img', { name: /^Board, turn \d+\./ }).getAttribute('aria-label'),
   };
 }
@@ -96,8 +100,7 @@ test('winner → Play again → new game; winner → Home → reload stays Home'
   const firstCode = await codeLine(page).textContent();
   expect(firstCode).toMatch(/· Hard$/);
 
-  // A turn: P1 → P2 → P3 → End turn → Start turn 2.
-  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Next player' }).click();
+  // A turn: End turn → Start turn 2.
   await page.getByRole('button', { name: 'End turn' }).click();
   await page.getByRole('button', { name: 'Start turn 2' }).click();
   await expect(h1(page)).toHaveText('Turn 2');
@@ -132,19 +135,18 @@ test('winner → Play again → new game; winner → Home → reload stays Home'
   const newCode = await codeLine(page).textContent();
   expect(newCode).toMatch(/· Hard$/);
   expect(newCode).not.toBe(firstCode);
-  await expect(players(page)).toHaveCount(3);
-  await expect(players(page).nth(0)).toHaveAttribute('aria-current', 'true');
+  await expect(startCells(page)).toHaveText(startsRe(3));
   const saved = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('bgc.game.v1') ?? 'null'),
+    JSON.parse(localStorage.getItem('bgc.game.v2') ?? 'null'),
   );
   expect(saved.state.game).toMatchObject({
     turn: 1,
     playerCount: 3,
     difficulty: 'hard',
-    activePlayer: 1,
     askedQuestionIds: [],
     winner: null,
   });
+  expect(saved.state.game).not.toHaveProperty('activePlayer');
 
   // Again: winner → Home → reload → Home.
   await openMenuItem(page, 'We have a winner');
@@ -154,27 +156,39 @@ test('winner → Play again → new game; winner → Home → reload stays Home'
   await expect(h1(page)).toHaveText(APP_NAME);
   await page.reload();
   await expect(h1(page)).toHaveText(APP_NAME);
-  await expect(players(page)).toHaveCount(0);
+  await expect(startCells(page)).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Continue game/ })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'New game' })).toBeVisible();
 });
 
 test('winner step Back returns to the same board', async ({ page }) => {
   await startGame(page, { players: 4, difficulty: 'Medium' });
-  await page.getByRole('button', { name: 'Next player' }).click();
   const before = await boardSnapshot(page);
   await openMenuItem(page, 'We have a winner');
   await page.getByRole('button', { name: 'Back' }).click();
   await expect(h1(page)).toHaveText('Turn 1');
   expect(await boardSnapshot(page)).toEqual(before);
-  await expect(players(page).nth(1)).toHaveAttribute('aria-current', 'true');
+  await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
 });
+
+for (const count of [2, 3, 4] as const) {
+  test(`${count} players: the winner choice lists Player 1…${count} (D11)`, async ({ page }) => {
+    await startGame(page, { players: count, difficulty: 'Easy' });
+    await page.getByRole('button', { name: 'End turn' }).click();
+    await page.getByRole('button', { name: 'Start turn 2' }).click();
+    await openMenuItem(page, 'We have a winner');
+    await expect(page.getByRole('button', { name: /^Player \d$/ })).toHaveText(
+      Array.from({ length: count }, (_, i) => `Player ${i + 1}`),
+    );
+    await page.getByRole('button', { name: `Player ${count}` }).click();
+    await expect(h1(page)).toHaveText(`Player ${count} wins!`);
+  });
+}
 
 test('New board: Cancel and Escape keep the game, confirm starts a new board', async ({ page }) => {
   await startGame(page, { players: 2, difficulty: 'Easy' });
-  await page.getByRole('button', { name: 'Next player' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await page.getByRole('button', { name: 'Start turn 2' }).click();
-  await page.getByRole('button', { name: 'Next player' }).click();
   const before = await boardSnapshot(page);
   expect(before.heading).toBe('Turn 2');
 
@@ -213,6 +227,5 @@ test('New board: Cancel and Escape keep the game, confirm starts a new board', a
   const code = await codeLine(page).textContent();
   expect(code).toMatch(/· Easy$/);
   expect(code).not.toBe(before.code);
-  await expect(players(page)).toHaveCount(2);
-  await expect(players(page).nth(0)).toHaveAttribute('aria-current', 'true');
+  await expect(startCells(page)).toHaveText(startsRe(2));
 });

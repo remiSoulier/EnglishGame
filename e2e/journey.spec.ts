@@ -5,6 +5,7 @@ import { APP_NAME, startGame } from './helpers';
 /**
  * Demo script: New game → Question (right, then wrong answer) → End turn → We have a winner.
  * Played on one phone (390 × 844), with a second device checking the board is the same.
+ * The app does not track turn order (decision D11): no player bar, no Next player.
  */
 
 const CODE = 'K7F2-9QX';
@@ -21,7 +22,6 @@ const QUESTIONS: RawQuestion[] = JSON.parse(
 );
 
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
-const players = (page: Page) => page.getByRole('list', { name: 'Players' }).getByRole('listitem');
 const grid = (page: Page) => page.getByRole('img', { name: /^Board, turn \d+\./ });
 const gridLabel = async (page: Page) => (await grid(page).getAttribute('aria-label'))!;
 const goalOf = (label: string) => /Goal on ([A-I][1-9])\./.exec(label)![1];
@@ -33,18 +33,23 @@ async function noHorizontalScroll(page: Page) {
   expect(scrollWidth, 'no horizontal scroll at 390 px').toBeLessThanOrEqual(390);
 }
 
-async function expectActivePlayer(page: Page, player: number) {
-  await expect(players(page).nth(player - 1)).toHaveAttribute('aria-current', 'true');
+/** The board shows Question and End turn, never a player bar nor Next player (D11). */
+async function expectBoardActions(page: Page) {
+  await expect(page.getByRole('button', { name: 'Question' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /next player/i })).toHaveCount(0);
+  await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
 }
 
-/** Board → Question → popup "Player N — Question for X card(s)" → Show the question. */
-async function askQuestion(page: Page, player: number) {
+/** Board → Question → popup "Question for X card(s)" → Show the question. */
+async function askQuestion(page: Page) {
   await page.getByRole('button', { name: 'Question' }).click();
   const title = page.getByRole('dialog').getByRole('heading');
-  await expect(title).toHaveText(new RegExp(`^Player ${player} — Question for [123] cards?$`));
+  await expect(title).toHaveText(/^Question for [123] cards?$/);
   const cards = Number(/for (\d)/.exec((await title.textContent())!)![1]);
   await noHorizontalScroll(page);
   await page.getByRole('button', { name: 'Show the question' }).click();
+  await expect(page.getByText(`For ${cardsLabel(cards)}`, { exact: true })).toBeVisible();
   const text = (await h1(page).textContent())!;
   const matches = QUESTIONS.filter((q) => q.question === text);
   expect(matches, `question "${text}" in questions.json`).toHaveLength(1);
@@ -53,7 +58,6 @@ async function askQuestion(page: Page, player: number) {
 }
 
 async function playToTurn2(page: Page) {
-  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Next player' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await expect(h1(page)).toHaveText('Walls and enemies have moved');
   await noHorizontalScroll(page);
@@ -69,7 +73,7 @@ test('demo journey: new game → right and wrong answers → end turn → winner
   let goal = '';
   let turn1Label = '';
   let turn2Label = '';
-  let p1Question = '';
+  let firstQuestion = '';
 
   await test.step('Home → New game: 3 players, Medium, board code K7F2-9QX', async () => {
     await page.goto('/');
@@ -78,30 +82,32 @@ test('demo journey: new game → right and wrong answers → end turn → winner
     await startGame(page, { ...GAME, goto: false });
     await expect(h1(page)).toHaveText('Turn 1');
     await expect(page.getByText(`Code ${CODE} · Medium`, { exact: true })).toBeVisible();
-    await expect(players(page)).toHaveCount(3);
-    await expectActivePlayer(page, 1);
+    await expectBoardActions(page);
+    await expect(page.getByText('Start:', { exact: true })).toBeAttached();
     turn1Label = await gridLabel(page);
     expect(enemiesOf(turn1Label).split(', ')).toHaveLength(4);
     goal = goalOf(turn1Label);
     await noHorizontalScroll(page);
   });
 
-  await test.step('Player 1 answers correctly and draws X cards', async () => {
-    const { cards, question } = await askQuestion(page, 1);
-    p1Question = question.question;
+  await test.step('A right answer draws X cards; Continue → same turn board', async () => {
+    const { cards, question } = await askQuestion(page);
+    firstQuestion = question.question;
     const right = question.answer;
     await page.getByRole('button', { name: `${right}: ${question.choices[right]}` }).click();
     await expect(h1(page)).toHaveText(/Correct!$/);
     await expect(page.getByText(`Draw ${cardsLabel(cards)}`, { exact: true })).toBeVisible();
+    await expect(page.getByText(/Player \d/)).toHaveCount(0);
     await noHorizontalScroll(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
-    await expectActivePlayer(page, 2);
+    expect(await gridLabel(page)).toBe(turn1Label);
+    await expectBoardActions(page);
   });
 
-  await test.step('Player 2 answers wrong: no cards, the right answer is shown', async () => {
-    const { question } = await askQuestion(page, 2);
-    expect(question.question, 'P2 gets another question').not.toBe(p1Question);
+  await test.step('A wrong answer: no cards, the right answer is shown', async () => {
+    const { question } = await askQuestion(page);
+    expect(question.question, 'no repeated question').not.toBe(firstQuestion);
     const wrong = Object.keys(question.choices).find((k) => k !== question.answer)!;
     await page.getByRole('button', { name: `${wrong}: ${question.choices[wrong]}` }).click();
     await expect(h1(page)).toHaveText(/Wrong answer$/);
@@ -112,21 +118,22 @@ test('demo journey: new game → right and wrong answers → end turn → winner
     await expect(right).toHaveCount(1);
     await expect(right).toContainText(question.choices[question.answer]);
     await expect(page.getByText('No cards this time.')).toBeVisible();
+    await expect(page.getByText(/Player \d/)).toHaveCount(0);
     await noHorizontalScroll(page);
     await page.getByRole('button', { name: 'Continue' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
-    await expectActivePlayer(page, 3);
+    expect(await gridLabel(page)).toBe(turn1Label);
+    await expectBoardActions(page);
   });
 
-  await test.step('Player 3 passes → End turn → new board → Start turn 2', async () => {
-    await expect(page.getByRole('button', { name: 'Next player' })).toHaveCount(0);
+  await test.step('End turn → new board (goal kept) → Start turn 2', async () => {
     await page.getByRole('button', { name: 'End turn' }).click();
     await expect(h1(page)).toHaveText('Walls and enemies have moved');
     await expect(page.getByText(`The goal stays on ${goal}`)).toBeVisible();
     await noHorizontalScroll(page);
     await page.getByRole('button', { name: 'Start turn 2' }).click();
     await expect(h1(page)).toHaveText('Turn 2');
-    await expectActivePlayer(page, 1);
+    await expectBoardActions(page);
     await expect(page.getByText(`Code ${CODE} · Medium`, { exact: true })).toBeVisible();
     turn2Label = await gridLabel(page);
     expect(goalOf(turn2Label)).toBe(goal);
@@ -152,6 +159,11 @@ test('demo journey: new game → right and wrong answers → end turn → winner
     await page.getByRole('button', { name: 'Menu' }).click();
     await page.getByRole('menuitem', { name: 'We have a winner' }).click();
     await expect(h1(page)).toHaveText('We have a winner');
+    await expect(page.getByRole('button', { name: /^Player \d$/ })).toHaveText([
+      'Player 1',
+      'Player 2',
+      'Player 3',
+    ]);
     await noHorizontalScroll(page);
     await page.getByRole('button', { name: 'Player 2' }).click();
     await expect(h1(page)).toHaveText('Player 2 wins!');
