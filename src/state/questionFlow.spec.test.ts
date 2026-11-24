@@ -82,16 +82,17 @@ describe('openQuestionAction (spec #13: X random between 1 and 3)', () => {
 });
 
 describe('question flow through the reducer (spec #13/#14)', () => {
-  it('Cancel goes back to the board, keeps the player, does not mark the question asked', () => {
+  it('Cancel goes back to the board, keeps the turn, does not mark the question asked', () => {
     let s = board(3);
-    s = reduce(s, { type: 'NEXT_PLAYER' });
+    s = reduce(s, { type: 'END_TURN' });
+    s = reduce(s, { type: 'START_TURN' });
     const action = openQuestionAction(s.game!.askedQuestionIds, () => 0.4);
     s = reduce(s, action);
     expect(s.screen).toBe('questionPopup');
     expect(s.game!.pendingQuestion).toEqual({ questionId: action.questionId, cards: action.cards });
     s = reduce(s, { type: 'CANCEL_QUESTION' });
     expect(s.screen).toBe('board');
-    expect(s.game!.activePlayer).toBe(2);
+    expect(s.game!.turn).toBe(2);
     expect(s.game!.pendingQuestion).toBeNull();
     expect(s.game!.askedQuestionIds).toEqual([]);
     // The same question can be opened again.
@@ -106,7 +107,7 @@ describe('question flow through the reducer (spec #13/#14)', () => {
     s = reduce(s, { type: 'BACK' });
     expect(s.screen).toBe('board');
     expect(s.game!.askedQuestionIds).toEqual([]);
-    expect(s.game!.activePlayer).toBe(1);
+    expect(s.game!.turn).toBe(1);
   });
 
   it('a correct answer records correct=true and marks the question asked', () => {
@@ -135,8 +136,9 @@ describe('question flow through the reducer (spec #13/#14)', () => {
     expect(reduce(s, { type: 'ANSWER_QUESTION', answer: q.answer })).toBe(s);
   });
 
-  it('CONTINUE moves to the next player; after the last one the player stays (D8)', () => {
+  it('CONTINUE returns to the same turn board; End turn is then available (D11)', () => {
     let s = board(2);
+    const board1 = s.game!.board;
     const ask = () => {
       s = reduce(
         s,
@@ -148,13 +150,18 @@ describe('question flow through the reducer (spec #13/#14)', () => {
     };
     ask();
     expect(s.screen).toBe('board');
-    expect(s.game!.activePlayer).toBe(2);
+    expect(s.game!.turn).toBe(1);
+    expect(s.game!.board).toBe(board1);
     expect(s.game!.pendingQuestion).toBeNull();
+    // Any number of questions can be asked in the same turn.
     ask();
-    expect(s.game!.activePlayer).toBe(2);
+    ask();
+    expect(s.game!.turn).toBe(1);
+    expect(s.game!.askedQuestionIds).toHaveLength(3);
     const ended = reduce(s, { type: 'END_TURN' });
     expect(ended.screen).toBe('newBoard');
-    expect(ended.game!.activePlayer).toBe(1);
+    expect(ended.game!.turn).toBe(2);
+    expect(ended.game!.askedQuestionIds).toEqual(s.game!.askedQuestionIds);
   });
 
   it('refuses an already-asked id, an unknown id and an out-of-range card count', () => {
@@ -185,7 +192,7 @@ describe('question flow through the reducer (spec #13/#14)', () => {
       s = reduce(s, { type: 'ANSWER_QUESTION', answer: 'A' });
       s = reduce(s, { type: 'CONTINUE' });
       ids.push(action.questionId);
-      if (s.game!.activePlayer === 4) {
+      if (i % 4 === 3) {
         s = reduce(s, { type: 'END_TURN' });
         s = reduce(s, { type: 'START_TURN' });
       }

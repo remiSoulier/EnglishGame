@@ -50,7 +50,7 @@ describe('GameProvider', () => {
 
   it('loads the saved state and ignores the fallback', () => {
     let s = started();
-    s = gameReducer(s, { type: 'NEXT_PLAYER' });
+    s = gameReducer(s, { type: 'END_TURN' });
     saveState(s);
     const fallback = vi.fn(() => initialState);
     const { result } = renderHook(() => useGame(), { wrapper: wrapper(fallback) });
@@ -66,22 +66,23 @@ describe('GameProvider', () => {
 
   it('saves the initial state on mount', () => {
     renderHook(() => useGame(), { wrapper: wrapper(started) });
-    expect(saved()).toEqual({ version: 1, state: started() });
+    expect(saved()).toEqual({ version: 2, state: started() });
   });
 
   it('saves after each dispatch', () => {
     const { result } = renderHook(() => useGame(), { wrapper: wrapper(started) });
 
-    act(() => result.current.dispatch({ type: 'NEXT_PLAYER' }));
-    expect(result.current.state.game!.activePlayer).toBe(2);
-    expect(saved()).toEqual({ version: 1, state: result.current.state });
-
     act(() => result.current.dispatch({ type: 'END_TURN' }));
     expect(result.current.state.screen).toBe('newBoard');
-    expect(saved()).toEqual({ version: 1, state: result.current.state });
+    expect(result.current.state.game!.turn).toBe(2);
+    expect(saved()).toEqual({ version: 2, state: result.current.state });
+
+    act(() => result.current.dispatch({ type: 'START_TURN' }));
+    expect(result.current.state.screen).toBe('board');
+    expect(saved()).toEqual({ version: 2, state: result.current.state });
 
     act(() => result.current.dispatch({ type: 'GO_HOME' }));
-    expect(saved()).toEqual({ version: 1, state: initialState });
+    expect(saved()).toEqual({ version: 2, state: initialState });
   });
 
   it('does not crash when localStorage throws', () => {
@@ -93,13 +94,14 @@ describe('GameProvider', () => {
     });
     const { result } = renderHook(() => useGame(), { wrapper: wrapper(started) });
     expect(result.current.state).toEqual(started());
-    act(() => result.current.dispatch({ type: 'NEXT_PLAYER' }));
-    expect(result.current.state.game!.activePlayer).toBe(2);
+    act(() => result.current.dispatch({ type: 'END_TURN' }));
+    expect(result.current.state.game!.turn).toBe(2);
   });
 
   it('a remount restores the state reached before unmounting', () => {
     const first = renderHook(() => useGame(), { wrapper: wrapper(started) });
-    act(() => first.result.current.dispatch({ type: 'NEXT_PLAYER' }));
+    act(() => first.result.current.dispatch({ type: 'END_TURN' }));
+    act(() => first.result.current.dispatch({ type: 'START_TURN' }));
     act(() => first.result.current.dispatch({ type: 'END_TURN' }));
     const reached = first.result.current.state;
     first.unmount();
@@ -112,8 +114,8 @@ describe('GameProvider', () => {
     function Consumer() {
       const { state, dispatch } = useGame();
       return (
-        <button type="button" onClick={() => dispatch({ type: 'NEXT_PLAYER' })}>
-          Player {state.game?.activePlayer}
+        <button type="button" onClick={() => dispatch({ type: 'END_TURN' })}>
+          Turn {state.game?.turn}
         </button>
       );
     }
@@ -122,7 +124,7 @@ describe('GameProvider', () => {
         <Consumer />
       </GameProvider>,
     );
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Player 1' }));
-    expect(screen.getByRole('button', { name: 'Player 2' })).toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Turn 1' }));
+    expect(screen.getByRole('button', { name: 'Turn 2' })).toBeInTheDocument();
   });
 });

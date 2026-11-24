@@ -7,9 +7,10 @@ import { QuestionScreen } from './QuestionScreen';
 const question = ALL_QUESTIONS[0];
 
 describe('QuestionScreen', () => {
-  it('shows the player, cards, tag, question and one button per choice', () => {
-    render(<QuestionScreen question={question} player={3} cards={1} onAnswer={vi.fn()} />);
-    expect(screen.getByText('Player 3 — for 1 card')).toBeInTheDocument();
+  it('shows the cards, tag, question and one button per choice', () => {
+    render(<QuestionScreen question={question} cards={1} onAnswer={vi.fn()} />);
+    expect(screen.getByText('For 1 card')).toBeInTheDocument();
+    expect(screen.queryByText(/Player/)).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: question.question })).toBeVisible();
     expect(screen.getAllByRole('button')).toHaveLength(Object.keys(question.choices).length);
     expect(screen.getByRole('button', { name: `A: ${question.choices.A}` })).toBeEnabled();
@@ -18,7 +19,7 @@ describe('QuestionScreen', () => {
   it('answers on the first tap only', async () => {
     const user = userEvent.setup();
     const onAnswer = vi.fn();
-    render(<QuestionScreen question={question} player={1} cards={2} onAnswer={onAnswer} />);
+    render(<QuestionScreen question={question} cards={2} onAnswer={onAnswer} />);
     await user.click(screen.getByRole('button', { name: `B: ${question.choices.B}` }));
     await user.click(screen.getByRole('button', { name: `A: ${question.choices.A}` }));
     expect(onAnswer).toHaveBeenCalledTimes(1);

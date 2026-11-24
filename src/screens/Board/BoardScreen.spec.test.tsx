@@ -9,9 +9,7 @@ function setup(overrides: Partial<BoardScreenProps> = {}) {
   const props: BoardScreenProps = {
     board: FIXTURE_BOARD,
     playerCount: 4,
-    activePlayer: 1,
     onQuestion: vi.fn(),
-    onNextPlayer: vi.fn(),
     onEndTurn: vi.fn(),
     onNewBoard: vi.fn(),
     onWinner: vi.fn(),
@@ -38,13 +36,11 @@ describe('BoardScreen (spec screen 3)', () => {
     expect(screen.getByText(`Code K7Q2 · ${label}`)).toBeInTheDocument();
   });
 
-  it('shows the player bar with the active player', () => {
-    setup({ playerCount: 3, activePlayer: 2 });
-    const bar = screen.getByRole('list', { name: 'Players' });
-    const items = within(bar).getAllByRole('listitem');
-    expect(items).toHaveLength(3);
-    expect(items[1]).toHaveAttribute('aria-current', 'true');
-    expect(items[1]).toHaveTextContent('now playing');
+  it.each([2, 3, 4] as const)('has no player bar with %i players (D11)', (playerCount) => {
+    setup({ playerCount });
+    expect(screen.queryByRole('list', { name: 'Players' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/now playing/i)).not.toBeInTheDocument();
+    expect(document.querySelector('[aria-current]')).toBeNull();
   });
 
   it('shows the labelled grid and the legend', () => {
@@ -53,41 +49,40 @@ describe('BoardScreen (spec screen 3)', () => {
     expect(screen.getByRole('list', { name: 'Legend' })).toBeInTheDocument();
   });
 
-  it.each([
-    [2, 1, 'Next player'],
-    [2, 2, 'End turn'],
-    [3, 2, 'Next player'],
-    [3, 3, 'End turn'],
-    [4, 3, 'Next player'],
-    [4, 4, 'End turn'],
-  ] as const)('with %i players and P%i active shows "%s"', (playerCount, activePlayer, label) => {
-    setup({ playerCount, activePlayer });
-    const other = label === 'End turn' ? 'Next player' : 'End turn';
-    expect(screen.getByRole('button', { name: label })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: other })).not.toBeInTheDocument();
+  it.each([2, 3, 4] as const)(
+    'with %i players always shows Question and End turn, never Next player (D11)',
+    (playerCount) => {
+      setup({ playerCount });
+      expect(screen.getByRole('button', { name: 'Question' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'End turn' })).toBeEnabled();
+      expect(screen.queryByRole('button', { name: /next player/i })).not.toBeInTheDocument();
+      expect(screen.queryByText(/next player/i)).not.toBeInTheDocument();
+    },
+  );
+
+  it.each([1, 2, 9])('shows End turn on turn %i too', (turn) => {
+    setup({ board: { ...FIXTURE_BOARD, turn } });
+    expect(screen.getByRole('button', { name: 'End turn' })).toBeInTheDocument();
   });
 
   it('Question fires onQuestion only', async () => {
     const { props, user } = setup();
     await user.click(screen.getByRole('button', { name: 'Question' }));
     expect(props.onQuestion).toHaveBeenCalledTimes(1);
-    for (const fn of [props.onNextPlayer, props.onEndTurn, props.onNewBoard, props.onWinner]) {
+    for (const fn of [props.onEndTurn, props.onNewBoard, props.onWinner]) {
       expect(fn).not.toHaveBeenCalled();
     }
   });
 
-  it('Next player fires onNextPlayer only', async () => {
-    const { props, user } = setup({ activePlayer: 2 });
-    await user.click(screen.getByRole('button', { name: 'Next player' }));
-    expect(props.onNextPlayer).toHaveBeenCalledTimes(1);
-    expect(props.onEndTurn).not.toHaveBeenCalled();
-  });
-
-  it('End turn fires onEndTurn only', async () => {
-    const { props, user } = setup({ activePlayer: 4 });
+  it('End turn fires onEndTurn only, every time it is tapped', async () => {
+    const { props, user } = setup();
     await user.click(screen.getByRole('button', { name: 'End turn' }));
     expect(props.onEndTurn).toHaveBeenCalledTimes(1);
-    expect(props.onNextPlayer).not.toHaveBeenCalled();
+    await user.click(screen.getByRole('button', { name: 'End turn' }));
+    expect(props.onEndTurn).toHaveBeenCalledTimes(2);
+    for (const fn of [props.onQuestion, props.onNewBoard, props.onWinner]) {
+      expect(fn).not.toHaveBeenCalled();
+    }
   });
 
   it.each([

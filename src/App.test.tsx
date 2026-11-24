@@ -9,8 +9,16 @@ import { gameReducer, initialState, type GameAction } from './state/gameReducer'
 import { STORAGE_KEY, saveState } from './state/storage';
 import type { GameState } from './state/types';
 
-const players = () =>
-  within(screen.getByRole('list', { name: 'Players' })).getAllByRole('listitem');
+/** Start cells of the positions list: one per player (D11: the only per-player info shown). */
+const startCells = () =>
+  (screen.getByText('Start:').nextElementSibling?.textContent ?? '').split(', ');
+
+/** D11: the board never shows a player bar nor a Next player button. */
+function expectNoTurnOrder() {
+  expect(screen.queryByRole('list', { name: 'Players' })).not.toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: /next player/i })).not.toBeInTheDocument();
+  expect(screen.queryByText(/now playing/i)).not.toBeInTheDocument();
+}
 
 const gridLabel = () =>
   screen.getByRole('img', { name: /^Board, turn \d+\./ }).getAttribute('aria-label');
@@ -24,13 +32,11 @@ function readCode(): string {
 function snapshot() {
   const text = screen.getByText(/^Code \S+ · (Easy|Medium|Hard)$/).textContent ?? '';
   const [, code, difficulty] = /^Code (\S+) · (\w+)$/.exec(text)!;
-  const items = players();
   return {
     heading: screen.getByRole('heading', { level: 1 }).textContent,
     code,
     difficulty,
-    players: items.length,
-    active: items.findIndex((li) => li.getAttribute('aria-current') === 'true'),
+    starts: startCells(),
     grid: gridLabel(),
   };
 }
@@ -114,7 +120,8 @@ describe('App', () => {
       const user = userEvent.setup();
       render(<App />);
       await startGame(user, { players: count, difficulty });
-      expect(players()).toHaveLength(count);
+      expect(startCells()).toHaveLength(count);
+      expectNoTurnOrder();
       expect(screen.getByText(new RegExp(`^Code \\S+ · ${difficulty}$`))).toBeInTheDocument();
       const list = /Enem(?:y|ies) on ([^.]+)\./.exec(gridLabel() ?? '')![1].split(', ');
       expect(list).toHaveLength(enemies);
@@ -149,26 +156,38 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1, name: /^Turn \d+$/ })).toBeInTheDocument();
   });
 
-  it('cycles players, ends the turn on the new board screen, then starts turn 2', async () => {
+  it.each([2, 3, 4] as const)(
+    '%i players: Question and End turn at turn start, no Next player, no player bar (D11)',
+    async (count) => {
+      const user = userEvent.setup();
+      render(<App />);
+      await startGame(user, { players: count });
+      expect(screen.getByRole('button', { name: 'Question' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'End turn' })).toBeEnabled();
+      expectNoTurnOrder();
+    },
+  );
+
+  it('End turn right at turn start → new board screen → Start turn 2, and again (D11)', async () => {
     const { user } = await renderGame();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Turn 1');
-    for (let i = 0; i < 3; i++) {
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-    }
-    expect(players()[3]).toHaveAttribute('aria-current', 'true');
     await user.click(screen.getByRole('button', { name: 'End turn' }));
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       /^Walls and enemies have moved$/,
     );
-    expect(screen.queryByRole('list', { name: 'Players' })).not.toBeInTheDocument();
+    expectNoTurnOrder();
     expect(screen.getByRole('img', { name: /^Board, turn 2\./ })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 2$/);
-    expect(players()[0]).toHaveAttribute('aria-current', 'true');
-    expect(players()[3]).not.toHaveAttribute('aria-current');
-    expect(screen.getByRole('button', { name: 'Next player' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Question' })).toBeInTheDocument();
+    expectNoTurnOrder();
+    await user.click(screen.getByRole('button', { name: 'End turn' }));
+    await user.click(screen.getByRole('button', { name: 'Start turn 3' }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 3$/);
+    expect(savedGame()).toMatchObject({ turn: 3 });
+    expect(savedGame()).not.toHaveProperty('activePlayer');
   });
 
   it('keeps the code and goal over several turns, redraws enemies, matches the engine', async () => {
@@ -183,9 +202,6 @@ describe('App', () => {
     expect(parseCell(goal)).toEqual(first.goal);
 
     for (let turn = 2; turn <= 4; turn++) {
-      for (let i = 0; i < 3; i++) {
-        await user.click(screen.getByRole('button', { name: 'Next player' }));
-      }
       await user.click(screen.getByRole('button', { name: 'End turn' }));
       expect(screen.getByText(`The goal stays on ${goal}`)).toBeInTheDocument();
       const label = gridLabel();
@@ -202,30 +218,23 @@ describe('App', () => {
     }
   });
 
-  it('restores code, turn, active player and board after a reload', async () => {
-    const { user, unmount } = await renderGame();
-    for (let i = 0; i < 2; i++) {
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-    }
+  it('restores code, turn and board after a reload', async () => {
+    const { unmount } = await renderGame();
     const code = readCode();
     const label = gridLabel();
-    expect(players()[2]).toHaveAttribute('aria-current', 'true');
     unmount();
 
     render(<App />);
     expect(readCode()).toBe(code);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
-    expect(players()[2]).toHaveAttribute('aria-current', 'true');
-    expect(players()[0]).not.toHaveAttribute('aria-current');
     expect(gridLabel()).toBe(label);
+    expect(screen.getByRole('button', { name: 'End turn' })).toBeInTheDocument();
+    expectNoTurnOrder();
   });
 
   it('restores a later turn and the new board screen after a reload', async () => {
     const { user, unmount } = await renderGame();
     const code = readCode();
-    for (let i = 0; i < 3; i++) {
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-    }
     await user.click(screen.getByRole('button', { name: 'End turn' }));
     const label = gridLabel();
     unmount();
@@ -239,7 +248,7 @@ describe('App', () => {
     expect(readCode()).toBe(code);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 2$/);
     expect(gridLabel()).toBe(label);
-    expect(players()[0]).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('button', { name: 'End turn' })).toBeInTheDocument();
   });
 
   it('goes back to the home screen when the saved game is cleared, then a new game has a new code', async () => {
@@ -254,6 +263,37 @@ describe('App', () => {
     expect(readCode()).not.toBe(code);
   });
 
+  it.each(['board', 'result', 'home'] as const)(
+    'ignores a v1 save on %s (with an active player): Home, no Continue game (D11)',
+    async (savedScreen) => {
+      const game = gameReducer(initialState, {
+        type: 'START_GAME',
+        playerCount: 3,
+        difficulty: 'medium',
+        code: 'K7F2-9QX',
+      }).game!;
+      const v1Game = {
+        ...game,
+        activePlayer: 2,
+        ...(savedScreen === 'home' ? { lastScreen: 'board' } : {}),
+        ...(savedScreen === 'result'
+          ? { pendingQuestion: { questionId: 1, cards: 2, answer: 'A', correct: false } }
+          : {}),
+      };
+      localStorage.setItem(
+        'bgc.game.v1',
+        JSON.stringify({ version: 1, state: { screen: savedScreen, game: v1Game } }),
+      );
+      const user = userEvent.setup();
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /^Continue game/ })).toBeNull();
+      // New game has no replace notice: there is no game to replace.
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      expect(screen.queryByText('This will replace your current game.')).toBeNull();
+    },
+  );
+
   it('the menu "We have a winner" shows the winner screen', async () => {
     const { user } = await renderGame();
     await user.click(screen.getByRole('button', { name: 'Menu' }));
@@ -264,29 +304,26 @@ describe('App', () => {
   it('the menu "New board" asks first, then starts turn 1 with a new code', async () => {
     const { user } = await renderGame();
     const code = readCode();
-    await user.click(screen.getByRole('button', { name: 'Next player' }));
+    await user.click(screen.getByRole('button', { name: 'End turn' }));
+    await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
     await openMenuItem(user, 'New board');
     expect(screen.getByRole('dialog', { name: 'Start a new board?' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'New board' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
     expect(readCode()).not.toBe(code);
-    expect(players()).toHaveLength(4);
-    expect(players()[0]).toHaveAttribute('aria-current', 'true');
+    expect(startCells()).toHaveLength(4);
+    expectNoTurnOrder();
   });
 
   describe('New board confirmation (#12, D8)', () => {
-    /** Plays to turn 2, P2 active, on a 3-player Hard game; returns the snapshot. */
+    /** Plays to turn 2 on a 3-player Hard game; returns the snapshot. */
     async function midGame() {
       const user = userEvent.setup();
       render(<App />);
       await startGame(user, { players: 3, difficulty: 'Hard' });
-      for (let i = 0; i < 2; i++) {
-        await user.click(screen.getByRole('button', { name: 'Next player' }));
-      }
       await user.click(screen.getByRole('button', { name: 'End turn' }));
       await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
       return { user, snapshot: snapshot() };
     }
 
@@ -301,7 +338,7 @@ describe('App', () => {
       expect(board).not.toContainElement(dialog);
     });
 
-    it('Cancel keeps the exact same game (code, turn, board, active player)', async () => {
+    it('Cancel keeps the exact same game (code, turn, board, players)', async () => {
       const { user, snapshot: before } = await midGame();
       const saved = localStorage.getItem(STORAGE_KEY);
       await openMenuItem(user, 'New board');
@@ -336,18 +373,17 @@ describe('App', () => {
       expect(after.heading).toBe('Turn 1');
       expect(after.code).not.toBe(before.code);
       expect(after.difficulty).toBe('Hard');
-      expect(after.players).toBe(3);
-      expect(after.active).toBe(0);
+      expect(after.starts).toHaveLength(3);
       const game = savedGame();
       expect(game).toMatchObject({
         code: after.code,
         turn: 1,
         playerCount: 3,
         difficulty: 'hard',
-        activePlayer: 1,
         winner: null,
         pendingQuestion: null,
       });
+      expect(game).not.toHaveProperty('activePlayer');
       expect(gridLabel()).toContain(
         `Goal on ${cellName(generateBoard(after.code, 1, 'hard').goal)}.`,
       );
@@ -360,24 +396,44 @@ describe('App', () => {
       render(<App />);
       await startGame(user, { players: count, difficulty: 'Easy' });
       await openMenuItem(user, 'We have a winner');
-      expect(screen.getAllByRole('button', { name: /^Player \d$/ })).toHaveLength(count);
+      const buttons = screen.getAllByRole('button', { name: /^Player \d$/ });
+      expect(buttons.map((b) => b.textContent)).toEqual(
+        Array.from({ length: count }, (_, i) => `Player ${i + 1}`),
+      );
     });
 
-    it('Back returns to the same board (same turn, code, grid, active player)', async () => {
+    it.each([2, 3, 4] as const)(
+      'lists Player 1…%i after End turn and questions too (D11)',
+      async (count) => {
+        const user = userEvent.setup();
+        render(<App />);
+        await startGame(user, { players: count, difficulty: 'Easy' });
+        await user.click(screen.getByRole('button', { name: 'Question' }));
+        await user.click(screen.getByRole('button', { name: 'Show the question' }));
+        await user.click(screen.getByRole('button', { name: /^A: / }));
+        await user.click(screen.getByRole('button', { name: 'Continue' }));
+        await user.click(screen.getByRole('button', { name: 'End turn' }));
+        await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+        await openMenuItem(user, 'We have a winner');
+        expect(screen.getAllByRole('button', { name: /^Player \d$/ })).toHaveLength(count);
+        await user.click(screen.getByRole('button', { name: `Player ${count}` }));
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+          new RegExp(`^Player ${count} wins!$`),
+        );
+      },
+    );
+
+    it('Back returns to the same board (same turn, code, grid, players)', async () => {
       const { user } = await renderGame();
-      for (let i = 0; i < 3; i++) {
-        await user.click(screen.getByRole('button', { name: 'Next player' }));
-      }
       await user.click(screen.getByRole('button', { name: 'End turn' }));
       await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
       const before = snapshot();
       await openMenuItem(user, 'We have a winner');
       expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
       await user.click(screen.getByRole('button', { name: 'Back' }));
       expect(snapshot()).toEqual(before);
       expect(before.heading).toBe('Turn 2');
-      expect(before.active).toBe(1);
+      expect(before.starts).toHaveLength(4);
     });
 
     it.each([1, 2, 3, 4])('declaring Player %i shows "Player %i wins!"', async (n) => {
@@ -416,7 +472,7 @@ describe('App', () => {
       expect(screen.queryByRole('button', { name: /resume|continue/i })).toBeNull();
     });
 
-    it('Play again starts turn 1: new code, same players & difficulty, P1, no asked questions', async () => {
+    it('Play again starts turn 1: new code, same players & difficulty, no asked questions', async () => {
       const user = userEvent.setup();
       const first = render(<App />);
       await startGame(user, { players: 3, difficulty: 'Hard' });
@@ -435,15 +491,13 @@ describe('App', () => {
       const after = snapshot();
       expect(after.heading).toBe('Turn 1');
       expect(after.code).not.toBe(code);
-      expect(after.players).toBe(3);
+      expect(after.starts).toHaveLength(3);
       expect(after.difficulty).toBe('Hard');
-      expect(after.active).toBe(0);
       expect(savedGame()).toMatchObject({
         code: after.code,
         turn: 1,
         playerCount: 3,
         difficulty: 'hard',
-        activePlayer: 1,
         askedQuestionIds: [],
         pendingQuestion: null,
         winner: null,
@@ -462,17 +516,13 @@ describe('App question flow (spec #13 / #14)', () => {
     localStorage.clear();
   });
 
-  const activeIndex = () => players().findIndex((li) => li.getAttribute('aria-current') === 'true');
-
   const savedAsked = (): number[] =>
     JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}').state.game.askedQuestionIds;
 
-  /** Board → Question → popup; returns the dialog and X read from its title. */
-  async function openPopup(user: User, player: number) {
+  /** Board → Question → popup; returns the dialog and X read from its title (no player, D11). */
+  async function openPopup(user: User) {
     await user.click(screen.getByRole('button', { name: 'Question' }));
-    const dialog = screen.getByRole('dialog', {
-      name: new RegExp(`^Player ${player} — Question for [123] cards?$`),
-    });
+    const dialog = screen.getByRole('dialog', { name: /^Question for [123] cards?$/ });
     const title = dialog.getAttribute('aria-labelledby')!;
     const text = document.getElementById(title)!.textContent ?? '';
     const cards = Number(/Question for (\d) card/.exec(text)![1]);
@@ -491,8 +541,8 @@ describe('App question flow (spec #13 / #14)', () => {
   const choice = (q: Question, key: string) =>
     screen.getByRole('button', { name: `${key}: ${q.choices[key as 'A']}` });
 
-  async function askAndAnswer(user: User, player: number, right: boolean) {
-    const { cards } = await openPopup(user, player);
+  async function askAndAnswer(user: User, right: boolean) {
+    const { cards } = await openPopup(user);
     await user.click(screen.getByRole('button', { name: 'Show the question' }));
     const q = currentQuestion();
     const key = right ? q.answer : choiceKeys(q).find((k) => k !== q.answer)!;
@@ -500,10 +550,10 @@ describe('App question flow (spec #13 / #14)', () => {
     return { q, key, cards };
   }
 
-  it('the popup names the active player and X in 1–3; the board is inert behind it', async () => {
+  it('the popup is titled "Question for X cards", X in 1–3; the board is inert behind it', async () => {
     const { user } = await renderGame();
-    await user.click(screen.getByRole('button', { name: 'Next player' }));
-    const { dialog } = await openPopup(user, 2);
+    const { dialog } = await openPopup(user);
+    expect(within(dialog).queryByText(/Player/)).toBeNull();
     expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(screen.getByRole('button', { name: 'Show the question' })).toHaveFocus();
     const board = screen.getByRole('heading', { level: 1, hidden: true }).closest('[inert]');
@@ -517,16 +567,16 @@ describe('App question flow (spec #13 / #14)', () => {
   });
 
   it.each(['button', 'Escape'] as const)(
-    'Cancel (%s) → board, same player, question not marked asked, focus back on Question',
+    'Cancel (%s) → board, same turn, question not marked asked, focus back on Question',
     async (how) => {
       const { user } = await renderGame();
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-      await openPopup(user, 2);
+      const grid = gridLabel();
+      await openPopup(user);
       if (how === 'button') await user.click(screen.getByRole('button', { name: 'Cancel' }));
       else await user.keyboard('{Escape}');
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
       expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
-      expect(activeIndex()).toBe(1);
+      expect(gridLabel()).toBe(grid);
       expect(savedAsked()).toEqual([]);
       expect(screen.getByRole('button', { name: 'Question' })).toHaveFocus();
       expect(document.querySelector('[inert]')).toBeNull();
@@ -535,21 +585,22 @@ describe('App question flow (spec #13 / #14)', () => {
 
   it('Show the question → the question screen with 2–4 choice buttons and the popup X', async () => {
     const { user } = await renderGame();
-    const { cards } = await openPopup(user, 1);
+    const { cards } = await openPopup(user);
     await user.click(screen.getByRole('button', { name: 'Show the question' }));
     const q = currentQuestion();
     const buttons = within(screen.getByRole('list', { name: 'Choices' })).getAllByRole('button');
     expect(buttons.length).toBeGreaterThanOrEqual(2);
     expect(buttons.length).toBeLessThanOrEqual(4);
     expect(buttons).toHaveLength(choiceKeys(q).length);
-    expect(
-      screen.getByText(`Player 1 — for ${cards} ${cards === 1 ? 'card' : 'cards'}`),
-    ).toBeInTheDocument();
+    expect(screen.getByText(`For ${cards} ${cards === 1 ? 'card' : 'cards'}`)).toBeInTheDocument();
+    expect(screen.queryByText(/Player \d/)).toBeNull();
   });
 
-  it('correct answer: "Correct!", "Draw X cards" with the popup X, explanation; Continue → P2', async () => {
+  it('correct answer: "Correct!", "Draw X cards" with the popup X, explanation; Continue → board', async () => {
     const { user } = await renderGame();
-    const { q, cards } = await askAndAnswer(user, 1, true);
+    const grid = gridLabel();
+    const { q, cards } = await askAndAnswer(user, true);
+    expect(screen.queryByText(/Player/)).toBeNull();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Correct!$/);
     expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
     expect(screen.getByText(`Draw ${cards} ${cards === 1 ? 'card' : 'cards'}`)).toBeInTheDocument();
@@ -557,12 +608,15 @@ describe('App question flow (spec #13 / #14)', () => {
     expect(savedAsked()).toEqual([q.id]);
     await user.click(screen.getByRole('button', { name: 'Continue' }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
-    expect(activeIndex()).toBe(1);
+    expect(gridLabel()).toBe(grid);
+    expect(screen.getByRole('button', { name: 'End turn' })).toBeInTheDocument();
+    expectNoTurnOrder();
   });
 
   it('wrong answer: "Wrong answer", right choice shown with text, pick marked, no cards', async () => {
     const { user } = await renderGame();
-    const { q, key } = await askAndAnswer(user, 1, false);
+    const { q, key } = await askAndAnswer(user, false);
+    expect(screen.queryByText(/Player/)).toBeNull();
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Wrong answer$/);
     expect(screen.getByText('No cards this time.')).toBeInTheDocument();
     expect(screen.queryByText(/^Draw \d/)).not.toBeInTheDocument();
@@ -574,22 +628,34 @@ describe('App question flow (spec #13 / #14)', () => {
     expect(pick).not.toBe(right);
     expect(screen.getByText(q.explanation)).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(activeIndex()).toBe(1);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
   });
 
-  it("last player's Continue keeps them active; End turn is available (D8)", async () => {
-    const { user } = await renderGame();
-    for (let i = 0; i < 3; i++) {
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-    }
-    await askAndAnswer(user, 4, true);
+  it('after questions and Continue, End turn draws the next board (same goal) (D11)', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await startGame(user, { players: 3, code: 'K7F2-9QX' });
+    const grid = gridLabel();
+    await askAndAnswer(user, true);
     await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(activeIndex()).toBe(3);
-    expect(screen.queryByRole('button', { name: 'Next player' })).not.toBeInTheDocument();
+    await askAndAnswer(user, false);
+    await user.click(screen.getByRole('button', { name: 'Continue' }));
+    // Still the same turn and board after two questions.
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+    expect(gridLabel()).toBe(grid);
+    expect(savedAsked()).toHaveLength(2);
     await user.click(screen.getByRole('button', { name: 'End turn' }));
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       /^Walls and enemies have moved$/,
     );
+    const first = generateBoard('K7F2-9QX', 1, 'medium');
+    const second = generateBoard('K7F2-9QX', 2, 'medium', first.goal);
+    expect(screen.getByText(`The goal stays on ${cellName(first.goal)}`)).toBeInTheDocument();
+    expect(gridLabel()).toContain(`Goal on ${cellName(first.goal)}.`);
+    expect(gridLabel()).toContain(`on ${second.enemies.map(cellName).join(', ')}.`);
+    await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 2$/);
+    expect(savedAsked()).toHaveLength(2);
   });
 
   it('30 questions in a game are all different; the 31st works (new cycle)', async () => {
@@ -600,11 +666,10 @@ describe('App question flow (spec #13 / #14)', () => {
     const total = ALL_QUESTIONS.length;
     expect(total).toBe(30);
     for (let i = 0; i < total + 1; i++) {
-      const player = activeIndex() + 1;
-      const { q } = await askAndAnswer(user, player, i % 2 === 0);
+      const { q } = await askAndAnswer(user, i % 2 === 0);
       texts.push(q.question);
       await user.click(screen.getByRole('button', { name: 'Continue' }));
-      if (player === 2) {
+      if (i % 2 === 1) {
         await user.click(screen.getByRole('button', { name: 'End turn' }));
         await user.click(screen.getByRole('button', { name: /^Start turn \d+$/ }));
       }
@@ -614,21 +679,21 @@ describe('App question flow (spec #13 / #14)', () => {
     expect(savedAsked()).toHaveLength(1);
   }, 60_000);
 
-  it('a reload keeps the popup (same player and X)', async () => {
+  it('a reload keeps the popup (same X)', async () => {
     const { user, unmount } = await renderGame();
-    const { cards } = await openPopup(user, 1);
+    const { cards } = await openPopup(user);
     unmount();
     render(<App />);
     expect(
       screen.getByRole('dialog', {
-        name: `Player 1 — Question for ${cards} ${cards === 1 ? 'card' : 'cards'}`,
+        name: `Question for ${cards} ${cards === 1 ? 'card' : 'cards'}`,
       }),
     ).toBeInTheDocument();
   });
 
   it('a reload on the question screen keeps the same question', async () => {
     const { user, unmount } = await renderGame();
-    await openPopup(user, 1);
+    await openPopup(user);
     await user.click(screen.getByRole('button', { name: 'Show the question' }));
     const q = currentQuestion();
     unmount();
@@ -641,7 +706,7 @@ describe('App question flow (spec #13 / #14)', () => {
 
   it('a reload on the result screen keeps the same question and answer', async () => {
     const { user, unmount } = await renderGame();
-    const { q, key, cards } = await askAndAnswer(user, 1, false);
+    const { q, key, cards } = await askAndAnswer(user, false);
     unmount();
     render(<App />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Wrong answer$/);
@@ -651,7 +716,7 @@ describe('App question flow (spec #13 / #14)', () => {
     expect(pick).toHaveTextContent(q.choices[key as 'A']!);
     expect(screen.queryByText(new RegExp(`^Draw ${cards}`))).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Continue' }));
-    expect(activeIndex()).toBe(1);
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
   });
 });
 
@@ -683,12 +748,8 @@ describe('Navigation (#12, D10)', () => {
   describe('Quit to home', () => {
     async function onTurn2() {
       const { user, ...rest } = await renderGame();
-      for (let i = 0; i < 3; i++) {
-        await user.click(screen.getByRole('button', { name: 'Next player' }));
-      }
       await user.click(screen.getByRole('button', { name: 'End turn' }));
       await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
       return { user, ...rest, before: snapshot() };
     }
 
@@ -788,7 +849,7 @@ describe('Navigation (#12, D10)', () => {
       await startGame(user, { players: 2, difficulty: 'Easy', code: 'HJKM-NPQ' });
       expect(readCodeAny()).toBe('HJKM-NPQ');
       expect(readCodeAny()).not.toBe(before.code);
-      expect(players()).toHaveLength(2);
+      expect(startCells()).toHaveLength(2);
       expect(savedGame()).toMatchObject({ code: 'HJKM-NPQ', turn: 1, playerCount: 2 });
       expect(savedGame()).not.toHaveProperty('lastScreen');
     });
@@ -816,12 +877,9 @@ describe('Navigation (#12, D10)', () => {
 
   describe('Continue game returns to the exact screen (saved home state)', () => {
     const cases: [string, GameAction[], RegExp][] = [
-      ['board', [{ type: 'NEXT_PLAYER' }], /^Turn 1$/],
-      [
-        'newBoard',
-        [{ type: 'NEXT_PLAYER' }, { type: 'NEXT_PLAYER' }, { type: 'END_TURN' }],
-        /^Walls and enemies have moved$/,
-      ],
+      ['board', [], /^Turn 1$/],
+      ['board', [{ type: 'END_TURN' }, { type: 'START_TURN' }], /^Turn 2$/],
+      ['newBoard', [{ type: 'END_TURN' }], /^Walls and enemies have moved$/],
       ['questionPopup', toPopup, /^Turn 1$/],
       ['question', toQuestion, new RegExp(`^${escape(q.question)}$`)],
       ['result', toResult, /Correct!$/],
@@ -844,7 +902,7 @@ describe('Navigation (#12, D10)', () => {
       await user.click(continueButton()!);
       expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state).toEqual(playing);
       if (screenName === 'questionPopup') {
-        expect(screen.getByRole('dialog', { name: /^Player 1 — Question for 2 cards$/ }));
+        expect(screen.getByRole('dialog', { name: /^Question for 2 cards$/ }));
         expect(screen.getByRole('button', { name: 'Show the question' })).toHaveFocus();
       } else {
         expect(h1()).toHaveTextContent(heading);
@@ -864,15 +922,12 @@ describe('Navigation (#12, D10)', () => {
       await startGame(user);
     });
 
-    it('board: Question / Next player / End turn / menu items', async () => {
+    it('board: Question / End turn / menu items', async () => {
       const { user } = await renderGame();
       await user.click(screen.getByRole('button', { name: 'Question' }));
       expect(screen.getByRole('dialog', { name: /Question for/ })).toBeInTheDocument();
       await user.click(screen.getByRole('button', { name: 'Cancel' }));
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-      expect(players()[1]).toHaveAttribute('aria-current', 'true');
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
-      await user.click(screen.getByRole('button', { name: 'Next player' }));
+      expectNoTurnOrder();
       await user.click(screen.getByRole('button', { name: 'End turn' }));
       expect(h1()).toHaveTextContent('Walls and enemies have moved');
       await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
@@ -984,7 +1039,9 @@ describe('Navigation (#12, D10)', () => {
     }
 
     it('on New game → Home, saved game kept', async () => {
-      saveState(gameReducer(play({ type: 'NEXT_PLAYER' }), { type: 'QUIT_TO_HOME' }));
+      saveState(
+        gameReducer(play({ type: 'END_TURN' }, { type: 'START_TURN' }), { type: 'QUIT_TO_HOME' }),
+      );
       const game = savedGame();
       const user = userEvent.setup();
       render(<App />);

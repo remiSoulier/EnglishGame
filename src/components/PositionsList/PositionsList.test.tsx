@@ -212,7 +212,6 @@ describe('PositionsList on screens', () => {
   const FIRST = generateBoard('K7QP2MX', 1, 'medium');
   const handlers = {
     onQuestion: vi.fn(),
-    onNextPlayer: vi.fn(),
     onEndTurn: vi.fn(),
     onNewBoard: vi.fn(),
     onWinner: vi.fn(),
@@ -220,15 +219,13 @@ describe('PositionsList on screens', () => {
 
   it('is on the Board screen, collapsed, and updates with the next turn board', async () => {
     const user = userEvent.setup();
-    const { rerender } = render(
-      <BoardScreen board={FIRST} playerCount={3} activePlayer={1} {...handlers} />,
-    );
+    const { rerender } = render(<BoardScreen board={FIRST} playerCount={3} {...handlers} />);
     expect(toggle()).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle());
     expectMatchesBoard(FIRST, 3);
 
     const next = generateBoard('K7QP2MX', 2, 'medium', FIRST.goal);
-    rerender(<BoardScreen board={next} playerCount={3} activePlayer={1} {...handlers} />);
+    rerender(<BoardScreen board={next} playerCount={3} {...handlers} />);
     expectMatchesBoard(next, 3);
     expect(entries().get('Goal:')!.textContent).toBe(cellName(FIRST.goal));
     expect(next.walls).not.toEqual(FIRST.walls);

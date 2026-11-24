@@ -3,10 +3,13 @@ import { resumeScreen } from './gameReducer';
 import type { Game, GameState, Screen } from './types';
 
 /** localStorage key of the saved game. */
-export const STORAGE_KEY = 'bgc.game.v1';
+export const STORAGE_KEY = 'bgc.game.v2';
 
-/** Version of the saved shape; bump it when `GameState` changes incompatibly. */
-export const STORAGE_VERSION = 1;
+/**
+ * Version of the saved shape; bump it when `GameState` changes incompatibly. v2 (decision D11):
+ * no active player any more; v1 saves (key `bgc.game.v1`) are ignored.
+ */
+export const STORAGE_VERSION = 2;
 
 interface Saved {
   version: number;
@@ -73,7 +76,6 @@ function isValidGame(v: unknown): boolean {
     Object.prototype.hasOwnProperty.call(ENEMY_COUNT, difficulty) &&
     isInt(playerCount, 2, 4) &&
     isInt(turn, 1) &&
-    isInt(v.activePlayer, 1, playerCount) &&
     isValidBoard(v.board, code, turn, difficulty) &&
     Array.isArray(v.askedQuestionIds) &&
     v.askedQuestionIds.every((id) => isInt(id, 0)) &&

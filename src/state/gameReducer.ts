@@ -17,11 +17,12 @@ import type {
  * are picked by the caller and passed in the payload.
  */
 export type GameAction =
-  /** Any screen → 'board': new game, turn 1, player 1. Invalid code / settings → no-op. */
+  /** Any screen → 'board': new game, turn 1. Invalid code / settings → no-op. */
   | { type: 'START_GAME'; playerCount: PlayerCount; difficulty: Difficulty; code: string }
-  /** 'board' or 'result', not the last player → next player, 'board', pending question cleared. */
-  | { type: 'NEXT_PLAYER' }
-  /** 'board', last player active, no winner → next turn's board (same goal), player 1, 'newBoard'. */
+  /**
+   * 'board', no winner → next turn's board (same goal), 'newBoard'. The app does not track whose
+   * turn it is (decision D11): End turn can be tapped at any time.
+   */
   | { type: 'END_TURN' }
   /** 'newBoard' → 'board'. */
   | { type: 'START_TURN' }
@@ -39,10 +40,7 @@ export type GameAction =
   | { type: 'SHOW_QUESTION' }
   /** 'question' → 'result': records the answer and whether it is correct, marks the id asked. */
   | { type: 'ANSWER_QUESTION'; answer: AnswerLetter }
-  /**
-   * 'result' → 'board', pending question cleared. Moves to the next player, except after the last
-   * player: the active player then stays the last one, who taps End turn.
-   */
+  /** 'result' → 'board', pending question cleared. */
   | { type: 'CONTINUE' }
   /** 'board' → 'winner' (choose the winner). */
   | { type: 'OPEN_WINNER' }
@@ -103,7 +101,6 @@ function newGame(playerCount: PlayerCount, difficulty: Difficulty, code: string)
     difficulty,
     playerCount,
     turn: 1,
-    activePlayer: 1,
     board,
     askedQuestionIds: [],
     pendingQuestion: null,
@@ -170,26 +167,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
   if (!game) return state;
 
   switch (action.type) {
-    case 'NEXT_PLAYER':
-      if ((screen !== 'board' && screen !== 'result') || game.activePlayer >= game.playerCount) {
-        return state;
-      }
-      return {
-        screen: 'board',
-        game: { ...game, activePlayer: game.activePlayer + 1, pendingQuestion: null },
-      };
-
     case 'END_TURN': {
-      if (screen !== 'board' || game.activePlayer !== game.playerCount || game.winner !== null) {
-        return state;
-      }
+      if (screen !== 'board' || game.winner !== null) return state;
       const turn = game.turn + 1;
       return {
         screen: 'newBoard',
         game: {
           ...game,
           turn,
-          activePlayer: 1,
           board: generateBoard(game.code, turn, game.difficulty, game.board.goal),
           pendingQuestion: null,
         },
@@ -258,16 +243,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'CONTINUE':
-      if (screen !== 'result') return state;
-      return {
-        screen: 'board',
-        game: {
-          ...game,
-          pendingQuestion: null,
-          activePlayer:
-            game.activePlayer < game.playerCount ? game.activePlayer + 1 : game.activePlayer,
-        },
-      };
+      return screen === 'result'
+        ? { screen: 'board', game: { ...game, pendingQuestion: null } }
+        : state;
 
     case 'OPEN_WINNER':
       return screen === 'board' ? { ...state, screen: 'winner' } : state;

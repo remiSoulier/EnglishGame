@@ -3,23 +3,26 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { QuestionPopupScreen } from './QuestionPopupScreen';
 
-function setup(player = 2, cards = 3) {
+function setup(cards = 3) {
   const onShow = vi.fn();
   const onCancel = vi.fn();
-  render(<QuestionPopupScreen player={player} cards={cards} onShow={onShow} onCancel={onCancel} />);
+  render(<QuestionPopupScreen cards={cards} onShow={onShow} onCancel={onCancel} />);
   return { onShow, onCancel, user: userEvent.setup() };
 }
 
 describe('QuestionPopupScreen (spec #13)', () => {
   it.each([
-    [1, 1, 'Player 1 — Question for 1 card'],
-    [2, 2, 'Player 2 — Question for 2 cards'],
-    [4, 3, 'Player 4 — Question for 3 cards'],
-  ])('player %i, %i card(s): dialog titled "%s"', (player, cards, title) => {
-    setup(player, cards);
+    [1, 'Question for 1 card'],
+    [2, 'Question for 2 cards'],
+    [3, 'Question for 3 cards'],
+  ])('%i card(s): dialog titled exactly "%s" (no player, D11)', (cards, title) => {
+    setup(cards);
     const dialog = screen.getByRole('dialog', { name: title });
     expect(dialog).toHaveAttribute('aria-modal', 'true');
-    expect(screen.getByRole('heading', { name: title })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: title })).toHaveTextContent(
+      new RegExp(`^${title}$`),
+    );
+    expect(screen.queryByText(/Player/)).not.toBeInTheDocument();
   });
 
   it('offers "Show the question" (focused) and "Cancel" as native buttons', () => {

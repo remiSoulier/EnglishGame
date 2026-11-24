@@ -4,13 +4,20 @@ import { APP_NAME, openNewGame, startGame } from './helpers';
 /** Backlog #12 / decision D10: quit to home, continue game, system back, focus. */
 
 const VIEWPORT = { width: 390, height: 844 };
-const STORAGE_KEY = 'bgc.game.v1';
+const STORAGE_KEY = 'bgc.game.v2';
 
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
 const home = (page: Page) => page.getByRole('heading', { level: 1, name: APP_NAME });
 const continueButton = (page: Page) => page.getByRole('button', { name: /^Continue game/ });
 const codeLine = (page: Page) => page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/);
-const players = (page: Page) => page.getByRole('list', { name: 'Players' }).getByRole('listitem');
+/** Start cells of the positions list (one per player; D11: no player bar). */
+const starts = async (page: Page) =>
+  (
+    (await page
+      .locator('dt', { hasText: /^Start:$/ })
+      .locator('xpath=following-sibling::dd[1]')
+      .textContent()) ?? ''
+  ).split(', ');
 const grid = (page: Page) => page.getByRole('img', { name: /^Board, turn \d+\./ });
 
 async function openMenuItem(page: Page, name: 'New board' | 'We have a winner' | 'Quit to home') {
@@ -28,9 +35,7 @@ async function boardSnapshot(page: Page) {
     heading: await h1(page).textContent(),
     code: await codeLine(page).textContent(),
     grid: await grid(page).getAttribute('aria-label'),
-    active: await players(page).evaluateAll((items) =>
-      items.findIndex((li) => li.getAttribute('aria-current') === 'true'),
-    ),
+    starts: await starts(page),
   };
 }
 
@@ -51,14 +56,12 @@ function trackErrors(page: Page): string[] {
   return errors;
 }
 
-/** Turn 2, player 2 active, on a 3-player Medium game. */
+/** Turn 2 on a 3-player Medium game. */
 async function midGame(page: Page) {
   await startGame(page, { players: 3, difficulty: 'Medium' });
-  for (let i = 0; i < 2; i++) await page.getByRole('button', { name: 'Next player' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await page.getByRole('button', { name: 'Start turn 2' }).click();
-  await page.getByRole('button', { name: 'Next player' }).click();
-  await expect(players(page).nth(1)).toHaveAttribute('aria-current', 'true');
+  await expect(h1(page)).toHaveText('Turn 2');
   return boardSnapshot(page);
 }
 
@@ -191,7 +194,7 @@ test.describe('quit to home and continue', () => {
     await startGame(page, { players: 2, difficulty: 'Easy', code: 'HJKM-NPQ', goto: false });
     await expect(codeLine(page)).toHaveText('Code HJKM-NPQ · Easy');
     expect(code).not.toBe('HJKM-NPQ');
-    await expect(players(page)).toHaveCount(2);
+    expect(await starts(page)).toHaveLength(2);
     await quitToHome(page);
     await expect(continueButton(page)).toContainText('Turn 1 · HJKM-NPQ');
   });

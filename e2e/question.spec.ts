@@ -18,16 +18,25 @@ const QUESTIONS: RawQuestion[] = JSON.parse(
 
 const cardsLabel = (n: number) => `${n} ${n === 1 ? 'card' : 'cards'}`;
 
-const activeChip = (page: Page) =>
-  page.getByRole('list', { name: 'Players' }).locator('li[aria-current="true"]');
+const gridLabel = (page: Page) =>
+  page.getByRole('img', { name: /^Board, turn \d+\./ }).getAttribute('aria-label');
 
-/** Board → Question → popup; checks the title and returns X. */
-async function openPopup(page: Page, player: number): Promise<number> {
+/** Back on the same turn's board: same grid, Question and End turn, no turn order (D11). */
+async function expectSameBoard(page: Page, label: string | null) {
+  await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
+  expect(await gridLabel(page)).toBe(label);
+  await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /next player/i })).toHaveCount(0);
+  await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
+}
+
+/** Board → Question → popup "Question for X cards" (no player, D11); returns X. */
+async function openPopup(page: Page): Promise<number> {
   await page.getByRole('button', { name: 'Question' }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   const title = (await dialog.getByRole('heading').textContent())!.replace(/\s+/g, ' ').trim();
-  const match = new RegExp(`^Player ${player} — Question for ([123]) cards?$`).exec(title);
+  const match = /^Question for ([123]) cards?$/.exec(title);
   expect(match, `popup title "${title}"`).not.toBeNull();
   const cards = Number(match![1]);
   expect(title.endsWith(`for ${cardsLabel(cards)}`)).toBe(true);
@@ -107,16 +116,18 @@ test.beforeEach(async ({ page }) => {
   await startGame(page, { players: 4, difficulty: 'Medium' });
 });
 
-test('correct answer: popup → question → Correct! + Draw X cards → Continue → P2', async ({
+test('correct answer: popup → question → Correct! + Draw X cards → Continue → board', async ({
   page,
 }) => {
-  const cards = await openPopup(page, 1);
+  const label = await gridLabel(page);
+  const cards = await openPopup(page);
   await expectTargets(page);
   await expectContrast(page, '[role="dialog"] h2, [role="dialog"] p, [role="dialog"] button');
 
   await page.getByRole('button', { name: 'Show the question' }).click();
   const q = await currentQuestion(page);
-  await expect(page.getByText(`Player 1 — for ${cardsLabel(cards)}`)).toBeVisible();
+  await expect(page.getByText(`For ${cardsLabel(cards)}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(/Player \d/)).toHaveCount(0);
   const choices = page.getByRole('list', { name: 'Choices' }).getByRole('button');
   await expect(choices).toHaveCount(Object.keys(q.choices).length);
   await expectTargets(page);
@@ -128,19 +139,19 @@ test('correct answer: popup → question → Correct! + Draw X cards → Continu
   await expect(heading).toBeFocused();
   await expect(page.getByText(`Draw ${cardsLabel(cards)}`, { exact: true })).toBeVisible();
   await expect(page.getByText(q.explanation)).toBeVisible();
+  await expect(page.getByText(/Player \d/)).toHaveCount(0);
   await expectTargets(page);
   await expectContrast(page, RESULT_TEXT);
 
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
-  await expect(activeChip(page)).toHaveText(/2/);
+  await expectSameBoard(page, label);
 });
 
-test('wrong answer: Wrong answer, right one shown, no cards, Continue → next player', async ({
+test('wrong answer: Wrong answer, right one shown, no cards, Continue → same board', async ({
   page,
 }) => {
-  await page.getByRole('button', { name: 'Next player' }).click();
-  await openPopup(page, 2);
+  const label = await gridLabel(page);
+  await openPopup(page);
   await page.getByRole('button', { name: 'Show the question' }).click();
   const q = await currentQuestion(page);
   const wrong = Object.keys(q.choices).find((k) => k !== q.answer)!;
@@ -162,31 +173,45 @@ test('wrong answer: Wrong answer, right one shown, no cards, Continue → next p
   await expectContrast(page, RESULT_TEXT);
 
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(activeChip(page)).toHaveText(/3/);
+  await expectSameBoard(page, label);
 });
 
-test('cancel: Cancel and Escape go back to the board, same player, focus on Question', async ({
+test('End turn after a question and Continue draws turn 2 (D11)', async ({ page }) => {
+  await openPopup(page);
+  await page.getByRole('button', { name: 'Show the question' }).click();
+  await page.getByRole('list', { name: 'Choices' }).getByRole('button').first().click();
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'End turn' }).click();
+  await expect(
+    page.getByRole('heading', { level: 1, name: 'Walls and enemies have moved' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Start turn 2' }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Turn 2' })).toBeVisible();
+  // Questions go on in turn 2, without repeats.
+  await openPopup(page);
+});
+
+test('cancel: Cancel and Escape go back to the board, same turn, focus on Question', async ({
   page,
 }) => {
-  await page.getByRole('button', { name: 'Next player' }).click();
+  const label = await gridLabel(page);
   for (const how of ['button', 'Escape'] as const) {
-    await openPopup(page, 2);
+    await openPopup(page);
     await expect(page.getByRole('button', { name: 'Show the question' })).toBeFocused();
     if (how === 'button') await page.getByRole('button', { name: 'Cancel' }).click();
     else await page.keyboard.press('Escape');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
-    await expect(activeChip(page)).toHaveText(/2/);
+    await expectSameBoard(page, label);
     await expect(page.getByRole('button', { name: 'Question' })).toBeFocused();
   }
-  const saved = await page.evaluate(() => localStorage.getItem('bgc.game.v1'));
+  const saved = await page.evaluate(() => localStorage.getItem('bgc.game.v2'));
   expect(JSON.parse(saved!).state.game.askedQuestionIds).toEqual([]);
 });
 
 test('reload on the question and result screens keeps the same question and answer', async ({
   page,
 }) => {
-  await openPopup(page, 1);
+  await openPopup(page);
   await page.getByRole('button', { name: 'Show the question' }).click();
   const q = await currentQuestion(page);
   await page.reload();

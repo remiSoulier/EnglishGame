@@ -37,7 +37,7 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
   ],
   board: [
     { via: 'Question', action: 'OPEN_QUESTION', to: 'questionPopup' },
-    { via: 'Next player', action: 'NEXT_PLAYER', to: 'board' },
+    // Always shown (decision D11: no turn order); refused once a winner is declared.
     { via: 'End turn', action: 'END_TURN', to: 'newBoard' },
     // Menu. New board and Quit to home ask for a confirmation first (Cancel stays on the board).
     { via: 'Menu › New board › New board', action: 'NEW_BOARD', to: 'board' },

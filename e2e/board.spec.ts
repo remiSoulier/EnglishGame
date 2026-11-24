@@ -1,52 +1,62 @@
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
 
-function players(page: Page): Locator {
-  return page.getByRole('list', { name: 'Players' }).getByRole('listitem');
+/** D11: no player bar, no Next player, ever. */
+async function expectNoTurnOrder(page: Page) {
+  await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /next player/i })).toHaveCount(0);
+  await expect(page.getByText(/now playing/i)).toHaveCount(0);
 }
 
 test.beforeEach(async ({ page }) => {
   await startGame(page, { players: 4, difficulty: 'Medium' });
 });
 
-test('shows turn, code, difficulty, players, grid, legend and actions', async ({ page }) => {
+test('shows turn, code, difficulty, grid, legend, Question and End turn', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
   await expect(page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/)).toBeVisible();
-  await expect(players(page)).toHaveCount(4);
-  await expect(players(page).nth(0)).toHaveAttribute('aria-current', 'true');
   await expect(page.getByRole('img', { name: /^Board, turn 1\./ })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Legend' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Question' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Next player' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Menu' })).toBeVisible();
+  await expectNoTurnOrder(page);
 });
 
-test('Next player x3 then End turn starts turn 2 with P1 active', async ({ page }) => {
-  const next = page.getByRole('button', { name: 'Next player' });
-  for (let i = 0; i < 3; i++) {
-    await expect(players(page).nth(i)).toHaveAttribute('aria-current', 'true');
-    await next.click();
+test('End turn right away starts turn 2, and can be repeated (D11)', async ({ page }) => {
+  for (const turn of [2, 3]) {
+    const endTurn = page.getByRole('button', { name: 'End turn' });
+    await expect(endTurn).toBeVisible();
+    await endTurn.click();
+
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Walls and enemies have moved' }),
+    ).toBeVisible();
+    await expectNoTurnOrder(page);
+    await page.getByRole('button', { name: `Start turn ${turn}` }).click();
+
+    await expect(page.getByRole('heading', { level: 1, name: `Turn ${turn}` })).toBeVisible();
+    await expect(
+      page.getByRole('img', { name: new RegExp(`^Board, turn ${turn}\\.`) }),
+    ).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Question' })).toBeVisible();
+    await expectNoTurnOrder(page);
   }
-  await expect(players(page).nth(3)).toHaveAttribute('aria-current', 'true');
-  await expect(next).toHaveCount(0);
+});
 
-  const endTurn = page.getByRole('button', { name: 'End turn' });
-  await expect(endTurn).toBeVisible();
-  await endTurn.click();
-
-  await expect(
-    page.getByRole('heading', { level: 1, name: 'Walls and enemies have moved' }),
-  ).toBeVisible();
-  await expect(players(page)).toHaveCount(0);
-  await page.getByRole('button', { name: 'Start turn 2' }).click();
-
-  await expect(page.getByRole('heading', { level: 1, name: 'Turn 2' })).toBeVisible();
-  await expect(page.getByRole('img', { name: /^Board, turn 2\./ })).toBeVisible();
-  await expect(players(page).nth(0)).toHaveAttribute('aria-current', 'true');
-  await expect(players(page).nth(3)).not.toHaveAttribute('aria-current', 'true');
-  await expect(page.getByRole('button', { name: 'Next player' })).toBeVisible();
+test.describe('with 2 and 3 players', () => {
+  for (const players of [2, 3] as const) {
+    test(`${players} players: Question and End turn, no turn order`, async ({ page }) => {
+      // beforeEach already started (and saved) a 4-player game: start over from Home.
+      await page.evaluate(() => localStorage.clear());
+      await startGame(page, { players, difficulty: 'Easy' });
+      await expect(page.getByRole('button', { name: 'Question' })).toBeVisible();
+      await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
+      await expectNoTurnOrder(page);
+    });
+  }
 });
 
 test('menu opens, closes on Escape (focus on trigger) and on outside click', async ({ page }) => {
@@ -112,7 +122,7 @@ test('no horizontal scroll and actions fit in the first viewport', async ({ page
   const scrollWidth = await page.evaluate<number>('document.documentElement.scrollWidth');
   expect(scrollWidth).toBeLessThanOrEqual(VIEWPORT.width);
 
-  for (const name of ['Question', 'Next player', 'Menu']) {
+  for (const name of ['Question', 'End turn', 'Menu']) {
     const box = await page.getByRole('button', { name }).boundingBox();
     expect(box, name).not.toBeNull();
     expect(box!.x, `${name} left`).toBeGreaterThanOrEqual(0);
@@ -145,7 +155,7 @@ const CONTRAST_SCRIPT = String.raw`(() => {
     }
     return { r: 255, g: 255, b: 255 };
   };
-  return [...document.querySelectorAll('button, [aria-label="Players"] li')].map((el) => {
+  return [...document.querySelectorAll('button')].map((el) => {
     const l1 = lum(parse(getComputedStyle(el).color));
     const l2 = lum(bgOf(el));
     const ratio = (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
@@ -153,7 +163,7 @@ const CONTRAST_SCRIPT = String.raw`(() => {
   });
 })()`;
 
-test('button and player chip text contrast is at least 4.5:1', async ({ page }) => {
+test('button text contrast is at least 4.5:1', async ({ page }) => {
   for (const open of [false, true]) {
     if (open) await page.getByRole('button', { name: 'Menu' }).click();
     const ratios = await page.evaluate<{ text: string; ratio: number }[]>(CONTRAST_SCRIPT);

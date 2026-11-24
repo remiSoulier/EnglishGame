@@ -11,7 +11,6 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     difficulty: 'medium',
     playerCount: 2,
     turn: 1,
-    activePlayer: 1,
     board: generateBoard('ABCD-EFG', 1, 'medium'),
     askedQuestionIds: [],
     pendingQuestion: null,

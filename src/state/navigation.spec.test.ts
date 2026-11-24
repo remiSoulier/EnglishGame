@@ -26,7 +26,6 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     difficulty: 'medium',
     playerCount: 3,
     turn: 1,
-    activePlayer: 1,
     board: generateBoard('ABCD-EFG', 1, 'medium'),
     askedQuestionIds: [],
     pendingQuestion: null,
@@ -72,10 +71,9 @@ function fixture(screen: Screen, exit: NavigationExit): [GameState, GameAction] 
         { screen, game: makeGame() },
         { type: 'OPEN_QUESTION', questionId: q1.id, cards: 1 },
       ];
-    case 'NEXT_PLAYER':
-      return [{ screen, game: makeGame() }, action];
     case 'END_TURN':
-      return [{ screen, game: makeGame({ activePlayer: 3 }) }, action];
+      // Any board state without a winner (D11: no turn order).
+      return [{ screen, game: makeGame() }, action];
     case 'NEW_BOARD':
       return [
         { screen, game: makeGame() },
@@ -160,6 +158,18 @@ describe('NAVIGATION map (#12)', () => {
       action: 'QUIT_TO_HOME',
       to: 'home',
     });
+  });
+
+  it('board offers Question and End turn, and no Next player (D11)', () => {
+    const board = NAVIGATION.board;
+    expect(board).toContainEqual({ via: 'Question', action: 'OPEN_QUESTION', to: 'questionPopup' });
+    expect(board).toContainEqual({ via: 'End turn', action: 'END_TURN', to: 'newBoard' });
+    const all = Object.values(NAVIGATION).flat();
+    expect(all.some((e) => e.action === 'NEXT_PLAYER' || e.via === 'Next player')).toBe(false);
+  });
+
+  it('result offers only Continue → board (D11)', () => {
+    expect(NAVIGATION.result).toEqual([{ via: 'Continue', action: 'CONTINUE', to: 'board' }]);
   });
 
   it('home offers Continue game to every game screen', () => {

@@ -5,8 +5,6 @@ import styles from './QuestionScreen.module.css';
 
 export interface QuestionScreenProps {
   question: Question;
-  /** Active player, 1-based. */
-  player: number;
   /** Cards at stake (1–3). */
   cards: number;
   /** Called once, with the first choice tapped (one try only). */
@@ -14,7 +12,7 @@ export interface QuestionScreenProps {
 }
 
 /** Question screen: the question and its 2–4 choices as big buttons; the first tap answers. */
-export function QuestionScreen({ question, player, cards, onAnswer }: QuestionScreenProps) {
+export function QuestionScreen({ question, cards, onAnswer }: QuestionScreenProps) {
   const [answered, setAnswered] = useState(false);
 
   const answer = (key: ChoiceKey) => {
@@ -26,9 +24,7 @@ export function QuestionScreen({ question, player, cards, onAnswer }: QuestionSc
   return (
     <main className={styles.screen}>
       <header className={styles.header}>
-        <p className={styles.player}>
-          Player {player} — for {cardsLabel(cards)}
-        </p>
+        <p className={styles.cards}>For {cardsLabel(cards)}</p>
         <p className={styles.tag}>{questionTag(question.category, question.difficulty)}</p>
       </header>
 

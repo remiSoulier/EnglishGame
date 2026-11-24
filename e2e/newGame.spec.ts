@@ -6,7 +6,16 @@ const CODE_RE = /^[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{3}$/;
 
 const home = (page: Page) => page.getByRole('heading', { level: 1, name: APP_NAME });
 const newGameHeading = (page: Page) => page.getByRole('heading', { level: 1, name: 'New game' });
-const players = (page: Page) => page.getByRole('list', { name: 'Players' }).getByRole('listitem');
+/** Start cells of the positions list: one per player (D11: no player bar any more). */
+const startCells = (page: Page) =>
+  page.locator('dt', { hasText: /^Start:$/ }).locator('xpath=following-sibling::dd[1]');
+
+async function expectStarts(page: Page, count: number) {
+  // "P1 A1, P2 I9, …": exactly `count` players.
+  const cells = Array.from({ length: count }, (_, i) => `P${i + 1} [A-I][1-9]`).join(', ');
+  await expect(startCells(page)).toHaveText(new RegExp(`^${cells}$`));
+  await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
+}
 const grid = (page: Page) => page.getByRole('img', { name: /^Board, turn 1\./ });
 const codeBox = (page: Page) => page.getByRole('textbox', { name: 'Board code' });
 const alert = (page: Page) => page.getByRole('alert');
@@ -97,7 +106,7 @@ test.describe('home screen', () => {
     await expect(page.locator('main svg[aria-hidden="true"]')).toBeVisible();
     const menu = page.getByRole('navigation', { name: 'Main menu' }).getByRole('button');
     await expect(menu).toHaveText(['New game', /^How to play/, /^Lexicon/]);
-    await expect(players(page)).toHaveCount(0);
+    await expect(startCells(page)).toHaveCount(0);
   });
 
   test('How to play and Lexicon are disabled and do nothing', async ({ page }) => {
@@ -143,7 +152,7 @@ test.describe('new game screen', () => {
 
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
-    await expect(players(page)).toHaveCount(2);
+    await expectStarts(page, 2);
     await expect(page.getByText(/^Code \S+ · Medium$/)).toBeVisible();
     expect(await codeOf(page)).toMatch(CODE_RE);
     expect(await enemyCount(page)).toBe(4);
@@ -170,9 +179,9 @@ test.describe('new game screen', () => {
       await expect(codeBox(page)).toHaveAttribute('aria-invalid', 'true');
       await expect(codeBox(page)).toBeFocused();
       await expect(newGameHeading(page)).toBeVisible();
-      await expect(players(page)).toHaveCount(0);
+      await expect(startCells(page)).toHaveCount(0);
       expect(
-        await page.evaluate(() => JSON.parse(localStorage.getItem('bgc.game.v1') ?? 'null')),
+        await page.evaluate(() => JSON.parse(localStorage.getItem('bgc.game.v2') ?? 'null')),
       ).toMatchObject({ state: { game: null } });
     });
   }
@@ -225,7 +234,7 @@ test.describe('new game screen', () => {
     await page.keyboard.press('Enter');
 
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
-    await expect(players(page)).toHaveCount(4);
+    await expectStarts(page, 4);
     await expect(page.getByText('Code K7F2-9QX · Easy')).toBeVisible();
   });
 });
@@ -238,11 +247,11 @@ test.describe('started game', () => {
     [3, 'Easy', 2],
     [2, 'Hard', 6],
   ] as const) {
-    test(`${count} players + ${difficulty}: ${count} chips, code line, ${enemies} enemies`, async ({
+    test(`${count} players + ${difficulty}: ${count} start cells, code line, ${enemies} enemies`, async ({
       page,
     }) => {
       await startGame(page, { players: count, difficulty });
-      await expect(players(page)).toHaveCount(count);
+      await expectStarts(page, count);
       await expect(page.getByText(new RegExp(`^Code \\S+ · ${difficulty}$`))).toBeVisible();
       expect(await codeOf(page)).toMatch(CODE_RE);
       expect(await enemyCount(page)).toBe(enemies);
@@ -278,7 +287,7 @@ test.describe('started game', () => {
     const label = await grid(page).getAttribute('aria-label');
     await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
-    await expect(players(page)).toHaveCount(3);
+    await expectStarts(page, 3);
     await expect(page.getByText('Code K7F2-9QX · Hard')).toBeVisible();
     await expect(grid(page)).toHaveAttribute('aria-label', label!);
   });
@@ -292,6 +301,6 @@ test.describe('started game', () => {
     await expect(page.getByRole('heading', { level: 1 })).toHaveText(
       new RegExp(`^(${APP_NAME}|New game)$`),
     );
-    await expect(players(page)).toHaveCount(0);
+    await expect(startCells(page)).toHaveCount(0);
   });
 });

@@ -15,7 +15,6 @@ describe('ResultScreen', () => {
     render(
       <ResultScreen
         question={question}
-        player={1}
         cards={1}
         answer={question.answer}
         correct
@@ -34,7 +33,6 @@ describe('ResultScreen', () => {
     render(
       <ResultScreen
         question={question}
-        player={2}
         cards={3}
         answer={wrong}
         correct={false}
