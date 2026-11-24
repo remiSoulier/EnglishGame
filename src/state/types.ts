@@ -32,8 +32,6 @@ export interface Game {
   difficulty: Difficulty;
   playerCount: PlayerCount;
   turn: number;
-  /** Active player, 1-based. */
-  activePlayer: number;
   /** Current board (`board.turn === turn`). */
   board: Board;
   /** Ids of the questions already asked in this game. */
