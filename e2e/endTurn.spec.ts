@@ -68,5 +68,6 @@ test('new board screen: content, 44 px button, no horizontal scroll at 390 px', 
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(VIEWPORT.width);
   expect(box.y + box.height).toBeLessThanOrEqual(VIEWPORT.height);
-  expect(await page.locator('button').count()).toBe(1);
+  // Only Start turn and the "Show positions" toggle (#20).
+  await expect(page.locator('button')).toHaveText([/Show positions$/, 'Start turn 2']);
 });
