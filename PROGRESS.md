@@ -86,3 +86,19 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-24 | #18 | VALIDÉ (no defect). vite-plugin-pwa 2.0.0, full game verified offline in e2e. Merged into main. |
 | 2026-11-24 | README | VALIDÉ: install, run, test and deploy (Vercel + Netlify) guide in French, plus netlify.toml and vercel.json. Real deploy not tried. Merged into main. |
 | 2026-11-24 | #20 | VALIDÉ (no defect). Collapsible positions list under the grid. Merged into main. |
+| 2026-11-24 | Final | VALIDÉ: final validator pass on the whole app against sections 3 and 4 (8 screens played at 390×844, 800 boards checked with an independent script, all gates green). |
+
+## Point final — 2026-11-24
+
+**Projet terminé** selon la définition de « fini » (section 7) :
+- Toutes les tâches de priorité 1 et 2 sont `VALIDÉ` ; celles de priorité 3 (#16, #17, #18, #19) et 4 (#20) aussi. Aucune tâche bloquée, aucun refus du validateur sur l'ensemble du projet.
+- `npm run lint`, `typecheck`, `test` (1480 tests), `e2e` (73 tests) et `build` passent sur `main`.
+- Validation finale de l'application entière contre les sections 3 et 4 : `VALIDÉ`.
+- `README.md` : installation, lancement, tests, déploiement Vercel et Netlify (`vercel.json`, `netlify.toml`).
+
+**Points ouverts (non bloquants) :**
+- Nom du jeu encore provisoire (« Board Game Companion ») ; il apparaît dans `src/state/appInfo.ts`, `vite.config.ts`, `index.html`, `e2e/helpers.ts` et `e2e/pwa.spec.ts` (voir README).
+- Aucun déploiement réel n'a été fait.
+- Cosmétique : mur terminé au bord qui dépasse de quelques pixels, « P » minuscule dans l'icône Start de la légende, grand espace vide sous la liste des positions à 844 px.
+- Playwright réutilise un serveur déjà lancé sur le port 4173 en local : lancer les e2e avec `CI=1` si une autre preview tourne.
+- Le test « 30 questions sans doublon » peut dépasser son délai si la machine est très chargée.
