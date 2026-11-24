@@ -47,3 +47,6 @@ La popup (#13) et les écrans Question/Result (#14) forment un seul parcours et 
 - Le bouton retour du téléphone ou du navigateur déclenche le retour de l'application uniquement là où il existe (New game, popup de question, choix du gagnant, boîtes de confirmation) ; ailleurs il garde son comportement normal.
 - À chaque changement d'écran, le focus clavier va sur le titre de l'écran.
 - La carte de navigation est documentée dans `src/state/navigation.ts`.
+
+## D11 — Plus de tour par tour dans l'application (2026-11-24, demande utilisateur)
+Sur demande de l'utilisateur, l'application ne suit plus l'ordre des joueurs : plus de joueur actif, plus de bouton *Next player*, plus de barre des joueurs. L'écran Board affiche toujours *Question* et **End turn** ; *End turn* tire le plateau suivant à tout moment. La popup devient « Question for X cards » (sans « Player N »), et *Continue* ramène simplement au plateau. Le nombre de joueurs reste choisi au début : il sert aux cases de départ affichées et au choix du gagnant. Les anciennes sauvegardes (format v1 avec joueur actif) sont ignorées. Remplace en partie D8 (« Continue → joueur suivant »).
