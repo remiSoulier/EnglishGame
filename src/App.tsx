@@ -2,7 +2,7 @@
  * Navigation (backlog #12, decision D8): the game reducer owns `screen`, there is no router.
  * The full map (each screen → the screens it leads to) is `NAVIGATION` in src/state/navigation.ts.
  * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
- * turn → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
+ * turn (at any time, no turn order: decision D11) → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
  * to home (confirm, game kept) → Home → Continue game. The browser / Android back button maps to
  * the in-app Back where there is one (useSystemBack), and focus moves to the new screen's <h1>.
  */
@@ -109,9 +109,7 @@ function Screens() {
           <BoardScreen
             board={game.board}
             playerCount={game.playerCount}
-            activePlayer={game.activePlayer}
             onQuestion={() => dispatch(openQuestionAction(game.askedQuestionIds))}
-            onNextPlayer={() => dispatch({ type: 'NEXT_PLAYER' })}
             onEndTurn={() => dispatch({ type: 'END_TURN' })}
             onNewBoard={() => setBoardDialog('newBoard')}
             onWinner={() => dispatch({ type: 'OPEN_WINNER' })}
@@ -120,7 +118,6 @@ function Screens() {
         </div>
         {pending && (
           <QuestionPopupScreen
-            player={game.activePlayer}
             cards={pending.cards}
             onShow={() => dispatch({ type: 'SHOW_QUESTION' })}
             onCancel={() => dispatch({ type: 'CANCEL_QUESTION' })}
@@ -178,7 +175,6 @@ function Screens() {
     return (
       <QuestionScreen
         question={question}
-        player={game.activePlayer}
         cards={pending.cards}
         onAnswer={(answer) => dispatch({ type: 'ANSWER_QUESTION', answer })}
       />
@@ -189,7 +185,6 @@ function Screens() {
     return (
       <ResultScreen
         question={question}
-        player={game.activePlayer}
         cards={pending.cards}
         answer={pending.answer}
         correct={pending.correct === true}

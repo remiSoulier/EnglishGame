@@ -3,17 +3,14 @@ import { Button } from '../../components/Button';
 import { Grid } from '../../components/Grid';
 import { Legend } from '../../components/Legend';
 import { Menu } from '../../components/Menu';
-import { PlayerBar } from '../../components/PlayerBar';
 import { PositionsList } from '../../components/PositionsList';
 import styles from './BoardScreen.module.css';
 
 export interface BoardScreenProps {
   board: Board;
   playerCount: 2 | 3 | 4;
-  /** Active player, 1-based. */
-  activePlayer: number;
   onQuestion: () => void;
-  onNextPlayer: () => void;
+  /** Draws the next board; always available (decision D11: no turn order). */
   onEndTurn: () => void;
   onNewBoard: () => void;
   onWinner: () => void;
@@ -27,20 +24,16 @@ const DIFFICULTY_LABEL: Readonly<Record<Difficulty, string>> = {
   hard: 'Hard',
 };
 
-/** Board screen: turn header, players, grid, legend and the turn actions. */
+/** Board screen: turn header, grid, legend, positions and the actions (Question, End turn). */
 export function BoardScreen({
   board,
   playerCount,
-  activePlayer,
   onQuestion,
-  onNextPlayer,
   onEndTurn,
   onNewBoard,
   onWinner,
   onQuit,
 }: BoardScreenProps) {
-  const isLastPlayer = activePlayer >= playerCount;
-
   return (
     <main className={styles.screen}>
       <header className={styles.header}>
@@ -59,8 +52,6 @@ export function BoardScreen({
         />
       </header>
 
-      <PlayerBar playerCount={playerCount} activePlayer={activePlayer} />
-
       <div className={styles.board}>
         <Grid board={board} playerCount={playerCount} />
         <Legend />
@@ -71,15 +62,9 @@ export function BoardScreen({
         <Button variant="secondary" fullWidth onClick={onQuestion}>
           Question
         </Button>
-        {isLastPlayer ? (
-          <Button variant="primary" fullWidth onClick={onEndTurn}>
-            End turn
-          </Button>
-        ) : (
-          <Button variant="primary" fullWidth onClick={onNextPlayer}>
-            Next player
-          </Button>
-        )}
+        <Button variant="primary" fullWidth onClick={onEndTurn}>
+          End turn
+        </Button>
       </div>
     </main>
   );

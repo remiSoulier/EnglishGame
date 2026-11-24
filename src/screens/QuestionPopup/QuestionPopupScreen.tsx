@@ -5,8 +5,6 @@ import { cardsLabel } from '../questionText';
 import styles from './QuestionPopupScreen.module.css';
 
 export interface QuestionPopupScreenProps {
-  /** Active player, 1-based. */
-  player: number;
   /** Cards at stake (1–3). */
   cards: number;
   onShow: () => void;
@@ -15,14 +13,14 @@ export interface QuestionPopupScreenProps {
 
 /**
  * Question popup, shown over the Board screen (which the caller renders behind it, `inert`):
- * "Player N — Question for X cards", Show the question / Cancel.
+ * "Question for X cards", Show the question / Cancel.
  */
-export function QuestionPopupScreen({ player, cards, onShow, onCancel }: QuestionPopupScreenProps) {
+export function QuestionPopupScreen({ cards, onShow, onCancel }: QuestionPopupScreenProps) {
   const titleId = useId();
   return (
     <Modal labelledBy={titleId} onCancel={onCancel}>
       <h2 id={titleId} className={styles.title}>
-        <span className={styles.player}>Player {player} —</span> Question for {cardsLabel(cards)}
+        Question for {cardsLabel(cards)}
       </h2>
       <p className={styles.text}>
         Answer correctly to draw {cardsLabel(cards)}. One try only: a wrong answer ends your turn.

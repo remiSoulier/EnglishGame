@@ -6,8 +6,6 @@ import styles from './ResultScreen.module.css';
 
 export interface ResultScreenProps {
   question: Question;
-  /** Active player, 1-based. */
-  player: number;
   /** Cards at stake (1–3). */
   cards: number;
   /** The player's answer. */
@@ -21,14 +19,7 @@ export interface ResultScreenProps {
  * choices with the right one and the player's pick labelled, the explanation, and Continue.
  * The heading is focused on mount so screen readers announce the result.
  */
-export function ResultScreen({
-  question,
-  player,
-  cards,
-  answer,
-  correct,
-  onContinue,
-}: ResultScreenProps) {
+export function ResultScreen({ question, cards, answer, correct, onContinue }: ResultScreenProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const titleId = useId();
 
@@ -44,8 +35,6 @@ export function ResultScreen({
 
   return (
     <main className={styles.screen}>
-      <p className={styles.player}>Player {player}</p>
-
       <section
         className={`${styles.banner} ${correct ? styles.bannerRight : styles.bannerWrong}`}
         aria-labelledby={titleId}
