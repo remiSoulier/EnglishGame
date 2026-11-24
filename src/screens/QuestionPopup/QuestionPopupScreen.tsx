@@ -22,9 +22,7 @@ export function QuestionPopupScreen({ cards, onShow, onCancel }: QuestionPopupSc
       <h2 id={titleId} className={styles.title}>
         Question for {cardsLabel(cards)}
       </h2>
-      <p className={styles.text}>
-        Answer correctly to draw {cardsLabel(cards)}. One try only: a wrong answer ends your turn.
-      </p>
+      <p className={styles.text}>Answer correctly to draw {cardsLabel(cards)}. One try only.</p>
       <div className={styles.actions}>
         <Button variant="primary" fullWidth onClick={onShow} data-autofocus>
           Show the question

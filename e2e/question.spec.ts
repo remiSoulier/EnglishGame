@@ -121,6 +121,11 @@ test('correct answer: popup → question → Correct! + Draw X cards → Continu
 }) => {
   const label = await gridLabel(page);
   const cards = await openPopup(page);
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toContainText(
+    `Answer correctly to draw ${cardsLabel(cards)}. One try only.`,
+  );
+  await expect(dialog).not.toContainText('ends your turn');
   await expectTargets(page);
   await expectContrast(page, '[role="dialog"] h2, [role="dialog"] p, [role="dialog"] button');
 
