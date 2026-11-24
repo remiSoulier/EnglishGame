@@ -102,3 +102,8 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - Cosmétique : mur terminé au bord qui dépasse de quelques pixels, « P » minuscule dans l'icône Start de la légende, grand espace vide sous la liste des positions à 844 px.
 - Playwright réutilise un serveur déjà lancé sur le port 4173 en local : lancer les e2e avec `CI=1` si une autre preview tourne.
 - Le test « 30 questions sans doublon » peut dépasser son délai si la machine est très chargée.
+
+## Changements demandés après livraison
+- [x] #21 Retirer le tour par tour : seulement un bouton End turn (ui-dev)
+
+| 2026-11-24 | #21 | VALIDÉ (user change request, D11): no turn order, End turn always available; storage moved to bgc.game.v2. Merged into main. |
