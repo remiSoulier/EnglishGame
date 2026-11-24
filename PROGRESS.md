@@ -110,3 +110,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #22 Texte de la popup simplifié : « Answer correctly to draw X cards. One try only. » (ui-dev)
 
 | 2026-11-24 | #22 | VALIDÉ: popup text no longer mentions ending your turn (avoids confusion with End turn, D11). Merged into main. |
+- [x] #23 Jeu fixe de 8 murs W1–W8, seules la place et l'orientation sont tirées (engine-dev)
+- [x] #24 Nom de chaque mur sur la grille et dans la liste des positions (ui-dev)
+
+| 2026-11-24 | #23, #24 | VALIDÉ both (D12). One defect fixed before validation: wall badges covered an enemy or the goal on ~11% of boards. Merged into main. |
