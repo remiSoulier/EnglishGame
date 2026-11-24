@@ -2,6 +2,7 @@ import { cellName, type Board } from '../../engine';
 import { Button } from '../../components/Button';
 import { Grid } from '../../components/Grid';
 import { Legend } from '../../components/Legend';
+import { PositionsList } from '../../components/PositionsList';
 import styles from './NewBoardScreen.module.css';
 
 export interface NewBoardScreenProps {
@@ -24,6 +25,7 @@ export function NewBoardScreen({ board, playerCount, onStartTurn }: NewBoardScre
         <Grid board={board} playerCount={playerCount} />
         <Legend />
         <p className={styles.reminder}>The goal stays on {cellName(board.goal)}</p>
+        <PositionsList board={board} playerCount={playerCount} />
       </div>
 
       <div className={styles.actions}>
