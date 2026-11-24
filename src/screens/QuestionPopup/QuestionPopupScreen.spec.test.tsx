@@ -25,6 +25,18 @@ describe('QuestionPopupScreen (spec #13)', () => {
     expect(screen.queryByText(/Player/)).not.toBeInTheDocument();
   });
 
+  it.each([
+    [1, 'Answer correctly to draw 1 card. One try only.'],
+    [2, 'Answer correctly to draw 2 cards. One try only.'],
+    [3, 'Answer correctly to draw 3 cards. One try only.'],
+  ])('%i card(s): text is exactly "%s", no turn wording (#22, D11)', (cards, text) => {
+    setup(cards);
+    const dialog = screen.getByRole('dialog');
+    expect(screen.getByText(text, { exact: true }).tagName).toBe('P');
+    expect(dialog).not.toHaveTextContent(/your turn/i);
+    expect(dialog).not.toHaveTextContent(/wrong answer/i);
+  });
+
   it('offers "Show the question" (focused) and "Cancel" as native buttons', () => {
     setup();
     const show = screen.getByRole('button', { name: 'Show the question' });
