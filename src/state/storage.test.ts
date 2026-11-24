@@ -33,9 +33,43 @@ afterEach(() => {
 });
 
 describe('constants', () => {
-  it('uses the bgc.game.v1 key and version 1', () => {
-    expect(STORAGE_KEY).toBe('bgc.game.v1');
-    expect(STORAGE_VERSION).toBe(1);
+  it('uses the bgc.game.v2 key and version 2 (D11)', () => {
+    expect(STORAGE_KEY).toBe('bgc.game.v2');
+    expect(STORAGE_VERSION).toBe(2);
+  });
+});
+
+describe('v1 saves (with an active player) are ignored (D11)', () => {
+  /** A v1 save as the previous version wrote it: version 1, game with `activePlayer`. */
+  const v1Save = (screen: Screen = 'board') => ({
+    version: 1,
+    state: { screen, game: { ...savedGame(), activePlayer: 2 } },
+  });
+
+  it.each<Screen>(['home', 'board', 'result', 'newBoard'])(
+    'a v1 save under bgc.game.v1 (screen %s) → null',
+    (screen) => {
+      localStorage.setItem('bgc.game.v1', JSON.stringify(v1Save(screen)));
+      expect(loadState()).toBeNull();
+    },
+  );
+
+  it('a v1 save written under the v2 key → null (version check)', () => {
+    write(v1Save());
+    expect(loadState()).toBeNull();
+  });
+
+  it('saving writes only bgc.game.v2, never bgc.game.v1', () => {
+    localStorage.setItem('bgc.game.v1', JSON.stringify(v1Save()));
+    saveState(started());
+    expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem('bgc.game.v1')!)).toEqual(v1Save());
+  });
+
+  it('a saved v2 game has no activePlayer', () => {
+    saveState(started());
+    const raw = JSON.parse(localStorage.getItem(STORAGE_KEY)!) as { state: GameState };
+    expect(raw.state.game).not.toHaveProperty('activePlayer');
   });
 });
 
@@ -47,7 +81,7 @@ describe('saveState / loadState round trip', () => {
   it('saves { version, state } under the key', () => {
     const s = started();
     saveState(s);
-    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ version: 1, state: s });
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({ version: 2, state: s });
   });
 
   it('restores a game in progress', () => {
@@ -65,7 +99,6 @@ describe('saveState / loadState round trip', () => {
     expect(loadState()).toEqual(s);
 
     s = gameReducer(s, { type: 'CONTINUE' });
-    s = gameReducer(s, { type: 'NEXT_PLAYER' });
     s = gameReducer(s, { type: 'END_TURN' });
     saveState(s);
     expect(loadState()).toEqual(s);
@@ -88,7 +121,6 @@ describe('saveState / loadState round trip', () => {
 
   it('the restored board equals the engine board for the same code and turn', () => {
     let s = started();
-    for (let i = 0; i < 2; i++) s = gameReducer(s, { type: 'NEXT_PLAYER' });
     s = gameReducer(s, { type: 'END_TURN' });
     saveState(s);
     expect(loadState()!.game!.board).toEqual(generateBoard(CODE, 2, 'hard'));
@@ -104,18 +136,18 @@ describe('loadState rejects bad data', () => {
     },
   );
 
-  it.each([0, 2, '1', null, undefined])('wrong version %j → null', (version) => {
+  it.each([0, 1, 3, '2', null, undefined])('wrong version %j → null', (version) => {
     write({ version, state: started() });
     expect(loadState()).toBeNull();
   });
 
   it('missing state → null', () => {
-    write({ version: 1 });
+    write({ version: 2 });
     expect(loadState()).toBeNull();
   });
 
   it.each([null, 'board', [], 3])('state %j → null', (state) => {
-    write({ version: 1, state });
+    write({ version: 2, state });
     expect(loadState()).toBeNull();
   });
 
@@ -146,8 +178,6 @@ describe('loadState rejects bad data', () => {
     ['playerCount string', (g) => (g.playerCount = '3')],
     ['turn 0', (g) => (g.turn = 0)],
     ['turn 1.5', (g) => (g.turn = 1.5)],
-    ['activePlayer 0', (g) => (g.activePlayer = 0)],
-    ['activePlayer > playerCount', (g) => (g.activePlayer = 4)],
     ['board missing', (g) => delete g.board],
     ['board of another code', (g) => (g.board = generateBoard('HJKM-NPQ', 1, 'hard'))],
     ['board of another turn', (g) => (g.board = generateBoard(CODE, 2, 'hard'))],
@@ -345,7 +375,8 @@ describe('lastScreen (quit to home, #12 D10)', () => {
 
   it('QUIT_TO_HOME then save/load then CONTINUE_GAME returns to the same screen and game', () => {
     let s = started();
-    s = gameReducer(s, { type: 'NEXT_PLAYER' });
+    s = gameReducer(s, { type: 'END_TURN' });
+    s = gameReducer(s, { type: 'START_TURN' });
     s = gameReducer(s, { type: 'OPEN_QUESTION', questionId: 1, cards: 3 });
     s = gameReducer(s, { type: 'SHOW_QUESTION' });
     const playing = s;

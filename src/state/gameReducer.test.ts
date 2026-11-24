@@ -26,7 +26,6 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     difficulty,
     playerCount: 4,
     turn,
-    activePlayer: 1,
     board: generateBoard(code, turn, difficulty, goal),
     askedQuestionIds: [],
     pendingQuestion: null,
@@ -81,7 +80,6 @@ describe('START_GAME', () => {
         difficulty: d,
         playerCount: n,
         turn: 1,
-        activePlayer: 1,
         board: generateBoard(CODE, 1, d),
         askedQuestionIds: [],
         pendingQuestion: null,
@@ -102,7 +100,7 @@ describe('START_GAME', () => {
   });
 
   it.each(ALL_SCREENS)('works from screen %s, replacing any game in progress', (screen) => {
-    const prev = state(screen, makeGame({ turn: 3, activePlayer: 2, askedQuestionIds: [1] }));
+    const prev = state(screen, makeGame({ turn: 3, askedQuestionIds: [1] }));
     const next = reduce(prev, {
       type: 'START_GAME',
       playerCount: 3,
@@ -110,8 +108,9 @@ describe('START_GAME', () => {
       code: OTHER_CODE,
     });
     expect(next.screen).toBe('board');
-    expect(next.game).toMatchObject({ code: OTHER_CODE, turn: 1, activePlayer: 1 });
+    expect(next.game).toMatchObject({ code: OTHER_CODE, turn: 1 });
     expect(next.game!.askedQuestionIds).toEqual([]);
+    expect(next.game).not.toHaveProperty('activePlayer');
   });
 
   it.each([
@@ -127,55 +126,23 @@ describe('START_GAME', () => {
   });
 });
 
-describe('NEXT_PLAYER', () => {
-  it('moves to the next player on the board screen', () => {
-    const prev = state('board', makeGame({ activePlayer: 2 }));
-    const next = reduce(prev, { type: 'NEXT_PLAYER' });
-    expect(next.screen).toBe('board');
-    expect(next.game!.activePlayer).toBe(3);
-    expect(next.game!.board).toBe(prev.game!.board);
-  });
-
-  it('from the result screen goes back to the board and clears the pending question', () => {
-    const prev = state(
-      'result',
-      makeGame({ pendingQuestion: { questionId: 1, cards: 2, answer: 'B', correct: true } }),
-    );
-    const next = reduce(prev, { type: 'NEXT_PLAYER' });
-    expect(next.screen).toBe('board');
-    expect(next.game!.activePlayer).toBe(2);
-    expect(next.game!.pendingQuestion).toBeNull();
-  });
-
-  it.each([2, 3, 4] as const)('is a no-op for the last player of a %i-player game', (n) => {
-    const prev = state('board', makeGame({ playerCount: n, activePlayer: n }));
-    expect(reduce(prev, { type: 'NEXT_PLAYER' })).toBe(prev);
-  });
-
-  it.each(ALL_SCREENS.filter((s) => s !== 'board' && s !== 'result'))(
-    'is a no-op on screen %s',
-    (screen) => {
-      const prev = state(screen);
-      expect(reduce(prev, { type: 'NEXT_PLAYER' })).toBe(prev);
-    },
-  );
-
-  it('is a no-op without a game', () => {
-    const prev = state('board', null);
-    expect(reduce(prev, { type: 'NEXT_PLAYER' })).toBe(prev);
+describe('NEXT_PLAYER (removed, D11)', () => {
+  it.each(ALL_SCREENS)('is an unknown action (no-op) on screen %s', (screen) => {
+    const prev = state(screen);
+    expect(reduce(prev, { type: 'NEXT_PLAYER' } as unknown as GameAction)).toBe(prev);
   });
 });
 
 describe('END_TURN', () => {
   it.each(['easy', 'medium', 'hard'] as const)(
-    'moves to the next turn board (%s) with the same goal, player 1, newBoard screen',
+    'moves to the next turn board (%s) with the same goal, newBoard screen',
     (difficulty) => {
-      const game = makeGame({ difficulty, turn: 2, activePlayer: 4, askedQuestionIds: [3] });
+      const game = makeGame({ difficulty, turn: 2, askedQuestionIds: [3] });
       const prev = state('board', game);
       const next = reduce(prev, { type: 'END_TURN' });
       expect(next.screen).toBe('newBoard');
       expect(next.game!.turn).toBe(3);
-      expect(next.game!.activePlayer).toBe(1);
+      expect(next.game).not.toHaveProperty('activePlayer');
       expect(next.game!.board).toEqual(generateBoard(CODE, 3, difficulty, game.board.goal));
       expect(next.game!.board.goal).toEqual(game.board.goal);
       expect(next.game!.code).toBe(CODE);
@@ -194,7 +161,6 @@ describe('END_TURN', () => {
     });
     const goal = s.game!.board.goal;
     for (let turn = 2; turn <= 6; turn++) {
-      s = reduce(s, { type: 'NEXT_PLAYER' });
       s = reduce(s, { type: 'END_TURN' });
       s = reduce(s, { type: 'START_TURN' });
       expect(s.game!.turn).toBe(turn);
@@ -203,18 +169,64 @@ describe('END_TURN', () => {
     }
   });
 
-  it.each([1, 2, 3])('is a no-op when player %i (not the last) is active', (p) => {
-    const prev = state('board', makeGame({ activePlayer: p }));
-    expect(reduce(prev, { type: 'END_TURN' })).toBe(prev);
+  it.each([2, 3, 4] as const)(
+    'works right at turn start for a %i-player game (no turn order, D11)',
+    (n) => {
+      const s = reduce(initialState, {
+        type: 'START_GAME',
+        playerCount: n,
+        difficulty: 'medium',
+        code: CODE,
+      });
+      const next = reduce(s, { type: 'END_TURN' });
+      expect(next.screen).toBe('newBoard');
+      expect(next.game!.turn).toBe(2);
+      expect(next.game!.playerCount).toBe(n);
+      expect(next.game!.board).toEqual(generateBoard(CODE, 2, 'medium', s.game!.board.goal));
+    },
+  );
+
+  it('can be repeated: End turn → Start turn several times in a row', () => {
+    let s = state('board', makeGame({ difficulty: 'easy' }));
+    const goal = s.game!.board.goal;
+    for (let turn = 2; turn <= 5; turn++) {
+      s = reduce(s, { type: 'END_TURN' });
+      expect(s.screen).toBe('newBoard');
+      s = reduce(s, { type: 'START_TURN' });
+      expect(s.screen).toBe('board');
+      expect(s.game!.turn).toBe(turn);
+      expect(s.game!.board).toEqual(generateBoard(CODE, turn, 'easy', goal));
+    }
+  });
+
+  it('works after a question was answered and Continue was tapped', () => {
+    let s = state('board', makeGame({ playerCount: 3 }));
+    s = reduce(s, { type: 'OPEN_QUESTION', questionId: q1.id, cards: 2 });
+    s = reduce(s, { type: 'SHOW_QUESTION' });
+    s = reduce(s, { type: 'ANSWER_QUESTION', answer: wrongLetter });
+    s = reduce(s, { type: 'CONTINUE' });
+    expect(s.screen).toBe('board');
+    expect(s.game!.turn).toBe(1);
+    const next = reduce(s, { type: 'END_TURN' });
+    expect(next.screen).toBe('newBoard');
+    expect(next.game!.turn).toBe(2);
+    expect(next.game!.askedQuestionIds).toEqual([q1.id]);
+  });
+
+  it('works after a cancelled question', () => {
+    let s = state('board');
+    s = reduce(s, { type: 'OPEN_QUESTION', questionId: q1.id, cards: 1 });
+    s = reduce(s, { type: 'CANCEL_QUESTION' });
+    expect(reduce(s, { type: 'END_TURN' }).screen).toBe('newBoard');
   });
 
   it('is a no-op once a winner is declared', () => {
-    const prev = state('board', makeGame({ activePlayer: 4, winner: 2 }));
+    const prev = state('board', makeGame({ winner: 2 }));
     expect(reduce(prev, { type: 'END_TURN' })).toBe(prev);
   });
 
   it.each(ALL_SCREENS.filter((s) => s !== 'board'))('is a no-op on screen %s', (screen) => {
-    const prev = state(screen, makeGame({ activePlayer: 4 }));
+    const prev = state(screen);
     expect(reduce(prev, { type: 'END_TURN' })).toBe(prev);
   });
 
@@ -251,7 +263,6 @@ describe('NEW_BOARD', () => {
         playerCount: 3,
         difficulty: 'hard',
         turn: 4,
-        activePlayer: 2,
         askedQuestionIds: [1, 2],
       }),
     );
@@ -263,7 +274,6 @@ describe('NEW_BOARD', () => {
         difficulty: 'hard',
         playerCount: 3,
         turn: 1,
-        activePlayer: 1,
         board: generateBoard(OTHER_CODE, 1, 'hard'),
         askedQuestionIds: [],
         pendingQuestion: null,
@@ -290,11 +300,11 @@ describe('NEW_BOARD', () => {
 
 describe('question flow', () => {
   it('OPEN_QUESTION sets the pending question and shows the popup', () => {
-    const prev = state('board', makeGame({ activePlayer: 2 }));
+    const prev = state('board', makeGame({ turn: 2 }));
     const next = reduce(prev, { type: 'OPEN_QUESTION', questionId: q1.id, cards: 3 });
     expect(next.screen).toBe('questionPopup');
     expect(next.game!.pendingQuestion).toEqual({ questionId: q1.id, cards: 3 });
-    expect(next.game!.activePlayer).toBe(2);
+    expect(next.game!.turn).toBe(2);
     expect(next.game!.askedQuestionIds).toEqual([]);
   });
 
@@ -332,7 +342,7 @@ describe('question flow', () => {
     expect(next.screen).toBe('board');
     expect(next.game!.pendingQuestion).toBeNull();
     expect(next.game!.askedQuestionIds).toEqual([]);
-    expect(next.game!.activePlayer).toBe(1);
+    expect(next.game!.turn).toBe(1);
   });
 
   it.each(ALL_SCREENS.filter((s) => s !== 'questionPopup'))(
@@ -421,37 +431,21 @@ describe('question flow', () => {
     },
   );
 
-  it('CONTINUE moves to the next player and back to the board', () => {
-    const prev = state(
-      'result',
-      makeGame({
-        activePlayer: 2,
-        pendingQuestion: { questionId: 1, cards: 1, answer: 'B', correct: true },
-      }),
-    );
-    const next = reduce(prev, { type: 'CONTINUE' });
-    expect(next.screen).toBe('board');
-    expect(next.game!.activePlayer).toBe(3);
-    expect(next.game!.pendingQuestion).toBeNull();
-  });
-
-  it('CONTINUE after the last player keeps the last player active (End turn)', () => {
-    const prev = state(
-      'result',
-      makeGame({
-        playerCount: 3,
-        activePlayer: 3,
-        pendingQuestion: { questionId: 1, cards: 1, answer: 'A', correct: false },
-      }),
-    );
-    const next = reduce(prev, { type: 'CONTINUE' });
-    expect(next.screen).toBe('board');
-    expect(next.game!.activePlayer).toBe(3);
-    expect(next.game!.turn).toBe(1);
-    expect(next.game!.pendingQuestion).toBeNull();
-    // The last player can then end the turn.
-    expect(reduce(next, { type: 'END_TURN' }).screen).toBe('newBoard');
-  });
+  it.each([true, false])(
+    'CONTINUE (correct: %s) returns to the same turn board, pending question cleared',
+    (correct) => {
+      const game = makeGame({
+        turn: 3,
+        askedQuestionIds: [1],
+        pendingQuestion: { questionId: 1, cards: 1, answer: 'B', correct },
+      });
+      const next = reduce(state('result', game), { type: 'CONTINUE' });
+      expect(next).toEqual({ screen: 'board', game: { ...game, pendingQuestion: null } });
+      expect(next.game!.board).toBe(game.board);
+      // End turn is then available (D11).
+      expect(reduce(next, { type: 'END_TURN' }).screen).toBe('newBoard');
+    },
+  );
 
   it.each(ALL_SCREENS.filter((s) => s !== 'result'))(
     'CONTINUE is a no-op on screen %s',
@@ -477,7 +471,7 @@ describe('question flow', () => {
     expect(s.screen).toBe('result');
     s = reduce(s, { type: 'CONTINUE' });
     expect(s.screen).toBe('board');
-    expect(s.game!.activePlayer).toBe(2);
+    expect(s.game!.turn).toBe(1);
     expect(s.game!.askedQuestionIds).toEqual([q1.id]);
     expect(s.game!.pendingQuestion).toBeNull();
   });
@@ -547,7 +541,6 @@ describe('winner flow', () => {
         difficulty: 'easy',
         playerCount: 2,
         turn: 1,
-        activePlayer: 1,
         board: generateBoard(OTHER_CODE, 1, 'easy'),
         askedQuestionIds: [],
         pendingQuestion: null,
@@ -661,7 +654,6 @@ describe('QUIT_TO_HOME (#12 D10)', () => {
   it.each(GAME_SCREENS)('%s → home, game kept with lastScreen', (screen) => {
     const game = makeGame({
       turn: 3,
-      activePlayer: 2,
       askedQuestionIds: [4],
       ...pendingFor[screen],
     });
@@ -688,7 +680,7 @@ describe('QUIT_TO_HOME (#12 D10)', () => {
 
 describe('CONTINUE_GAME (#12 D10)', () => {
   it.each<[Screen, Partial<Game>]>([
-    ['board', { activePlayer: 3 }],
+    ['board', { turn: 3 }],
     ['newBoard', { turn: 2 }],
     ['questionPopup', { pendingQuestion: { questionId: q1.id, cards: 1 } }],
     ['question', { pendingQuestion: { questionId: q1.id, cards: 3 } }],
@@ -787,7 +779,8 @@ describe('purity', () => {
       { type: 'CONTINUE' },
       { type: 'END_TURN' },
       { type: 'START_TURN' },
-      { type: 'NEXT_PLAYER' },
+      { type: 'END_TURN' },
+      { type: 'START_TURN' },
       { type: 'OPEN_QUESTION', questionId: 2, cards: 3 },
       { type: 'BACK' },
       { type: 'NEW_BOARD', code: OTHER_CODE },
@@ -807,7 +800,7 @@ describe('purity', () => {
   });
 
   it('is deterministic: same state and action give equal results', () => {
-    const prev = state('board', makeGame({ activePlayer: 4, turn: 3 }));
+    const prev = state('board', makeGame({ turn: 3 }));
     expect(reduce(prev, { type: 'END_TURN' })).toEqual(reduce(prev, { type: 'END_TURN' }));
   });
 });
