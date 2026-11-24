@@ -20,6 +20,7 @@ describe('engine purity', () => {
         './rng.ts',
         './side.ts',
         './types.ts',
+        './wallPieces.ts',
         './walls.ts',
       ].sort(),
     );
