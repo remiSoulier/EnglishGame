@@ -2,6 +2,17 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
+/** Sizes of the pieces W1 … W8 (decision D12), regex-escaped. */
+const WALL_SIZES = [
+  '88 mm',
+  '88 mm',
+  '132 mm',
+  '176 mm',
+  '44 \\+ 44 mm',
+  '88 \\+ 44 mm',
+  '88 \\+ 88 mm',
+  '132 \\+ 88 mm',
+];
 
 function grid(page: Page, turn: number) {
   return page.getByRole('img', { name: new RegExp(`^Board, turn ${turn}\\.`) });
@@ -53,7 +64,9 @@ async function expectPanelMatchesGrid(page: Page, turn: number) {
   expect(walls).toHaveLength(wallCountOf(label));
   expect(walls).toHaveLength(8);
   walls.forEach((w, i) =>
-    expect(w).toMatch(new RegExp(`^Wall ${i + 1}: [A-I][1-9]-[ES](, [A-I][1-9]-[ES])+$`)),
+    expect(w).toMatch(
+      new RegExp(`^W${i + 1} \\(${WALL_SIZES[i]}\\): [A-I][1-9]-[ES](, [A-I][1-9]-[ES])+$`),
+    ),
   );
   expect(map['Start:']).toBe('P1 A1, P2 I9, P3 I1, P4 A9');
   await expect(root.getByText('E = east side, S = south side of the cell.')).toBeVisible();
