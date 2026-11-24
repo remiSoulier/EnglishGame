@@ -12,6 +12,9 @@ export default defineConfig({
   use: {
     baseURL,
     trace: 'on-first-retry',
+    // The PWA service worker caches the app; block it by default so tests always hit the server.
+    // Offline tests opt in with `test.use({ serviceWorkers: 'allow' })`.
+    serviceWorkers: 'block',
   },
   projects: [
     {
