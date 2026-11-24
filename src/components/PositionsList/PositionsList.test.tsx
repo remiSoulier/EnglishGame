@@ -9,6 +9,7 @@ import {
   type Board,
   type Cell,
   type Difficulty,
+  type WallId,
 } from '../../engine';
 import { BoardScreen } from '../../screens/Board/BoardScreen';
 import { NewBoardScreen } from '../../screens/NewBoard/NewBoardScreen';
@@ -17,6 +18,18 @@ import { PositionsList, type PositionsListProps } from './PositionsList';
 const HINT = 'E = east side, S = south side of the cell.';
 const CODES = ['K7QP2MX', 'ABCDEFG', 'HJKMNPQ', '2345678', 'ZZ9Y8XW'];
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
+const IDS: WallId[] = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
+/** Physical size of each piece (decision D12), written independently from the engine. */
+const MM: Readonly<Record<string, string>> = {
+  W1: '88 mm',
+  W2: '88 mm',
+  W3: '132 mm',
+  W4: '176 mm',
+  W5: '44 + 44 mm',
+  W6: '88 + 44 mm',
+  W7: '88 + 88 mm',
+  W8: '132 + 88 mm',
+};
 
 function setup(overrides: Partial<PositionsListProps> = {}) {
   const props: PositionsListProps = {
@@ -69,8 +82,12 @@ function expectMatchesBoard(board: Board, playerCount: 2 | 3 | 4, root: HTMLElem
 
   const walls = within(map.get('Walls:')!).getAllByRole('listitem');
   expect(walls).toHaveLength(board.walls.length);
+  // One line per piece, in W1 … W8 order, whatever the stored order.
+  const byId = new Map(board.walls.map((w) => [w.id, w]));
+  const ids = IDS.filter((id) => byId.has(id));
   walls.forEach((li, i) => {
-    expect(li.textContent).toBe(`Wall ${i + 1}: ${board.walls[i].sides.join(', ')}`);
+    const wall = byId.get(ids[i])!;
+    expect(li.textContent).toBe(`${wall.id} (${MM[wall.id]}): ${wall.sides.join(', ')}`);
   });
 
   const starts = START_CELLS.slice(0, playerCount)
@@ -193,18 +210,33 @@ describe('PositionsList: content matches the board', () => {
     expect(screen.queryByText(/^Enem(y|ies):$/)).toBeNull();
   });
 
-  it('writes walls as "Wall N: <sides>" in stored order', () => {
+  it('writes walls as "Wn (size): <sides>" in W1 … W8 order, whatever the stored order', () => {
     const base = generateBoard('K7QP2MX', 1, 'medium');
     const board: Board = {
       ...base,
-      walls: [{ sides: ['C2-E', 'C3-E', 'C4-E'] }, { sides: ['B5-S', 'C5-S'] }],
+      walls: [
+        { id: 'W6', sides: ['C2-E', 'C3-E', 'C3-S'] },
+        { id: 'W1', sides: ['B5-S', 'C5-S'] },
+      ],
     };
     setup({ board, defaultOpen: true });
     const items = within(entries().get('Walls:')!).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
-      'Wall 1: C2-E, C3-E, C4-E',
-      'Wall 2: B5-S, C5-S',
+      'W1 (88 mm): B5-S, C5-S',
+      'W6 (88 + 44 mm): C2-E, C3-E, C3-S',
     ]);
+  });
+
+  it('lists the eight pieces W1 … W8 once each on generated boards', () => {
+    for (const code of CODES) {
+      const board = generateBoard(code, 2, 'hard');
+      const { unmount } = setup({ board, defaultOpen: true });
+      const items = within(entries().get('Walls:')!).getAllByRole('listitem');
+      expect(items.map((li) => /^(W\d) \(/.exec(li.textContent ?? '')?.[1])).toEqual(IDS);
+      expect(items[0].textContent).toMatch(/^W1 \(88 mm\): [A-I][1-9]-[ES](, [A-I][1-9]-[ES])*$/);
+      expect(items[7].textContent).toMatch(/^W8 \(132 \+ 88 mm\): /);
+      unmount();
+    }
   });
 });
 

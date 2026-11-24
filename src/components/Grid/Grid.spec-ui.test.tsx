@@ -12,6 +12,17 @@ import { Grid } from './Grid';
 
 const COLS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
 const ROWS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+/** Physical size of each piece (decision D12), written independently from the engine. */
+const MM: Readonly<Record<string, string>> = {
+  W1: '88 mm',
+  W2: '88 mm',
+  W3: '132 mm',
+  W4: '176 mm',
+  W5: '44 + 44 mm',
+  W6: '88 + 44 mm',
+  W7: '88 + 88 mm',
+  W8: '132 + 88 mm',
+};
 
 function board(overrides: Partial<Board> = {}): Board {
   return {
@@ -109,14 +120,14 @@ describe('Grid — walls', () => {
   });
 
   it('draws C3-E,C4-E as a vertical segment at x=120 from y=80 to y=160', () => {
-    const svg = renderGrid(board({ walls: [{ sides: ['C3-E', 'C4-E'] }] }));
+    const svg = renderGrid(board({ walls: [{ id: 'W1', sides: ['C3-E', 'C4-E'] }] }));
     const path = svg.querySelector('[data-wall="C3-E C4-E"] path');
     expect(path).not.toBeNull();
     expect(path?.getAttribute('d')).toBe('M120 80L120 120M120 120L120 160');
   });
 
   it('draws E2-S,F2-S,G2-S as a horizontal segment at y=80 from x=160 to x=280', () => {
-    const svg = renderGrid(board({ walls: [{ sides: ['E2-S', 'F2-S', 'G2-S'] }] }));
+    const svg = renderGrid(board({ walls: [{ id: 'W3', sides: ['E2-S', 'F2-S', 'G2-S'] }] }));
     const d = svg.querySelector('[data-wall="E2-S F2-S G2-S"] path')?.getAttribute('d');
     expect(d).toBe('M160 80L200 80M200 80L240 80M240 80L280 80');
   });
@@ -127,7 +138,9 @@ describe('Grid — walls', () => {
       const g = svg.querySelector(`[data-wall="${wall.sides.join(' ')}"]`);
       expect(g, wall.sides.join(' ')).not.toBeNull();
       expect(g?.querySelector('path')?.getAttribute('d')).toBe(expectedD(wall.sides));
-      expect(g?.querySelector('title')?.textContent).toBe(`Wall: ${wall.sides.join(', ')}`);
+      expect(g?.querySelector('title')?.textContent).toBe(
+        `Wall ${wall.id} (${MM[wall.id]}): ${wall.sides.join(', ')}`,
+      );
     }
   });
 
@@ -258,7 +271,7 @@ describe('Grid — no pawns', () => {
     const ids = Array.from(svg.querySelectorAll('[data-testid]')).map((e) =>
       e.getAttribute('data-testid'),
     );
-    expect(ids.sort()).toEqual(['enemies', 'goal', 'grid-lines', 'starts', 'walls']);
+    expect(ids.sort()).toEqual(['enemies', 'goal', 'grid-lines', 'starts', 'wall-labels', 'walls']);
   });
 
   it('only draws circles as part of enemy "!" marks', () => {
@@ -298,7 +311,7 @@ describe('describeBoard', () => {
       describeBoard(
         board({
           enemies: [{ x: 0, y: 1 }],
-          walls: [{ sides: ['C3-E', 'C4-E'] }],
+          walls: [{ id: 'W1', sides: ['C3-E', 'C4-E'] }],
           goal: { x: 8, y: 8 },
         }),
       ),
@@ -315,7 +328,10 @@ describe('describeBoard', () => {
             { x: 8, y: 0 },
             { x: 3, y: 6 },
           ],
-          walls: [{ sides: ['C3-E', 'C4-E'] }, { sides: ['A4-S', 'B4-S'] }],
+          walls: [
+            { id: 'W1', sides: ['C3-E', 'C4-E'] },
+            { id: 'W2', sides: ['A4-S', 'B4-S'] },
+          ],
         }),
       ),
     ).toBe('Board, turn 12. Goal on A1. Enemies on I1, D7. 2 walls.');
