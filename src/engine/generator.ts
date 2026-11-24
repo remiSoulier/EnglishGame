@@ -15,7 +15,7 @@ import {
  * Board generation: goal, enemies and the full deterministic board of a turn.
  *
  * Draw order for `generateBoard(code, turn, …)`, all from `rngFor(code, turn)`:
- *   1. walls  — `placeConnectedWalls(rng)` (8 walls, board fully connected);
+ *   1. walls  — `placeConnectedWalls(rng)` (the 8 fixed pieces W1–W8, board fully connected);
  *   2. goal   — `placeGoal(rng)`, drawn on turn 1 only (the draw is consumed on turn 1 even when a
  *               goal is passed in, so turn 1 is identical with or without its own goal);
  *   3. enemies — `placeEnemies(rng, ENEMY_COUNT[difficulty], goal)`.

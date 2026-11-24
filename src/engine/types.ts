@@ -1,3 +1,5 @@
+import type { WallId } from './wallPieces';
+
 /**
  * Core types and constants of the board model.
  *
@@ -22,10 +24,17 @@ export interface Side {
 /** Canonical string key of a side, e.g. `C3-E`. Always normalised (see `normalizeSide`). */
 export type SideKey = string;
 
-/** A wall: 2–5 contiguous cell sides, as canonical keys ordered along the wall. */
+/**
+ * A wall: one of the eight fixed pieces (`id`, see `WALL_PIECES`) laid on 2–5 contiguous cell
+ * sides, stored as canonical keys ordered along the wall.
+ */
 export interface Wall {
+  id: WallId;
   sides: SideKey[];
 }
+
+/** The part of a wall that geometry functions read: its sides only. */
+export type WallSides = Pick<Wall, 'sides'>;
 
 /** Game difficulty. */
 export type Difficulty = 'easy' | 'medium' | 'hard';
@@ -62,7 +71,7 @@ export const ENEMY_COUNT: Readonly<Record<Difficulty, number>> = {
   hard: 6,
 };
 
-/** Number of walls on a board. */
+/** Number of walls on a board (one per piece of `WALL_PIECES`). */
 export const WALL_COUNT = 8;
 
 /** Starting cells in player order: P1 = A1, P2 = I9, P3 = I1, P4 = A9. */
