@@ -1,10 +1,19 @@
 /**
  * Task #24 — wall piece labels (decision D12): one badge W1 … W8 per wall, drawn on its wall,
  * the wall titles with their piece size, and badges that never hide the goal or an enemy.
+ *
+ * D1 regression: badges also stay clear of start labels and of each other, inside the board.
  */
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { generateBoard, sideEndpoints, type Board, type Difficulty } from '../../engine';
+import {
+  generateBoard,
+  mulberry32,
+  newCode,
+  sideEndpoints,
+  type Board,
+  type Difficulty,
+} from '../../engine';
 import { FIXTURE_BOARD } from '../../state/fixtureBoard';
 import { CELL } from './geometry';
 import { Grid } from './Grid';
@@ -122,6 +131,30 @@ function checkBadges(board: Board, label: string): void {
     for (const s of symbols) if (intersects(box, s.box)) covered.push(`${id} covers ${s.name}`);
   }
   expect(covered, label).toEqual([]);
+
+  // Start labels ("P1" … "P4", 12 px bold text centred in the cell): about 20 × 16 units.
+  const startBoxes: { name: string; box: Box }[] = [];
+  svg.querySelectorAll('[data-testid="starts"] text').forEach((t) => {
+    const x = Number(t.getAttribute('x'));
+    const y = Number(t.getAttribute('y'));
+    startBoxes.push({
+      name: t.textContent ?? '',
+      box: { x0: x - 10, y0: y - 8, x1: x + 10, y1: y + 8 },
+    });
+  });
+  expect(startBoxes, label).toHaveLength(4);
+  const soft: string[] = [];
+  const all = [...boxes];
+  all.forEach(([id, box], i) => {
+    for (const st of startBoxes) if (intersects(box, st.box)) soft.push(`${id} covers ${st.name}`);
+    for (const [other, ob] of all.slice(i + 1)) {
+      if (intersects(box, ob)) soft.push(`${id} overlaps ${other}`);
+    }
+    if (box.x0 < 0 || box.y0 < 0 || box.x1 > 9 * CELL || box.y1 > 9 * CELL) {
+      soft.push(`${id} leaves the board`);
+    }
+  });
+  expect(soft, label).toEqual([]);
 }
 
 describe('Grid — wall piece badges', () => {
@@ -136,10 +169,26 @@ describe('Grid — wall piece badges', () => {
     ['HJKM-NPQ', 3, 'hard'],
     ['2345-678', 1, 'medium'],
     ['ZZ9Y-8XW', 2, 'hard'],
+    // D1: short walls wrapped around an enemy used to hide part of it.
+    ['7MGC-HSC', 2, 'hard'],
+    ['JAGE-RTW', 2, 'easy'],
+    ['JAGE-RTW', 2, 'medium'],
+    ['WAT9-9JV', 1, 'hard'],
   ];
   it.each(cases)('generated %s turn %i %s', (code, turn, difficulty) => {
     checkBadges(generateBoard(code, turn, difficulty), `${code}/${turn}/${difficulty}`);
   });
+
+  it('D1 regression: 300 generated boards, no badge hides a symbol, start label or badge', () => {
+    const difficulties: Difficulty[] = ['easy', 'medium', 'hard'];
+    for (let i = 0; i < 100; i++) {
+      const code = newCode(mulberry32(i));
+      difficulties.forEach((difficulty, d) => {
+        const turn = 1 + ((i + d) % 3);
+        checkBadges(generateBoard(code, turn, difficulty), `${code}/${turn}/${difficulty}`);
+      });
+    }
+  }, 20_000);
 
   it('draws badges above the walls (later in document order)', () => {
     const svg = renderSvg(FIXTURE_BOARD);
