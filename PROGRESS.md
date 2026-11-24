@@ -84,3 +84,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-24 | #16 | VALIDÉ (validator ran 9 mutations of the engine: all caught). Mean 0.12 ms per board. Merged into main. |
 | 2026-11-24 | #19 | VALIDÉ (journey passes 3/3). Note: Playwright reuses a server already on port 4173, so parallel e2e runs from two checkouts can test the wrong build; validator re-ran with CI=1. Merged into main. |
 | 2026-11-24 | #18 | VALIDÉ (no defect). vite-plugin-pwa 2.0.0, full game verified offline in e2e. Merged into main. |
+| 2026-11-24 | README | VALIDÉ: install, run, test and deploy (Vercel + Netlify) guide in French, plus netlify.toml and vercel.json. Real deploy not tried. Merged into main. |
