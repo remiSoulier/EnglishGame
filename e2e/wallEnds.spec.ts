@@ -1,0 +1,41 @@
+import { expect, test, type Page } from '@playwright/test';
+import { startGame } from './helpers';
+
+const VIEWPORT = { width: 390, height: 844 };
+
+async function checkEnds(page: Page) {
+  const svg = page.getByRole('img', { name: /^Board, turn 1\..* 8 walls\.$/ });
+  await expect(svg).toBeVisible();
+  const group = svg.locator('[data-testid="wall-ends"]');
+  await expect(group).toHaveAttribute('aria-hidden', 'true');
+  const marks = group.locator('circle');
+  await expect(marks).toHaveCount(16);
+
+  const svgBox = (await svg.boundingBox())!;
+  for (let i = 0; i < 16; i++) {
+    const box = (await marks.nth(i).boundingBox())!;
+    expect(box.width, `mark ${i}`).toBeGreaterThan(2);
+    expect(box.x, `mark ${i}`).toBeGreaterThanOrEqual(svgBox.x - 1);
+    expect(box.x + box.width, `mark ${i}`).toBeLessThanOrEqual(svgBox.x + svgBox.width + 1);
+  }
+
+  // Ringed in the wall colour, 2 units wide.
+  await expect(marks.first()).toHaveCSS('stroke-width', '2px');
+  await expect(marks.first()).not.toHaveCSS('stroke', 'none');
+
+  const legendMarks = page.getByRole('list', { name: 'Legend' }).locator('li').first();
+  await expect(legendMarks.locator('svg circle')).toHaveCount(2);
+
+  const scrollWidth = await page.evaluate<number>('document.documentElement.scrollWidth');
+  expect(scrollWidth).toBeLessThanOrEqual(VIEWPORT.width);
+}
+
+test('typed code: 16 wall end marks, no horizontal scroll', async ({ page }) => {
+  await startGame(page, { players: 4, difficulty: 'Hard', code: 'K7F29QX' });
+  await checkEnds(page);
+});
+
+test('random board: 16 wall end marks, no horizontal scroll', async ({ page }) => {
+  await startGame(page, { players: 2, difficulty: 'Easy' });
+  await checkEnds(page);
+});
