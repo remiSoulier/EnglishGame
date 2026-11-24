@@ -9,7 +9,8 @@ import {
 import { describeBoard } from './describeBoard';
 import { CELL } from './geometry';
 import styles from './Grid.module.css';
-import { EnemyShape, GoalShape, StartShape, WallShape } from './shapes';
+import { EnemyShape, GoalShape, StartShape, WallLabel, WallShape } from './shapes';
+import { placeWallLabels, wallTitle } from './wallLabels';
 
 export interface GridProps {
   board: Board;
@@ -31,6 +32,7 @@ const lines = Array.from({ length: BOARD_SIZE - 1 }, (_, i) => (i + 1) * CELL);
 export function Grid({ board, playerCount = 4, className }: GridProps) {
   const summary = describeBoard(board);
   const starts = START_CELLS.slice(0, playerCount);
+  const labelPoints = placeWallLabels(board.walls, [...board.enemies, board.goal, ...starts]);
 
   return (
     <svg
@@ -94,7 +96,7 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
           const key = wall.sides.join(' ');
           return (
             <g key={key} data-wall={key}>
-              <title>{`Wall: ${wall.sides.join(', ')}`}</title>
+              <title>{wallTitle(wall)}</title>
               <WallShape
                 segments={wall.sides.map((side) => {
                   const [a, b] = sideEndpoints(side);
@@ -104,6 +106,19 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
             </g>
           );
         })}
+      </g>
+
+      <g data-testid="wall-labels" aria-hidden="true">
+        {board.walls.map((wall, index) =>
+          wall.id ? (
+            <WallLabel
+              key={wall.id}
+              id={wall.id}
+              x={labelPoints[index].x}
+              y={labelPoints[index].y}
+            />
+          ) : null,
+        )}
       </g>
     </svg>
   );

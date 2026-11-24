@@ -38,6 +38,22 @@
   stroke-linejoin: round;
 }
 
+.wallBadge {
+  fill: var(--color-board-bg);
+  stroke: var(--color-wall);
+  stroke-width: 1.5;
+}
+
+/* --color-wall on --color-board-bg: 14.68:1. */
+.wallBadgeText {
+  fill: var(--color-wall);
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
 .enemyBody {
   fill: var(--color-enemy);
 }
