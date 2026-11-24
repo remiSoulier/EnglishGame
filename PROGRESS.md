@@ -107,3 +107,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #21 Retirer le tour par tour : seulement un bouton End turn (ui-dev)
 
 | 2026-11-24 | #21 | VALIDÉ (user change request, D11): no turn order, End turn always available; storage moved to bgc.game.v2. Merged into main. |
+- [x] #22 Texte de la popup simplifié : « Answer correctly to draw X cards. One try only. » (ui-dev)
+
+| 2026-11-24 | #22 | VALIDÉ: popup text no longer mentions ending your turn (avoids confusion with End turn, D11). Merged into main. |
