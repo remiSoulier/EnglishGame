@@ -114,3 +114,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #24 Nom de chaque mur sur la grille et dans la liste des positions (ui-dev)
 
 | 2026-11-24 | #23, #24 | VALIDÉ both (D12). One defect fixed before validation: wall badges covered an enemy or the goal on ~11% of boards. Merged into main. |
+- [x] #25 Rivets aux deux bouts de chaque mur pour distinguer les pièces qui se touchent (ui-dev)
+
+| 2026-11-24 | #25 | VALIDÉ after 1 refusal: badges hid junction rivets on ~12% of boards; fixed (badges now avoid all rivets) and re-validated. Merged into main. |
