@@ -32,7 +32,7 @@ const lines = Array.from({ length: BOARD_SIZE - 1 }, (_, i) => (i + 1) * CELL);
 export function Grid({ board, playerCount = 4, className }: GridProps) {
   const summary = describeBoard(board);
   const starts = START_CELLS.slice(0, playerCount);
-  const labelPoints = placeWallLabels(board.walls, [...board.enemies, board.goal, ...starts]);
+  const labelPoints = placeWallLabels(board.walls, [...board.enemies, board.goal], starts);
 
   return (
     <svg

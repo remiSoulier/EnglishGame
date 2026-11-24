@@ -18,8 +18,21 @@ export interface LabelPoint {
 export const BADGE_WIDTH = 26;
 export const BADGE_HEIGHT = 17;
 
-/** Half-size of the box treated as covered by a cell symbol (enemy, goal, start label). */
-const SYMBOL_HALF = 16;
+/** Half-size of the box covered by an enemy or goal symbol (goal star outer radius 0.42 cell). */
+const SYMBOL_HALF = 17;
+/** Half-size of the box covered by a start label ("P1" … "P4", 12 px bold). */
+const START_HALF_X = 10;
+const START_HALF_Y = 8;
+
+/** Sideways shifts of a candidate, perpendicular to its side (SVG units, < 1 cell). */
+const OFFSETS = [0, -10, 10, -20, 20, -30, 30];
+/** Positions along a side, as a fraction of its length (slightly past its ends too). */
+const FRACTIONS = [0.5, 0.25, 0.75, 0, 1, -0.25, 1.25];
+
+/** Score weights: hiding an enemy or the goal is worst, then leaving the board, then the rest. */
+const W_SYMBOL = 1_000_000;
+const W_OUTSIDE = 10_000;
+const W_SOFT = 100;
 
 const SIZE = BOARD_SIZE * CELL;
 
@@ -39,6 +52,12 @@ function badgeBox({ x, y }: LabelPoint): Box {
   };
 }
 
+function cellBox(c: Cell, halfX: number, halfY: number): Box {
+  const cx = c.x * CELL + CELL / 2;
+  const cy = c.y * CELL + CELL / 2;
+  return { x0: cx - halfX, y0: cy - halfY, x1: cx + halfX, y1: cy + halfY };
+}
+
 function overlap(a: Box, b: Box): number {
   const w = Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0);
   const h = Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0);
@@ -51,59 +70,77 @@ function outside(box: Box): number {
   return area - overlap(box, { x0: 0, y0: 0, x1: SIZE, y1: SIZE });
 }
 
-/** Candidate centres along a wall (quarter points of each side), with their path position. */
-function candidates(wall: Wall): { point: LabelPoint; t: number }[] {
-  const result: { point: LabelPoint; t: number }[] = [];
+interface Candidate {
+  point: LabelPoint;
+  box: Box;
+  /** Score that does not depend on the other badges. */
+  base: number;
+}
+
+/**
+ * Candidate centres of a wall's badge: points along each side, on the wall or shifted sideways
+ * (perpendicular to the side) by up to 3/4 of a cell, so the badge centre stays within one cell
+ * of its wall.
+ */
+function candidates(wall: Wall, symbols: readonly Box[], startLabels: readonly Box[]): Candidate[] {
+  const middle = wall.sides.length / 2;
+  const result: Candidate[] = [];
   wall.sides.forEach((side, index) => {
     const [a, b] = sideEndpoints(side);
-    for (const f of [0.25, 0.5, 0.75]) {
-      result.push({
-        point: { x: (a.px + (b.px - a.px) * f) * CELL, y: (a.py + (b.py - a.py) * f) * CELL },
-        t: index + f,
-      });
+    const vertical = a.px === b.px;
+    for (const f of FRACTIONS) {
+      for (const offset of OFFSETS) {
+        const point = {
+          x: (a.px + (b.px - a.px) * f) * CELL + (vertical ? offset : 0),
+          y: (a.py + (b.py - a.py) * f) * CELL + (vertical ? 0 : offset),
+        };
+        const box = badgeBox(point);
+        const hidden = symbols.reduce((sum, s) => sum + overlap(box, s), 0);
+        const starts = startLabels.reduce((sum, s) => sum + overlap(box, s), 0);
+        const base =
+          W_SYMBOL * hidden +
+          W_OUTSIDE * outside(box) +
+          W_SOFT * starts +
+          Math.abs(offset) +
+          Math.abs(index + f - middle) * 4;
+        result.push({ point, box, base });
+      }
     }
   });
   return result;
 }
 
 /**
- * Picks where to draw each wall's name badge, on the wall itself. Minimises the area the badge
- * hides of the cell symbols (`occupied`: enemies, goal, starts), of the badges already placed and
- * outside the board; ties go to the point closest to the middle of the wall. Returns one point
- * per wall, in the order of `walls`.
+ * Picks where to draw each wall's name badge: on its wall or shifted sideways by at most 3/4 of a
+ * cell. In order of priority it avoids hiding an enemy or the goal, leaving the board, and hiding
+ * a start label or another badge; then it prefers a badge on the wall, near its middle. Walls with
+ * the fewest free spots are placed first. Returns one point per wall, in the order of `walls`.
  */
-export function placeWallLabels(walls: readonly Wall[], occupied: readonly Cell[]): LabelPoint[] {
-  const symbols: Box[] = occupied.map((c) => {
-    const cx = c.x * CELL + CELL / 2;
-    const cy = c.y * CELL + CELL / 2;
-    return {
-      x0: cx - SYMBOL_HALF,
-      y0: cy - SYMBOL_HALF,
-      x1: cx + SYMBOL_HALF,
-      y1: cy + SYMBOL_HALF,
-    };
-  });
+export function placeWallLabels(
+  walls: readonly Wall[],
+  symbolCells: readonly Cell[],
+  startCells: readonly Cell[] = [],
+): LabelPoint[] {
+  const symbols = symbolCells.map((c) => cellBox(c, SYMBOL_HALF, SYMBOL_HALF));
+  const startLabels = startCells.map((c) => cellBox(c, START_HALF_X, START_HALF_Y));
+  const options = walls.map((wall) => candidates(wall, symbols, startLabels));
+  const free = options.map((list) => list.filter((c) => c.base < W_SOFT).length);
+  const order = walls.map((_, i) => i).sort((i, j) => free[i] - free[j] || i - j);
+
   const placed: Box[] = [];
-
-  return walls.map((wall) => {
-    const middle = wall.sides.length / 2;
-    let best: LabelPoint = { x: 0, y: 0 };
+  const result: LabelPoint[] = walls.map(() => ({ x: 0, y: 0 }));
+  for (const i of order) {
+    let best = options[i][0];
     let bestScore = Infinity;
-
-    for (const { point, t } of candidates(wall)) {
-      const box = badgeBox(point);
-      const score =
-        symbols.reduce((sum, s) => sum + overlap(box, s), 0) +
-        placed.reduce((sum, p) => sum + 2 * overlap(box, p), 0) +
-        outside(box) +
-        Math.abs(t - middle);
+    for (const c of options[i]) {
+      const score = c.base + W_SOFT * placed.reduce((sum, p) => sum + overlap(c.box, p), 0);
       if (score < bestScore) {
         bestScore = score;
-        best = point;
+        best = c;
       }
     }
-
-    placed.push(badgeBox(best));
-    return best;
-  });
+    placed.push(best.box);
+    result[i] = best.point;
+  }
+  return result;
 }
