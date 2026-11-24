@@ -33,7 +33,8 @@ const lines = Array.from({ length: BOARD_SIZE - 1 }, (_, i) => (i + 1) * CELL);
 export function Grid({ board, playerCount = 4, className }: GridProps) {
   const summary = describeBoard(board);
   const starts = START_CELLS.slice(0, playerCount);
-  const labelPoints = placeWallLabels(board.walls, [...board.enemies, board.goal], starts);
+  const ends = board.walls.map(wallEnds);
+  const labelPoints = placeWallLabels(board.walls, [...board.enemies, board.goal], starts, ends);
 
   return (
     <svg
@@ -111,8 +112,8 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
 
       {/* Above every wall (so a later piece never hides an earlier piece's end), below badges. */}
       <g data-testid="wall-ends" aria-hidden="true">
-        {board.walls.flatMap((wall) =>
-          wallEnds(wall).map((p) => (
+        {board.walls.flatMap((wall, i) =>
+          ends[i].map((p) => (
             <WallEnd key={`${wall.sides.join(' ')}@${p.x},${p.y}`} x={p.x} y={p.y} />
           )),
         )}
