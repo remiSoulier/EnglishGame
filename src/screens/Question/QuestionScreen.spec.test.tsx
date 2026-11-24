@@ -19,10 +19,10 @@ function makeQuestion(n: 2 | 3 | 4): Question {
   };
 }
 
-function setup(n: 2 | 3 | 4 = 4, player = 3, cards = 2) {
+function setup(n: 2 | 3 | 4 = 4, cards = 2) {
   const onAnswer = vi.fn();
   const question = makeQuestion(n);
-  render(<QuestionScreen question={question} player={player} cards={cards} onAnswer={onAnswer} />);
+  render(<QuestionScreen question={question} cards={cards} onAnswer={onAnswer} />);
   return { onAnswer, question, user: userEvent.setup() };
 }
 
@@ -48,9 +48,14 @@ describe('QuestionScreen (spec #14)', () => {
     }
   });
 
-  it('shows the active player and the cards at stake', () => {
-    setup(4, 3, 1);
-    expect(screen.getByText('Player 3 — for 1 card')).toBeInTheDocument();
+  it.each([
+    [1, 'For 1 card'],
+    [2, 'For 2 cards'],
+    [3, 'For 3 cards'],
+  ])('shows the cards at stake (%i): "%s", without a player (D11)', (cards, text) => {
+    setup(4, cards);
+    expect(screen.getByText(text)).toBeInTheDocument();
+    expect(screen.queryByText(/Player \d/)).not.toBeInTheDocument();
   });
 
   it.each([2, 3, 4] as const)('%i choices: each choice answers with its own letter', async (n) => {

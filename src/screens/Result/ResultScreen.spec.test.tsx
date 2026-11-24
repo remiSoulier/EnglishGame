@@ -14,18 +14,11 @@ const question: Question = {
   explanation: 'Cherry is the right one because of reasons.',
 };
 
-function setup({
-  answer = 'C' as ChoiceKey,
-  correct = true,
-  cards = 2,
-  player = 1,
-  q = question,
-} = {}) {
+function setup({ answer = 'C' as ChoiceKey, correct = true, cards = 2, q = question } = {}) {
   const onContinue = vi.fn();
   render(
     <ResultScreen
       question={q}
-      player={player}
       cards={cards}
       answer={answer}
       correct={correct}
@@ -62,9 +55,9 @@ describe('ResultScreen (spec #14)', () => {
       expect(itemFor('Banana')).not.toHaveTextContent(/answer/);
     });
 
-    it('shows the question, the explanation and the active player', () => {
-      setup({ player: 3 });
-      expect(screen.getByText('Player 3')).toBeInTheDocument();
+    it('shows the question and the explanation, without a player line (D11)', () => {
+      setup();
+      expect(screen.queryByText(/Player/)).not.toBeInTheDocument();
       expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('Which one is right?');
       expect(screen.getByText(question.explanation)).toBeInTheDocument();
     });

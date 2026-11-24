@@ -8,9 +8,7 @@ function setup(overrides: Partial<BoardScreenProps> = {}) {
   const props: BoardScreenProps = {
     board: FIXTURE_BOARD,
     playerCount: 3,
-    activePlayer: 1,
     onQuestion: vi.fn(),
-    onNextPlayer: vi.fn(),
     onEndTurn: vi.fn(),
     onNewBoard: vi.fn(),
     onWinner: vi.fn(),
@@ -21,17 +19,18 @@ function setup(overrides: Partial<BoardScreenProps> = {}) {
 }
 
 describe('BoardScreen', () => {
-  it('shows the turn, code, difficulty and Next player before the last player', () => {
+  it('shows the turn, code, difficulty, Question and End turn (no Next player)', () => {
     setup();
     expect(screen.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeInTheDocument();
     expect(screen.getByText('Code DEMO · Medium')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Next player' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'End turn' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Question' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'End turn' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next player' })).not.toBeInTheDocument();
   });
 
-  it('shows End turn for the last player and opens the menu', async () => {
+  it('End turn fires onEndTurn; the menu opens', async () => {
     const user = userEvent.setup();
-    const props = setup({ activePlayer: 3 });
+    const props = setup();
     await user.click(screen.getByRole('button', { name: 'End turn' }));
     expect(props.onEndTurn).toHaveBeenCalledTimes(1);
 
