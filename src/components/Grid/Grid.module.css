@@ -38,6 +38,13 @@
   stroke-linejoin: round;
 }
 
+/* End mark: --color-board-bg disc, --color-wall ring (14.68:1 vs board, same as walls). */
+.wallEnd {
+  fill: var(--color-board-bg);
+  stroke: var(--color-wall);
+  stroke-width: 2;
+}
+
 .wallBadge {
   fill: var(--color-board-bg);
   stroke: var(--color-wall);

@@ -271,14 +271,25 @@ describe('Grid — no pawns', () => {
     const ids = Array.from(svg.querySelectorAll('[data-testid]')).map((e) =>
       e.getAttribute('data-testid'),
     );
-    expect(ids.sort()).toEqual(['enemies', 'goal', 'grid-lines', 'starts', 'wall-labels', 'walls']);
+    expect(ids.sort()).toEqual([
+      'enemies',
+      'goal',
+      'grid-lines',
+      'starts',
+      'wall-ends',
+      'wall-labels',
+      'walls',
+    ]);
   });
 
-  it('only draws circles as part of enemy "!" marks', () => {
+  it('only draws circles as enemy "!" marks or wall end marks (2 per wall)', () => {
     const svg = renderGrid();
-    const circles = svg.querySelectorAll('circle');
-    expect(circles).toHaveLength(FIXTURE_BOARD.enemies.length);
-    circles.forEach((c) => expect(c.closest('[data-testid="enemies"]')).not.toBeNull());
+    const circles = Array.from(svg.querySelectorAll('circle'));
+    const inEnemies = circles.filter((c) => c.closest('[data-testid="enemies"]'));
+    const inEnds = circles.filter((c) => c.closest('[data-testid="wall-ends"]'));
+    expect(inEnemies).toHaveLength(FIXTURE_BOARD.enemies.length);
+    expect(inEnds).toHaveLength(2 * FIXTURE_BOARD.walls.length);
+    expect(circles).toHaveLength(inEnemies.length + inEnds.length);
   });
 });
 

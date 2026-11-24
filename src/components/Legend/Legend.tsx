@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { CELL } from '../Grid/geometry';
-import { EnemyShape, GoalShape, StartShape, WallShape } from '../Grid/shapes';
+import { EnemyShape, GoalShape, StartShape, WallEnd, WallShape } from '../Grid/shapes';
 import styles from './Legend.module.css';
 
 export interface LegendProps {
@@ -30,7 +30,9 @@ export function Legend({ className }: LegendProps) {
     <ul className={className ? `${styles.legend} ${className}` : styles.legend} aria-label="Legend">
       <li className={styles.item}>
         <Icon>
-          <WallShape segments={[{ x1: C, y1: 2, x2: C, y2: CELL - 2 }]} />
+          <WallShape segments={[{ x1: C, y1: 4, x2: C, y2: CELL - 4 }]} />
+          <WallEnd x={C} y={4} />
+          <WallEnd x={C} y={CELL - 4} />
         </Icon>
         Wall
       </li>
