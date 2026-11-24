@@ -50,3 +50,18 @@ La popup (#13) et les écrans Question/Result (#14) forment un seul parcours et 
 
 ## D11 — Plus de tour par tour dans l'application (2026-11-24, demande utilisateur)
 Sur demande de l'utilisateur, l'application ne suit plus l'ordre des joueurs : plus de joueur actif, plus de bouton *Next player*, plus de barre des joueurs. L'écran Board affiche toujours *Question* et **End turn** ; *End turn* tire le plateau suivant à tout moment. La popup devient « Question for X cards » (sans « Player N »), et *Continue* ramène simplement au plateau. Le nombre de joueurs reste choisi au début : il sert aux cases de départ affichées et au choix du gagnant. Les anciennes sauvegardes (format v1 avec joueur actif) sont ignorées. Remplace en partie D8 (« Continue → joueur suivant »).
+
+## D12 — Jeu fixe de 8 murs (2026-11-24, demande utilisateur)
+Les murs sont désormais 8 pièces physiques fixes, toujours les mêmes (cases de 44 mm) :
+
+| Mur | Forme | Côtés |
+| --- | --- | --- |
+| W1, W2 | droit | 2 |
+| W3 | droit | 3 |
+| W4 | droit | 4 |
+| W5 | L 1 + 1 | 2 |
+| W6 | L 2 + 1 | 3 |
+| W7 | L 2 + 2 | 4 |
+| W8 | L 3 + 2 | 5 |
+
+À chaque tirage, l'application choisit seulement la **place** et le **sens** de chaque pièce : horizontal ou vertical pour les murs droits, l'une des **4 rotations** pour les murs en L (pas de pièce retournée en miroir). Les autres règles restent : entre les cases, jamais le long du bord, pas de chevauchement (contact autorisé), aucune case isolée (sinon on retire). Chaque mur porte son nom (W1…W8) pour que les joueurs sachent quelle pièce poser où. Le message de l'utilisateur était tronqué après « 4 r… » : interprété comme « 4 rotations pour les L ».
