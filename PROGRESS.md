@@ -27,7 +27,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #16 Tests du générateur (tester)
 - [x] #17 Questions sans doublon (engine-dev)
 - [ ] #18 PWA (setup-dev)
-- [ ] #19 Parcours e2e (tester)
+- [x] #19 Parcours e2e (tester)
 
 ## Priorité 4 — optionnel
 - [ ] #20 Liste écrite des positions (ui-dev)
@@ -82,3 +82,4 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - Cosmétique (P1) : mur qui dépasse de quelques pixels au bord, « P » minuscule dans l'icône Start de la légende.
 - Reste à faire : priorité 3 (#16 tests du générateur, #18 PWA, #19 parcours e2e), priorité 4 (#20), puis README et validation finale de l'ensemble.
 | 2026-11-24 | #16 | VALIDÉ (validator ran 9 mutations of the engine: all caught). Mean 0.12 ms per board. Merged into main. |
+| 2026-11-24 | #19 | VALIDÉ (journey passes 3/3). Note: Playwright reuses a server already on port 4173, so parallel e2e runs from two checkouts can test the wrong build; validator re-ran with CI=1. Merged into main. |
