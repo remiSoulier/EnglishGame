@@ -71,6 +71,9 @@ describe('NewBoardScreen (spec screen 7)', () => {
 
   it('can be activated with the keyboard', async () => {
     const { props, user } = setup();
+    // Tab order: "Show positions" toggle, then the Start button.
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Show positions' })).toHaveFocus();
     await user.tab();
     expect(screen.getByRole('button', { name: 'Start turn 2' })).toHaveFocus();
     await user.keyboard('{Enter}');

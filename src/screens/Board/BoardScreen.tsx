@@ -4,6 +4,7 @@ import { Grid } from '../../components/Grid';
 import { Legend } from '../../components/Legend';
 import { Menu } from '../../components/Menu';
 import { PlayerBar } from '../../components/PlayerBar';
+import { PositionsList } from '../../components/PositionsList';
 import styles from './BoardScreen.module.css';
 
 export interface BoardScreenProps {
@@ -63,6 +64,7 @@ export function BoardScreen({
       <div className={styles.board}>
         <Grid board={board} playerCount={playerCount} />
         <Legend />
+        <PositionsList board={board} playerCount={playerCount} />
       </div>
 
       <div className={styles.actions}>
