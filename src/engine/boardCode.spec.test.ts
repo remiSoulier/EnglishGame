@@ -20,10 +20,11 @@ const CHARS_ERROR = 'Code contains invalid characters';
 
 /** Walls of K7F2-9QX turn 1, pinned so that any change to the draw is noticed. */
 const PINNED_WALLS_K7F2_9QX_T1 =
-  '[{"sides":["G4-S","H4-S"]},{"sides":["C2-E","C3-E","C4-E","C5-E"]},' +
-  '{"sides":["G5-E","G4-E","H3-S","I3-S"]},{"sides":["A6-S","B6-S"]},' +
-  '{"sides":["H1-E","H1-S"]},{"sides":["D2-S","C2-S","B2-S"]},' +
-  '{"sides":["D5-E","E5-S","F5-S"]},{"sides":["B4-S","A4-S"]}]';
+  '[{"id":"W1","sides":["D2-E","D3-E"]},{"id":"W2","sides":["H5-E","H6-E"]},' +
+  '{"id":"W3","sides":["G3-E","G4-E","G5-E"]},{"id":"W4","sides":["F8-S","G8-S","H8-S","I8-S"]},' +
+  '{"id":"W5","sides":["G7-S","G8-E"]},{"id":"W6","sides":["E7-E","E8-E","E8-S"]},' +
+  '{"id":"W7","sides":["G6-S","H6-S","H7-E","H8-E"]},' +
+  '{"id":"W8","sides":["C4-E","C5-E","C6-E","C6-S","B6-S"]}]';
 
 const isUint32 = (n: number): boolean => Number.isInteger(n) && n >= 0 && n <= 0xffffffff;
 

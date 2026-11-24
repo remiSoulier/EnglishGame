@@ -1,4 +1,5 @@
 import { CELL } from './geometry';
+import { BADGE_HEIGHT, BADGE_WIDTH } from './wallLabels';
 import styles from './Grid.module.css';
 
 interface ShapeProps {
@@ -76,4 +77,23 @@ export interface Segment {
 export function WallShape({ segments }: { segments: Segment[] }) {
   const d = segments.map((s) => `M${s.x1} ${s.y1}L${s.x2} ${s.y2}`).join('');
   return <path className={styles.wall} d={d} />;
+}
+
+/** Wall name badge (e.g. "W6"): dark bold text on a small white rounded box, centred on (x, y). */
+export function WallLabel({ id, x, y }: { id: string; x: number; y: number }) {
+  return (
+    <g data-wall-label={id}>
+      <rect
+        className={styles.wallBadge}
+        x={x - BADGE_WIDTH / 2}
+        y={y - BADGE_HEIGHT / 2}
+        width={BADGE_WIDTH}
+        height={BADGE_HEIGHT}
+        rx={4}
+      />
+      <text className={styles.wallBadgeText} x={x} y={y}>
+        {id}
+      </text>
+    </g>
+  );
 }

@@ -17,7 +17,10 @@ describe('connectivity', () => {
   });
 
   it('redraws disconnected layouts deterministically', () => {
-    expect(isFullyConnected(placeWalls(mulberry32(2)))).toBe(false);
+    let disconnected = 0;
+    while (isFullyConnected(placeWalls(mulberry32(disconnected)))) disconnected++;
+    expect(disconnected).toBeLessThan(1000);
+    expect(isFullyConnected(placeConnectedWalls(mulberry32(disconnected)))).toBe(true);
     for (let seed = 0; seed < 200; seed++) {
       const walls = placeConnectedWalls(mulberry32(seed));
       expect(isFullyConnected(walls)).toBe(true);

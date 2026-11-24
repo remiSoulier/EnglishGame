@@ -1,5 +1,13 @@
 import { useId, useState } from 'react';
-import { cellName, START_CELLS, type Board, type Cell } from '../../engine';
+import {
+  cellName,
+  START_CELLS,
+  WALL_PIECES,
+  wallPiece,
+  type Board,
+  type Cell,
+  type Wall,
+} from '../../engine';
 import styles from './PositionsList.module.css';
 
 export interface PositionsListProps {
@@ -13,12 +21,24 @@ function byRowThenColumn(a: Cell, b: Cell): number {
   return a.y - b.y || a.x - b.x;
 }
 
+function pieceRank(wall: Wall): number {
+  const rank = WALL_PIECES.findIndex((p) => p.id === wall.id);
+  return rank === -1 ? WALL_PIECES.length : rank;
+}
+
+/** Name of a wall line, e.g. `W6 (88 + 44 mm)`. */
+function wallName(wall: Wall): string {
+  const piece = wallPiece(wall.id);
+  return piece ? `${piece.id} (${piece.sizeMm})` : 'Wall';
+}
+
 /** Collapsible written list of the board positions (goal, enemies, walls, starts). */
 export function PositionsList({ board, playerCount, defaultOpen = false }: PositionsListProps) {
   const [open, setOpen] = useState(defaultOpen);
   const panelId = useId();
 
   const enemies = [...board.enemies].sort(byRowThenColumn).map(cellName);
+  const walls = [...board.walls].sort((a, b) => pieceRank(a) - pieceRank(b));
   const starts = START_CELLS.slice(0, playerCount).map(
     (cell, index) => `P${index + 1} ${cellName(cell)}`,
   );
@@ -55,9 +75,9 @@ export function PositionsList({ board, playerCount, defaultOpen = false }: Posit
               <dt className={styles.term}>Walls:</dt>
               <dd className={styles.value}>
                 <ul className={styles.walls}>
-                  {board.walls.map((wall, index) => (
+                  {walls.map((wall, index) => (
                     <li key={index} className={styles.wall}>
-                      <span className={styles.wallLabel}>Wall {index + 1}:</span>{' '}
+                      <span className={styles.wallLabel}>{wallName(wall)}:</span>{' '}
                       {wall.sides.join(', ')}
                     </li>
                   ))}

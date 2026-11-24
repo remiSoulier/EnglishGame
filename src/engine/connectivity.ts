@@ -1,5 +1,5 @@
 import { cellName, isInside } from './cell';
-import { BOARD_SIZE, type Cell, type Rng, type SideKey, type Wall } from './types';
+import { BOARD_SIZE, type Cell, type Rng, type SideKey, type Wall, type WallSides } from './types';
 import { placeWalls, wallSideSet } from './walls';
 
 const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
@@ -53,7 +53,7 @@ function flood(start: number, blocked: ReadonlySet<SideKey>): { order: Int32Arra
  * starting with `from` itself.
  * @throws if `from` is outside the board.
  */
-export function reachableCells(from: Cell, walls: readonly Wall[]): Cell[] {
+export function reachableCells(from: Cell, walls: readonly WallSides[]): Cell[] {
   if (!isInside(from)) {
     throw new Error(`Cell outside the board: (${from.x}, ${from.y})`);
   }
@@ -67,7 +67,7 @@ export function reachableCells(from: Cell, walls: readonly Wall[]): Cell[] {
 }
 
 /** True if all 81 cells are reachable from A1 (hence from any cell) without crossing a wall. */
-export function isFullyConnected(walls: readonly Wall[]): boolean {
+export function isFullyConnected(walls: readonly WallSides[]): boolean {
   return flood(0, wallSideSet(walls)).count === CELL_COUNT;
 }
 
