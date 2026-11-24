@@ -7,23 +7,23 @@ import {
   reachableCells,
 } from './connectivity';
 import { mulberry32 } from './rng';
-import { BOARD_SIZE, WALL_COUNT, type Cell, type Rng, type Wall } from './types';
+import { BOARD_SIZE, WALL_COUNT, type Cell, type Rng, type WallSides } from './types';
 import { isValidWallShape, placeWalls, wallsOverlap } from './walls';
 
 const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 
 /** Shorthand: one wall from side strings. */
-const w = (...sides: string[]): Wall => ({ sides });
+const w = (...sides: string[]): WallSides => ({ sides });
 
 /** Names of the cells reachable from `from` (by name), sorted. */
-const reachNames = (from: string, walls: readonly Wall[]): string[] =>
+const reachNames = (from: string, walls: readonly WallSides[]): string[] =>
   reachableCells(parseCell(from), walls).map(cellName).sort();
 
 /**
  * Independent canonical side set: every side mapped to "x,y,E" or "x,y,S" of the cell on its
  * west / north. Does not use any engine side helper.
  */
-function mySideSet(walls: readonly Wall[]): Set<string> {
+function mySideSet(walls: readonly WallSides[]): Set<string> {
   const set = new Set<string>();
   for (const wall of walls) {
     for (const raw of wall.sides) {
@@ -46,7 +46,7 @@ function mySideSet(walls: readonly Wall[]): Set<string> {
 }
 
 /** Union-find over the 81 cells; returns the root of each cell index. */
-function unionFindRoots(walls: readonly Wall[]): number[] {
+function unionFindRoots(walls: readonly WallSides[]): number[] {
   const blocked = mySideSet(walls);
   const parent = Array.from({ length: CELL_COUNT }, (_, i) => i);
   const find = (i: number): number => {
@@ -69,7 +69,7 @@ function unionFindRoots(walls: readonly Wall[]): number[] {
   return Array.from({ length: CELL_COUNT }, (_, i) => find(i));
 }
 
-function ufConnected(walls: readonly Wall[]): boolean {
+function ufConnected(walls: readonly WallSides[]): boolean {
   const roots = unionFindRoots(walls);
   return roots.every((r) => r === roots[0]);
 }
@@ -98,7 +98,7 @@ describe('isFullyConnected — hand-made cases', () => {
   });
 
   it('accepts either notation of a side (N/W/O, lowercase)', () => {
-    const variants: Wall[][] = [
+    const variants: WallSides[][] = [
       [w('E5-N', 'E5-E'), w('E5-S', 'E5-W')],
       [w('e5-n', 'e5-e'), w('e5-s', 'e5-o')],
       [w('E4-S', 'F5-W'), w('E6-N', 'D5-E')],
@@ -208,14 +208,27 @@ describe('BFS vs independent union-find', { timeout: 30_000 }, () => {
   });
 });
 
+/** First seed whose raw `placeWalls` layout is disconnected (found programmatically). */
+function firstDisconnectedSeed(): number {
+  for (let seed = 0; seed < 1000; seed++) {
+    if (!ufConnected(placeWalls(mulberry32(seed)))) return seed;
+  }
+  throw new Error('no disconnected raw layout among seeds 0–999');
+}
+
 describe('the redraw really happens', { timeout: 30_000 }, () => {
-  it('seed 2 raw placement leaves A1 with 60/81 reachable cells', () => {
-    const raw = placeWalls(mulberry32(2));
+  it('a disconnected raw placement is redrawn into a connected one', () => {
+    const seed = firstDisconnectedSeed();
+    const raw = placeWalls(mulberry32(seed));
     expect(isFullyConnected(raw)).toBe(false);
-    expect(reachableCells(parseCell('A1'), raw)).toHaveLength(60);
-    const fixed = placeConnectedWalls(mulberry32(2));
+    const reach = reachableCells(parseCell('A1'), raw).length;
+    const fromI9 = reachableCells(parseCell('I9'), raw).length;
+    // At least one start corner does not see all 81 cells.
+    expect(Math.min(reach, fromI9)).toBeLessThan(CELL_COUNT);
+    const fixed = placeConnectedWalls(mulberry32(seed));
     expect(fixed).not.toEqual(raw);
     expect(isFullyConnected(fixed)).toBe(true);
+    expect(ufConnected(fixed)).toBe(true);
   });
 
   it('several seeds among 0–999 produce a disconnected raw placement', () => {
@@ -223,7 +236,7 @@ describe('the redraw really happens', { timeout: 30_000 }, () => {
     for (let seed = 0; seed < 1000; seed++) {
       if (!isFullyConnected(placeWalls(mulberry32(seed)))) bad.push(seed);
     }
-    expect(bad).toContain(2);
+    expect(bad).toContain(firstDisconnectedSeed());
     expect(bad.length).toBeGreaterThan(1);
   });
 
@@ -263,10 +276,10 @@ describe('placeConnectedWalls is bounded', { timeout: 30_000 }, () => {
   });
 
   it('throws a clear error after exactly MAX_CONNECTED_ATTEMPTS disconnected draws', () => {
-    // Record the values seed 2 feeds to one (disconnected) placeWalls call, then replay them
+    // Record the values a disconnected seed feeds to one placeWalls call, then replay them
     // in a loop so that every draw yields the very same disconnected layout.
     const recorded: number[] = [];
-    const src = mulberry32(2);
+    const src = mulberry32(firstDisconnectedSeed());
     const recorder: Rng = () => {
       const v = src();
       recorded.push(v);

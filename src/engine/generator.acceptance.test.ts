@@ -4,11 +4,16 @@
  * Over 1 000 distinct board codes, all three difficulties and turns 1–3, checks every board rule
  * through the public API `generateBoard` only, with independent geometry / connectivity checks
  * (engine validators are used solely as a cross-check).
+ *
+ * Task #23 (decision D12) — each board holds the eight fixed pieces W1 … W8 exactly once, with
+ * their side count, shape, arm lengths and (for W6 / W8) never-mirrored chirality, checked with
+ * own geometry; every orientation of every piece appears across the sample.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
   generateBoard,
   isFullyConnected,
+  matchesPiece,
   mulberry32,
   newCode,
   wallShape,
@@ -23,6 +28,19 @@ const DIFFICULTIES: readonly Difficulty[] = ['easy', 'medium', 'hard'];
 const EXPECTED_ENEMIES: Readonly<Record<Difficulty, number>> = { easy: 2, medium: 4, hard: 6 };
 const LATER_TURNS = [2, 3] as const;
 const N = 9;
+
+/** The fixed pieces of decision D12, written independently from the engine. */
+const PIECES: Readonly<Record<string, { shape: 'straight' | 'L'; arms: number[] }>> = {
+  W1: { shape: 'straight', arms: [2] },
+  W2: { shape: 'straight', arms: [2] },
+  W3: { shape: 'straight', arms: [3] },
+  W4: { shape: 'straight', arms: [4] },
+  W5: { shape: 'L', arms: [1, 1] },
+  W6: { shape: 'L', arms: [2, 1] },
+  W7: { shape: 'L', arms: [2, 2] },
+  W8: { shape: 'L', arms: [3, 2] },
+};
+const PIECE_IDS = Object.keys(PIECES);
 
 // ---------------------------------------------------------------------------------------------
 // Independent geometry helpers (no engine code).
@@ -105,6 +123,63 @@ function shapeOf(segs: readonly Segment[]): string {
   return turns === 0 ? 'straight' : turns === 1 ? 'L' : `${turns} turns`;
 }
 
+/** Unit step vectors along a wall listed in path order (y grows downwards). */
+function stepsOf(segs: readonly Segment[]): Point[] {
+  if (segs.length === 0) return [];
+  const shared = (s: Segment, t: Segment): Point | undefined =>
+    [s.a, s.b].find((p) => pkey(p) === pkey(t.a) || pkey(p) === pkey(t.b));
+  let start: Point = segs[0].a;
+  if (segs.length > 1) {
+    const join = shared(segs[0], segs[1]);
+    if (join && pkey(join) === pkey(segs[0].a)) start = segs[0].b;
+  }
+  const steps: Point[] = [];
+  let cur = start;
+  for (const s of segs) {
+    const next = pkey(s.a) === pkey(cur) ? s.b : s.a;
+    steps.push([next[0] - cur[0], next[1] - cur[1]]);
+    cur = next;
+  }
+  return steps;
+}
+
+const dirName = (v: Point): string =>
+  v[0] === 1 ? 'E' : v[0] === -1 ? 'W' : v[1] === 1 ? 'S' : 'N';
+
+interface PieceGeometry {
+  arms: number[];
+  /** For an L read from the end of its longer arm (or either end if equal): +1 clockwise. */
+  turn: 0 | 1 | -1;
+  /** 'H' / 'V' for a straight wall; for an L the first-arm direction of its clockwise reading. */
+  orientation: string;
+}
+
+/**
+ * Arms, turn direction and orientation of a wall (own geometry). On screen y grows downwards,
+ * so the cross product dx1·dy2 − dy1·dx2 > 0 is a clockwise (right-hand) turn, e.g. East → South.
+ */
+function pieceGeometry(segs: readonly Segment[]): PieceGeometry {
+  let steps = stepsOf(segs);
+  const arms: number[] = [];
+  for (let i = 0; i < steps.length; i++) {
+    if (i > 0 && pkey(steps[i]) === pkey(steps[i - 1])) arms[arms.length - 1]++;
+    else arms.push(1);
+  }
+  if (arms.length === 1) return { arms, turn: 0, orientation: segs[0].orient };
+  if (arms[0] < arms[1]) {
+    // Read from the other end: reverse order and direction of every step.
+    steps = steps.map(([x, y]): Point => [-x, -y]).reverse();
+    arms.reverse();
+  }
+  const s1 = steps[0];
+  const s2 = steps[steps.length - 1];
+  const cross = s1[0] * s2[1] - s1[1] * s2[0];
+  const turn = cross > 0 ? 1 : -1;
+  // Clockwise reading: for equal arms read from the other end if this reading is CCW.
+  const first = turn === 1 ? s1 : ([-s2[0], -s2[1]] as Point);
+  return { arms, turn, orientation: dirName(first) };
+}
+
 /** Number of connected components of the 81 cells, using union-find with the wall segments. */
 function componentCount(blocked: ReadonlySet<string>): number {
   const parent = Array.from({ length: N * N }, (_, i) => i);
@@ -152,6 +227,12 @@ interface Results {
   wallLength: string[];
   wallShape: string[];
   shapeCrossCheck: string[];
+  pieceIds: string[];
+  pieceGeometry: string[];
+  mirrored: string[];
+  matchesPiece: string[];
+  /** Orientation counts per piece, e.g. `W6` → { E: 10, S: 12, … }. */
+  orientations: Record<string, Record<string, number>>;
   overlap: string[];
   border: string[];
   connectivity: string[];
@@ -175,6 +256,12 @@ function timed(fn: () => Board, r: { total: number; max: number; calls: number }
 function checkBoard(board: Board, label: string, difficulty: Difficulty, r: Results): void {
   r.boards++;
   if (board.walls.length !== 8) r.wallCount.push(`${label}: ${board.walls.length} walls`);
+  const ids = board.walls.map((w) => w.id as string);
+  if ([...ids].sort().join() !== PIECE_IDS.join()) {
+    r.pieceIds.push(`${label}: ids ${ids.join(',')}`);
+  } else if (ids.join() !== PIECE_IDS.join()) {
+    r.pieceIds.push(`${label}: ids not in W1 … W8 order: ${ids.join(',')}`);
+  }
 
   const used = new Map<string, number>();
   board.walls.forEach((wall, w) => {
@@ -190,6 +277,29 @@ function checkBoard(board: Board, label: string, difficulty: Difficulty, r: Resu
     const shape = shapeOf(segs);
     if (shape !== 'straight' && shape !== 'L') {
       r.wallShape.push(`${label}: wall ${w} [${wall.sides.join(' ')}] ${shape}`);
+    }
+    const piece = PIECES[wall.id];
+    if (!piece) {
+      r.pieceIds.push(`${label}: unknown piece id ${String(wall.id)}`);
+    } else if (shape === 'straight' || shape === 'L') {
+      const geo = pieceGeometry(segs);
+      const length = piece.arms.reduce((a, b) => a + b, 0);
+      const want = [...piece.arms].sort((a, b) => b - a).join('+');
+      const got = [...geo.arms].sort((a, b) => b - a).join('+');
+      if (n !== length || shape !== piece.shape || want !== got) {
+        r.pieceGeometry.push(
+          `${label}: ${wall.id} [${wall.sides.join(' ')}] ${shape} ${got}, want ${piece.shape} ${want}`,
+        );
+      }
+      // Chirality only matters for unequal arms (W6, W8): longer arm then a clockwise turn.
+      if (piece.shape === 'L' && piece.arms[0] !== piece.arms[1] && geo.turn !== 1) {
+        r.mirrored.push(`${label}: ${wall.id} [${wall.sides.join(' ')}] mirrored`);
+      }
+      const counts = (r.orientations[wall.id] ??= {});
+      counts[geo.orientation] = (counts[geo.orientation] ?? 0) + 1;
+    }
+    if (!matchesPiece(wall)) {
+      r.matchesPiece.push(`${label}: engine matchesPiece rejects ${wall.id} [${wall.sides}]`);
     }
     const engineShape = wallShape(wall);
     if ((shape === 'straight' || shape === 'L') !== (engineShape !== 'invalid')) {
@@ -236,6 +346,11 @@ function runAll(): Results {
     wallLength: [],
     wallShape: [],
     shapeCrossCheck: [],
+    pieceIds: [],
+    pieceGeometry: [],
+    mirrored: [],
+    matchesPiece: [],
+    orientations: {},
     overlap: [],
     border: [],
     connectivity: [],
@@ -303,6 +418,25 @@ describe('generator acceptance — 1 000 seeds × 3 difficulties × turns 1–3'
     r = runAll();
   }, 120_000);
 
+  it('0. own piece geometry self-check on hand-made walls', () => {
+    const geo = (sides: string[]): PieceGeometry => pieceGeometry(sides.map(segmentOf));
+    // W6 ‾‾| : 2 East, clockwise, 1 South; from either end.
+    expect(geo(['C2-S', 'D2-S', 'D3-E'])).toEqual({ arms: [2, 1], turn: 1, orientation: 'E' });
+    expect(geo(['D3-E', 'D2-S', 'C2-S'])).toEqual({ arms: [2, 1], turn: 1, orientation: 'E' });
+    // Mirror |‾‾ : 2 West then 1 South (counter-clockwise).
+    expect(geo(['D2-S', 'C2-S', 'B3-E']).turn).toBe(-1);
+    // W8 rotated: 3 North then 2 East (clockwise).
+    expect(geo(['D8-E', 'D7-E', 'D6-E', 'E5-S', 'F5-S'])).toEqual({
+      arms: [3, 2],
+      turn: 1,
+      orientation: 'N',
+    });
+    // W7 equal arms read counter-clockwise: orientation of its clockwise reading.
+    expect(geo(['C2-S', 'D2-S', 'D2-E', 'D1-E']).orientation).toBe('S');
+    expect(geo(['B4-S', 'C4-S', 'D4-S']).orientation).toBe('H');
+    expect(geo(['C3-E', 'C4-E']).orientation).toBe('V');
+  });
+
   it('uses 1 000 distinct codes and checks 9 000 boards', () => {
     expect(new Set(r.codes).size).toBe(SEEDS);
     expect(r.boards).toBe(SEEDS * DIFFICULTIES.length * (1 + LATER_TURNS.length));
@@ -312,6 +446,33 @@ describe('generator acceptance — 1 000 seeds × 3 difficulties × turns 1–3'
     expect(r.wallCount).toEqual([]);
     expect(r.wallLength).toEqual([]);
     expect(r.wallShape).toEqual([]);
+  });
+
+  it('1c. pieces W1 … W8 exactly once each, in id order', () => {
+    expect(r.pieceIds).toEqual([]);
+  });
+
+  it('1d. each wall has its piece side count, shape and arms (own geometry)', () => {
+    expect(r.pieceGeometry).toEqual([]);
+    expect(r.matchesPiece).toEqual([]);
+  });
+
+  it('1e. W6 and W8 are never mirrored (longer arm then a clockwise turn)', () => {
+    expect(r.mirrored).toEqual([]);
+  });
+
+  it('1f. every orientation of every piece appears across the sample', () => {
+    const expected = (id: string): string[] =>
+      PIECES[id].shape === 'straight' ? ['H', 'V'] : ['E', 'N', 'S', 'W'];
+    for (const id of PIECE_IDS) {
+      const counts = r.orientations[id] ?? {};
+      expect(Object.keys(counts).sort(), id).toEqual(expected(id));
+      const total = Object.values(counts).reduce((a, b) => a + b, 0);
+      expect(total, id).toBe(r.boards);
+      // Roughly uniform: each orientation gets at least a tenth of the draws.
+      for (const k of expected(id)) expect(counts[k], `${id} ${k}`).toBeGreaterThan(total / 10);
+    }
+    process.stdout.write(`orientation counts ${JSON.stringify(r.orientations)}\n`);
   });
 
   it('1b. own shape check agrees with the engine wallShape', () => {

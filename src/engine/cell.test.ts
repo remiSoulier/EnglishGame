@@ -48,7 +48,7 @@ describe('constants and types', () => {
   it('allows building values of every model type', () => {
     const difficulty: Difficulty = 'medium';
     const side: Side = { cell: { x: 2, y: 2 }, dir: 'E' };
-    const wall: Wall = { sides: ['C3-E', 'C4-E'] };
+    const wall: Wall = { id: 'W1', sides: ['C3-E', 'C4-E'] };
     const board: Board = {
       code: 'ABC',
       turn: 1,

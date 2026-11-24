@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { allCells, DIRS, isInside, neighbors, parseCell, step } from './cell';
 import { mulberry32 } from './rng';
 import { isBorderSide, parseSide, sideEndpoints, sideKey } from './side';
-import { BOARD_SIZE, type Cell, type GridPoint, type Rng, type Wall } from './types';
+import {
+  BOARD_SIZE,
+  type Cell,
+  type GridPoint,
+  type Rng,
+  type Wall,
+  type WallSides,
+} from './types';
 import {
   isBlocked,
   isValidWallShape,
@@ -13,7 +20,7 @@ import {
 } from './walls';
 
 const c = (name: string): Cell => parseCell(name);
-const wall = (...sides: string[]): Wall => ({ sides });
+const wall = (...sides: string[]): WallSides => ({ sides });
 
 describe('wallSideSet', () => {
   it('normalises every side to its canonical key', () => {
@@ -129,7 +136,7 @@ function eq(a: Pt, b: Pt): boolean {
  * Independent geometric analysis of a wall: walks the stored sides on the corner lattice and
  * returns the shape and number of sides, or an error message describing the first violation.
  */
-function analyse(wall: Wall): { shape: 'straight' | 'L'; length: number } | { error: string } {
+function analyse(wall: WallSides): { shape: 'straight' | 'L'; length: number } | { error: string } {
   const { sides } = wall;
   if (sides.length < 2 || sides.length > 5) {
     return { error: `length ${sides.length}` };
