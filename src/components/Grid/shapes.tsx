@@ -45,11 +45,19 @@ interface StartShapeProps {
   label: string;
 }
 
-/** Start cell: dashed square outline with a small player label. */
+/** Start cell: dashed square outline (on a dark halo) with a small player label. */
 export function StartShape({ x, y, label }: StartShapeProps) {
   const inset = 4;
   return (
     <g>
+      <rect
+        className={styles.startHalo}
+        x={x + inset}
+        y={y + inset}
+        width={CELL - inset * 2}
+        height={CELL - inset * 2}
+        rx={2}
+      />
       <rect
         className={styles.start}
         x={x + inset}
@@ -73,10 +81,22 @@ export interface Segment {
   y2: number;
 }
 
+/** SVG path data of a wall's segments. */
+function wallPath(segments: Segment[]): string {
+  return segments.map((s) => `M${s.x1} ${s.y1}L${s.x2} ${s.y2}`).join('');
+}
+
 /** A wall: one path made of thick, round-capped segments. */
 export function WallShape({ segments }: { segments: Segment[] }) {
-  const d = segments.map((s) => `M${s.x1} ${s.y1}L${s.x2} ${s.y2}`).join('');
-  return <path className={styles.wall} d={d} />;
+  return <path className={styles.wall} d={wallPath(segments)} />;
+}
+
+/**
+ * Dark halo under a wall (wider, board-coloured stroke), so the lime wall keeps its 9.64:1
+ * contrast wherever it crosses a light spot of the board art.
+ */
+export function WallHalo({ segments }: { segments: Segment[] }) {
+  return <path className={styles.wallHalo} d={wallPath(segments)} />;
 }
 
 /** Radius of a wall end mark, in SVG user units (outer edge = radius + half the 2-unit stroke). */

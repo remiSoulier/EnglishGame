@@ -19,8 +19,13 @@
   --color-bg: #ffffff;
   --color-text: #142420; /* 16.12:1 on --color-bg */
 
-  /* Board (dark forest). Ratios against --color-board-bg (#0f3d3a). */
+  /*
+   * Board (dark forest). Ratios against --color-board-bg (#0f3d3a). The 9×9 cells show the
+   * board art (public/art/board-texture.webp) under --color-board-veil; walls, enemies, goal and
+   * start outlines get a --color-board-bg halo, so their ratios hold over any spot of the art.
+   */
   --color-board-bg: #0f3d3a;
+  --color-board-veil: rgb(5 25 24 / 40%);
   /* Decorative only (thin cell lines, 2.39:1): the border and walls carry the structure. */
   --color-grid-line: #3d7a69;
   --color-board-border: #8cc4ad; /* 6.07:1 */
