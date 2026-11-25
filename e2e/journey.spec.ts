@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { APP_NAME, startGame } from './helpers';
 
 /**
- * Demo script: New game → Question (right, then wrong answer) → End turn → We have a winner.
+ * Demo script: New game → Question (right, then wrong answer) → End turn → End game (D13).
  * Played on one phone (390 × 844), with a second device checking the board is the same.
  * The app does not track turn order (decision D11): no player bar, no Next player.
  */
@@ -65,7 +65,7 @@ async function playToTurn2(page: Page) {
   await expect(h1(page)).toHaveText('Turn 2');
 }
 
-test('demo journey: new game → right and wrong answers → end turn → winner', async ({
+test('demo journey: new game → right and wrong answers → end turn → end game', async ({
   page,
   browser,
   baseURL,
@@ -155,20 +155,13 @@ test('demo journey: new game → right and wrong answers → end turn → winner
     await context.close();
   });
 
-  await test.step('Menu → We have a winner → Player 2 wins → Home', async () => {
+  await test.step('Menu → End game → confirm → Home without Continue game', async () => {
     await page.getByRole('button', { name: 'Menu' }).click();
-    await page.getByRole('menuitem', { name: 'We have a winner' }).click();
-    await expect(h1(page)).toHaveText('We have a winner');
-    await expect(page.getByRole('button', { name: /^Player \d$/ })).toHaveText([
-      'Player 1',
-      'Player 2',
-      'Player 3',
-    ]);
+    await page.getByRole('menuitem', { name: 'End game' }).click();
+    const dialog = page.getByRole('dialog', { name: 'End this game?' });
+    await expect(dialog).toBeVisible();
     await noHorizontalScroll(page);
-    await page.getByRole('button', { name: 'Player 2' }).click();
-    await expect(h1(page)).toHaveText('Player 2 wins!');
-    await noHorizontalScroll(page);
-    await page.getByRole('button', { name: 'Home' }).click();
+    await dialog.getByRole('button', { name: 'End game' }).click();
     await expect(h1(page)).toHaveText(APP_NAME);
     await expect(page.getByRole('button', { name: /Continue game/ })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'New game' })).toBeVisible();

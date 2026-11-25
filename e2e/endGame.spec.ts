@@ -10,7 +10,7 @@ const startsRe = (count: number) =>
   new RegExp(`^${Array.from({ length: count }, (_, i) => `P${i + 1} [A-I][1-9]`).join(', ')}$`);
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
 
-async function openMenuItem(page: Page, name: 'New board' | 'We have a winner') {
+async function openMenuItem(page: Page, name: 'New board' | 'End game' | 'Quit to home') {
   await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('menuitem', { name }).click();
 }
@@ -95,95 +95,134 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test('winner → Play again → new game; winner → Home → reload stays Home', async ({ page }) => {
-  await startGame(page, { players: 3, difficulty: 'Hard' });
-  const firstCode = await codeLine(page).textContent();
-  expect(firstCode).toMatch(/· Hard$/);
+const STORAGE_KEY = 'bgc.game.v2';
+const continueButton = (page: Page) => page.getByRole('button', { name: /^Continue game/ });
+const savedState = (page: Page) =>
+  page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? 'null'), STORAGE_KEY);
 
-  // A turn: End turn → Start turn 2.
+/** 3-player Hard game at turn 2, one question answered; returns the board snapshot. */
+async function midGame(page: Page) {
+  await startGame(page, { players: 3, difficulty: 'Hard' });
+  await page.getByRole('button', { name: 'Question' }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Show the question' }).click();
+  await page.getByRole('list', { name: 'Choices' }).getByRole('button').first().click();
+  await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByRole('button', { name: 'End turn' }).click();
   await page.getByRole('button', { name: 'Start turn 2' }).click();
   await expect(h1(page)).toHaveText('Turn 2');
+  return boardSnapshot(page);
+}
 
-  await openMenuItem(page, 'We have a winner');
-  await expect(h1(page)).toHaveText('We have a winner');
-  await expect(h1(page)).toBeFocused();
-  await expect(page.getByText('Who reached the goal?')).toBeVisible();
-  await expect(page.getByRole('button', { name: /^Player \d$/ })).toHaveText([
-    'Player 1',
-    'Player 2',
-    'Player 3',
+test('the board menu lists exactly New board, End game, Quit to home (D13)', async ({ page }) => {
+  await startGame(page);
+  await page.getByRole('button', { name: 'Menu' }).click();
+  await expect(page.getByRole('menu').getByRole('menuitem')).toHaveText([
+    'New board',
+    'End game',
+    'Quit to home',
   ]);
-  await checkButtons(page.getByRole('button', { name: /^Player \d$/ }), 56);
-  await checkButtons(page.getByRole('button'));
+  await expect(page.getByText(/we have a winner/i)).toHaveCount(0);
+  await checkButtons(page.getByRole('menuitem'));
   await noHorizontalScroll(page);
-  await checkContrast(page);
+});
 
-  await page.getByRole('button', { name: 'Player 2' }).click();
-  await expect(h1(page)).toHaveText('Player 2 wins!');
-  await expect(h1(page)).toBeFocused();
-  await checkButtons(page.getByRole('button'));
-  await noHorizontalScroll(page);
-  await checkContrast(page);
-
-  // Reload on the win screen shows it again.
-  await page.reload();
-  await expect(h1(page)).toHaveText('Player 2 wins!');
-
-  await page.getByRole('button', { name: 'Play again' }).click();
-  await expect(h1(page)).toHaveText('Turn 1');
-  const newCode = await codeLine(page).textContent();
-  expect(newCode).toMatch(/· Hard$/);
-  expect(newCode).not.toBe(firstCode);
-  await expect(startCells(page)).toHaveText(startsRe(3));
-  const saved = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem('bgc.game.v2') ?? 'null'),
+test('End game: the dialog, then Home without Continue game, also after a reload', async ({
+  page,
+}) => {
+  await midGame(page);
+  await openMenuItem(page, 'End game');
+  const dialog = page.getByRole('dialog', { name: 'End this game?' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('heading', { level: 2 })).toHaveText('End this game?');
+  await expect(dialog).toContainText(
+    'The game will be deleted. You will go back to the home screen.',
   );
-  expect(saved.state.game).toMatchObject({
-    turn: 1,
-    playerCount: 3,
-    difficulty: 'hard',
-    askedQuestionIds: [],
-    winner: null,
-  });
-  expect(saved.state.game).not.toHaveProperty('activePlayer');
+  await expect(dialog.getByRole('button')).toHaveText(['End game', 'Cancel']);
+  await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeFocused();
+  await checkButtons(dialog.getByRole('button'));
+  await noHorizontalScroll(page);
+  await checkContrast(page);
+  // The dialog fits in the 390 × 844 viewport.
+  const box = (await dialog.boundingBox())!;
+  expect(box.x).toBeGreaterThanOrEqual(0);
+  expect(box.x + box.width).toBeLessThanOrEqual(390);
+  expect(box.y + box.height).toBeLessThanOrEqual(844);
 
-  // Again: winner → Home → reload → Home.
-  await openMenuItem(page, 'We have a winner');
-  await page.getByRole('button', { name: 'Player 3' }).click();
-  await expect(h1(page)).toHaveText('Player 3 wins!');
-  await page.getByRole('button', { name: 'Home' }).click();
+  await dialog.getByRole('button', { name: 'End game' }).click();
+  await expect(dialog).toHaveCount(0);
   await expect(h1(page)).toHaveText(APP_NAME);
+  await expect(h1(page)).toBeFocused();
+  await expect(continueButton(page)).toHaveCount(0);
+  expect(await savedState(page)).toEqual({ version: 2, state: { screen: 'home', game: null } });
+  await checkButtons(page.getByRole('button'));
+  await noHorizontalScroll(page);
+
   await page.reload();
   await expect(h1(page)).toHaveText(APP_NAME);
+  await expect(continueButton(page)).toHaveCount(0);
   await expect(startCells(page)).toHaveCount(0);
-  await expect(page.getByRole('button', { name: /^Continue game/ })).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'New game' })).toBeVisible();
+  await page.getByRole('button', { name: 'New game' }).click();
+  await expect(page.getByText('This will replace your current game.')).toHaveCount(0);
 });
 
-test('winner step Back returns to the same board', async ({ page }) => {
-  await startGame(page, { players: 4, difficulty: 'Medium' });
-  const before = await boardSnapshot(page);
-  await openMenuItem(page, 'We have a winner');
-  await page.getByRole('button', { name: 'Back' }).click();
-  await expect(h1(page)).toHaveText('Turn 1');
-  expect(await boardSnapshot(page)).toEqual(before);
-  await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
-});
+for (const how of ['Cancel', 'Escape', 'backdrop', 'system back'] as const) {
+  test(`End game: ${how} keeps the exact same game`, async ({ page }) => {
+    const before = await midGame(page);
+    const saved = await savedState(page);
+    await openMenuItem(page, 'End game');
+    const dialog = page.getByRole('dialog', { name: 'End this game?' });
+    await expect(dialog).toBeVisible();
+    if (how === 'Cancel') await dialog.getByRole('button', { name: 'Cancel' }).click();
+    else if (how === 'Escape') await page.keyboard.press('Escape');
+    else if (how === 'backdrop') await page.mouse.click(195, 10);
+    else await page.goBack();
+    await expect(dialog).toHaveCount(0);
+    await expect(h1(page)).toHaveText('Turn 2');
+    expect(await boardSnapshot(page)).toEqual(before);
+    expect(await savedState(page)).toEqual(saved);
 
-for (const count of [2, 3, 4] as const) {
-  test(`${count} players: the winner choice lists Player 1…${count} (D11)`, async ({ page }) => {
-    await startGame(page, { players: count, difficulty: 'Easy' });
-    await page.getByRole('button', { name: 'End turn' }).click();
-    await page.getByRole('button', { name: 'Start turn 2' }).click();
-    await openMenuItem(page, 'We have a winner');
-    await expect(page.getByRole('button', { name: /^Player \d$/ })).toHaveText(
-      Array.from({ length: count }, (_, i) => `Player ${i + 1}`),
-    );
-    await page.getByRole('button', { name: `Player ${count}` }).click();
-    await expect(h1(page)).toHaveText(`Player ${count} wins!`);
+    // Still the same game after a reload, and End game still works.
+    await page.reload();
+    await expect(h1(page)).toHaveText('Turn 2');
+    expect(await boardSnapshot(page)).toEqual(before);
+    await openMenuItem(page, 'End game');
+    await dialog.getByRole('button', { name: 'End game' }).click();
+    await expect(h1(page)).toHaveText(APP_NAME);
+    await expect(continueButton(page)).toHaveCount(0);
   });
 }
+
+test('a game quit to home, continued, then ended leaves no Continue game', async ({ page }) => {
+  await midGame(page);
+  await openMenuItem(page, 'Quit to home');
+  await page.getByRole('dialog').getByRole('button', { name: 'Quit' }).click();
+  await continueButton(page).click();
+  await expect(h1(page)).toHaveText('Turn 2');
+  await openMenuItem(page, 'End game');
+  await page.getByRole('dialog').getByRole('button', { name: 'End game' }).click();
+  await expect(h1(page)).toHaveText(APP_NAME);
+  await expect(continueButton(page)).toHaveCount(0);
+  await page.reload();
+  await expect(continueButton(page)).toHaveCount(0);
+});
+
+test('a legacy save on the removed winner screen reopens on its board', async ({ page }) => {
+  await startGame(page, { players: 3, difficulty: 'Easy', code: 'K7F2-9QX' });
+  await page.evaluate((key) => {
+    const saved = JSON.parse(localStorage.getItem(key)!);
+    saved.state.screen = 'winner';
+    saved.state.game.winner = 2;
+    localStorage.setItem(key, JSON.stringify(saved));
+  }, STORAGE_KEY);
+  await page.reload();
+  await expect(h1(page)).toHaveText('Turn 1');
+  await expect(codeLine(page)).toHaveText('Code K7F2-9QX · Easy');
+  await expect(page.getByText(/wins!|play again/i)).toHaveCount(0);
+  await openMenuItem(page, 'End game');
+  await page.getByRole('dialog').getByRole('button', { name: 'End game' }).click();
+  await expect(h1(page)).toHaveText(APP_NAME);
+  await expect(continueButton(page)).toHaveCount(0);
+});
 
 test('New board: Cancel and Escape keep the game, confirm starts a new board', async ({ page }) => {
   await startGame(page, { players: 2, difficulty: 'Easy' });
