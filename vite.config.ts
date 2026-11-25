@@ -4,8 +4,8 @@ import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 /** SILVA forest green (D14), also the icon background in scripts/generate-icons.mjs. */
-const THEME_COLOR = '#16302f';
-const BACKGROUND_COLOR = '#16302f';
+const THEME_COLOR = '#0f3d3a';
+const BACKGROUND_COLOR = '#0f3d3a';
 
 // https://vite.dev/config/
 export default defineConfig({

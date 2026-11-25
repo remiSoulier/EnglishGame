@@ -13,10 +13,10 @@ import { chromium } from '@playwright/test';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const OUT_DIR = join(ROOT, 'icons');
 
-/** Dark forest green of the mockup's home screen (also the manifest theme/background colour). */
-const FOREST = '#16302f';
-/** Lime accent of the mockup's buttons. */
-const LIME = '#dcf98f';
+/** SILVA forest green (--silva-forest in src/styles/tokens.css; manifest theme/background). */
+const FOREST = '#0f3d3a';
+/** SILVA lime accent (mirrors src/styles/tokens.css). */
+const LIME = '#d9f26b';
 
 /** Logo markup in a 64×64 coordinate space: frame, 3×3 grid, wall, star. */
 const LOGO = `
