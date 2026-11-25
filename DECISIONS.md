@@ -65,3 +65,6 @@ Les murs sont désormais 8 pièces physiques fixes, toujours les mêmes (cases d
 | W8 | L 3 + 2 | 5 |
 
 À chaque tirage, l'application choisit seulement la **place** et le **sens** de chaque pièce : horizontal ou vertical pour les murs droits, l'une des **4 rotations** pour les murs en L (pas de pièce retournée en miroir). Les autres règles restent : entre les cases, jamais le long du bord, pas de chevauchement (contact autorisé), aucune case isolée (sinon on retire). Chaque mur porte son nom (W1…W8) pour que les joueurs sachent quelle pièce poser où. Le message de l'utilisateur était tronqué après « 4 r… » : interprété comme « 4 rotations pour les L ».
+
+## D13 — Plus d'écran « We have a winner », un bouton End game (2026-11-25, demande utilisateur)
+Sur demande de l'utilisateur, l'écran 8 (choix du gagnant, « Player X wins! », *Play again*) est supprimé. Dans le menu du plateau, *We have a winner* est remplacé par **End game** : une confirmation (« End this game? » / *End game* / *Cancel*) puis retour à l'accueil, la partie sauvegardée est effacée (pas de *Continue game*). Les joueurs annoncent eux-mêmes le gagnant autour de la table. Le nombre de joueurs ne sert plus qu'aux cases de départ affichées. Les sauvegardes encore sur l'écran gagnant sont ramenées au plateau. Remplace la partie « Victoire » du cahier des charges et la tâche #15.
