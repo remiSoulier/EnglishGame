@@ -2,7 +2,7 @@ import type { Board, Difficulty } from '../engine';
 
 /** Screen currently shown. Navigation is driven by the game reducer (decision D8), no router. */
 export type Screen =
-  'home' | 'newGame' | 'board' | 'questionPopup' | 'question' | 'result' | 'newBoard' | 'winner';
+  'home' | 'newGame' | 'board' | 'questionPopup' | 'question' | 'result' | 'newBoard';
 
 /** Screens that belong to a game in progress (every screen but 'home' and 'newGame'). */
 export type GameScreen = Exclude<Screen, 'home' | 'newGame'>;
@@ -10,7 +10,7 @@ export type GameScreen = Exclude<Screen, 'home' | 'newGame'>;
 /** A multiple-choice answer letter. */
 export type AnswerLetter = 'A' | 'B' | 'C' | 'D';
 
-/** Number of players at the table. */
+/** Number of players at the table: drives the start cells shown (decision D13). */
 export type PlayerCount = 2 | 3 | 4;
 
 /** Number of cards at stake for a question. */
@@ -37,8 +37,6 @@ export interface Game {
   /** Ids of the questions already asked in this game. */
   askedQuestionIds: number[];
   pendingQuestion: null | PendingQuestion;
-  /** Winning player (1-based) once declared. */
-  winner: null | number;
   /**
    * Screen the game was on when the players quit to home (`QUIT_TO_HOME`), so that "Continue
    * game" (`CONTINUE_GAME`) returns to it. Absent while the game is being played.

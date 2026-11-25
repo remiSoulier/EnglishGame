@@ -13,7 +13,8 @@ export interface BoardScreenProps {
   /** Draws the next board; always available (decision D11: no turn order). */
   onEndTurn: () => void;
   onNewBoard: () => void;
-  onWinner: () => void;
+  /** Menu "End game": the caller asks for a confirmation, then deletes the game (decision D13). */
+  onEndGame: () => void;
   /** Menu "Quit to home" (shown when provided). */
   onQuit?: () => void;
 }
@@ -31,7 +32,7 @@ export function BoardScreen({
   onQuestion,
   onEndTurn,
   onNewBoard,
-  onWinner,
+  onEndGame,
   onQuit,
 }: BoardScreenProps) {
   return (
@@ -46,7 +47,7 @@ export function BoardScreen({
         <Menu
           items={[
             { label: 'New board', onSelect: onNewBoard },
-            { label: 'We have a winner', onSelect: onWinner },
+            { label: 'End game', onSelect: onEndGame },
             ...(onQuit ? [{ label: 'Quit to home', onSelect: onQuit }] : []),
           ]}
         />
