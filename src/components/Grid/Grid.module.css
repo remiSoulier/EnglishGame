@@ -4,6 +4,10 @@
   max-width: 480px;
   height: auto;
   margin: 0 auto;
+  padding: 6px 8px 8px 4px;
+  border-radius: 18px;
+  /* Dark forest panel: the coordinate labels outside the 9×9 board sit on it too. */
+  background: var(--color-board-bg);
 }
 
 .boardBg {
@@ -23,7 +27,7 @@
 
 .label {
   fill: var(--color-label);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-family);
   font-size: 15px;
   font-weight: 600;
   text-anchor: middle;
@@ -38,7 +42,7 @@
   stroke-linejoin: round;
 }
 
-/* End mark: --color-board-bg disc, --color-wall ring (14.68:1 vs board, same as walls). */
+/* End mark: --color-board-bg disc, --color-wall ring (9.64:1 vs board, same as walls). */
 .wallEnd {
   fill: var(--color-board-bg);
   stroke: var(--color-wall);
@@ -51,10 +55,10 @@
   stroke-width: 1.5;
 }
 
-/* --color-wall on --color-board-bg: 14.68:1. */
+/* --color-wall on --color-board-bg: 9.64:1. */
 .wallBadgeText {
   fill: var(--color-wall);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-family);
   font-size: 13px;
   font-weight: 700;
   text-anchor: middle;
@@ -91,7 +95,7 @@
 
 .startLabel {
   fill: var(--color-start);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-family);
   font-size: 12px;
   font-weight: 700;
   text-anchor: middle;

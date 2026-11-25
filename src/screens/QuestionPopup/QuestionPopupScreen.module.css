@@ -1,14 +1,52 @@
 .title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   margin: 0;
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.2;
+  text-align: center;
   overflow-wrap: anywhere;
 }
 
+.lead {
+  color: var(--color-primary);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.stake {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Navy box, white number: 13.47:1. */
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  height: 64px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.unit {
+  color: var(--color-primary);
+  font-size: 28px;
+  font-weight: 800;
+}
+
 .text {
-  margin: 12px 0 0;
+  margin: 14px 0 0;
+  color: var(--color-text-muted);
   font-size: 16px;
+  text-align: center;
 }
 
 .actions {

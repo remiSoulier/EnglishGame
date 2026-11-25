@@ -5,17 +5,17 @@
 .trigger {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
   min-height: var(--tap-target);
   min-width: var(--tap-target);
-  padding: 0 12px;
+  padding: 0;
   border: 2px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-bg);
+  border-radius: 12px;
+  background: var(--color-surface);
   color: var(--color-text);
   font-family: inherit;
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -31,7 +31,7 @@
 }
 
 .icon {
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
 }
 
@@ -45,7 +45,7 @@
   min-width: 220px;
   max-width: calc(100vw - 24px);
   padding: 6px;
-  border: 1px solid var(--color-border);
+  border: 2px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
   box-shadow: var(--shadow-popover);
