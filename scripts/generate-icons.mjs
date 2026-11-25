@@ -1,6 +1,7 @@
 /**
- * Generates the placeholder PWA icons in public/icons/ from the app logo (3×3 grid + star)
- * drawn on the primary colour. Uses Playwright's Chromium to rasterise the SVG.
+ * Generates the PWA icons in public/icons/ and public/favicon.svg in the SILVA style (D14):
+ * a lime rounded-square frame holding a 3×3 grid, a star (goal) and a wall stroke, on the
+ * mockup's dark forest green. Uses Playwright's Chromium to rasterise the SVG.
  *
  * Usage: node scripts/generate-icons.mjs
  */
@@ -9,27 +10,30 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 
-const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'public', 'icons');
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
+const OUT_DIR = join(ROOT, 'icons');
 
-/** Primary colour (mirrors --color-primary in src/styles/tokens.css). */
-const PRIMARY = '#1d4ed8';
+/** Dark forest green of the mockup's home screen (also the manifest theme/background colour). */
+const FOREST = '#16302f';
+/** Lime accent of the mockup's buttons. */
+const LIME = '#dcf98f';
 
-/** Logo markup (mirrors src/components/Logo/Logo.tsx), in a 64×64 coordinate space. */
+/** Logo markup in a 64×64 coordinate space: frame, 3×3 grid, wall, star. */
 const LOGO = `
-  <rect x="2" y="2" width="60" height="60" rx="8" fill="#ffffff" />
-  <g stroke="#c9ced6" stroke-width="1">
-    <line x1="22" y1="2" x2="22" y2="62" /><line x1="2" y1="22" x2="62" y2="22" />
-    <line x1="42" y1="2" x2="42" y2="62" /><line x1="2" y1="42" x2="62" y2="42" />
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="none" stroke="${LIME}" stroke-width="4" />
+  <g stroke="${LIME}" stroke-opacity="0.35" stroke-width="1.5">
+    <line x1="24.7" y1="8" x2="24.7" y2="56" /><line x1="8" y1="24.7" x2="56" y2="24.7" />
+    <line x1="39.3" y1="8" x2="39.3" y2="56" /><line x1="8" y1="39.3" x2="56" y2="39.3" />
   </g>
-  <rect x="40" y="20" width="4" height="24" rx="1.5" fill="#1f2937" />
-  <path d="M52 15.5l2.35 4.76 5.25.76-3.8 3.7.9 5.23L52 27.48l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"
-    transform="translate(0 -9)" fill="#047857" />
-  <circle cx="12" cy="52" r="5" fill="${PRIMARY}" />
-  <rect x="2" y="2" width="60" height="60" rx="8" fill="none" stroke="#5b6470" stroke-width="2" />
+  <line x1="39.3" y1="28" x2="39.3" y2="52" stroke="${LIME}" stroke-width="4"
+    stroke-linecap="round" />
+  <path d="M48 11.5l2.35 4.76 5.25.76-3.8 3.7.9 5.23L48 23.48l-4.7 2.47.9-5.23-3.8-3.7 5.25-.76z"
+    transform="translate(0 -1.5)" fill="${LIME}" />
+  <circle cx="16.3" cy="47.7" r="4" fill="${LIME}" />
 `;
 
 /**
- * Builds a square SVG: the logo centred on a primary background.
+ * Builds a square SVG: the logo centred on a forest-green background.
  * @param {number} size Output size in px.
  * @param {number} ratio Logo size relative to the icon (maskable icons keep it in the safe zone).
  */
@@ -38,7 +42,7 @@ function iconSvg(size, ratio) {
   const offset = (size - logo) / 2;
   const scale = logo / 64;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" fill="${PRIMARY}" />
+  <rect width="${size}" height="${size}" fill="${FOREST}" />
   <g transform="translate(${offset} ${offset}) scale(${scale})">${LOGO}</g>
 </svg>`;
 }
@@ -51,7 +55,16 @@ const ICONS = [
   { file: 'apple-touch-icon-180.png', size: 180, ratio: 0.75 },
 ];
 
+/** Favicon: the logo on a rounded forest-green tile (vector, no rasterisation needed). */
+const FAVICON = `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="${FOREST}" />
+  <g transform="translate(4 4) scale(0.875)">${LOGO}</g>
+</svg>
+`;
+
 await mkdir(OUT_DIR, { recursive: true });
+await writeFile(join(ROOT, 'favicon.svg'), FAVICON);
+console.log('wrote public/favicon.svg');
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ deviceScaleFactor: 1 });
