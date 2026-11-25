@@ -376,18 +376,14 @@ describe('Grid — player label plates stay clear of walls, rivets and badges', 
     throw new Error(`no board with a wall on ${side}`);
   }
 
-  it('8EVP-FVC (4 players) with W8 on I1-S: the P3 plate is clear', () => {
-    let found = 0;
+  it('8EVP-FVC (4 players), turns 1–6: every plate is clear', () => {
+    // The validator's board had W8 on I1-S; since D16 changed the wall draw the code gives other
+    // layouts, so the I1-S case itself is covered by the generated-board test just below.
     for (const difficulty of DIFFICULTIES) {
       for (let turn = 1; turn <= 6; turn++) {
-        const board = generateBoard('8EVP-FVC', turn, difficulty);
-        const w8 = board.walls.find((w) => w.id === 'W8');
-        if (!w8?.sides.includes('I1-S')) continue;
-        found++;
-        checkPlates(board, `8EVP-FVC/${turn}/${difficulty}`);
+        checkPlates(generateBoard('8EVP-FVC', turn, difficulty), `8EVP-FVC/${turn}/${difficulty}`);
       }
     }
-    expect(found, '8EVP-FVC has W8 on I1-S for some turn/difficulty').toBeGreaterThan(0);
   });
 
   it.each(['A1-S', 'I1-S', 'A8-S', 'I8-S'])('a wall on %s keeps the plates clear', (side) => {
