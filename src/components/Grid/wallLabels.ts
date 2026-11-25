@@ -21,11 +21,10 @@ export const BADGE_HEIGHT = 17;
 /** Half-size of the box covered by an enemy or goal symbol (goal star outer radius 0.42 cell). */
 const SYMBOL_HALF = 17;
 /**
- * Half-size of the box covered by a start cell's character and its "P1" … "P4" label (drawn
- * below the character, see `StartShape`): most of the cell, centred on it.
+ * Half-size of the box reserved around a start cell (character, "P1" … "P4" plate and dashed
+ * outline, see `StartShape`): the whole 40 × 40 cell. Overlaps of 0 area (touching) are fine.
  */
-const START_HALF_X = 16;
-const START_HALF_Y = 18;
+const START_HALF = CELL / 2;
 
 /** Sideways shifts of a candidate, perpendicular to its side (SVG units, < 1 cell). */
 const OFFSETS = [0, -10, 10, -20, 20, -30, 30];
@@ -37,11 +36,12 @@ const RIVET_HALF = 6;
 
 /**
  * Score weights: hiding an enemy or the goal is worst, then leaving the board, then hiding a
- * rivet where two pieces touch, then the rest (start labels, other badges), then other rivets.
+ * rivet where two pieces touch or covering part of a start cell, then the rest (other badges),
+ * then other rivets.
  */
 const W_SYMBOL = 1_000_000;
 const W_OUTSIDE = 10_000;
-/** Per hidden contact rivet: worse than 50 units² of overlap with a start label or badge. */
+/** Per hidden contact rivet or covered start cell: worse than 50 units² of badge overlap. */
 const W_CONTACT = 5_000;
 const W_SOFT = 100;
 /** Per hidden free-end rivet (an end touching no other piece). */
@@ -134,7 +134,7 @@ interface Candidate {
 function candidates(
   wall: Wall,
   symbols: readonly Box[],
-  startLabels: readonly Box[],
+  startCells: readonly Box[],
   rivets: Rivets,
 ): Candidate[] {
   const middle = wall.sides.length / 2;
@@ -150,11 +150,11 @@ function candidates(
         };
         const box = badgeBox(point);
         const hidden = symbols.reduce((sum, s) => sum + overlap(box, s), 0);
-        const starts = startLabels.reduce((sum, s) => sum + overlap(box, s), 0);
+        const starts = startCells.reduce((sum, s) => sum + overlap(box, s), 0);
         const base =
           W_SYMBOL * hidden +
           W_OUTSIDE * outside(box) +
-          W_CONTACT * hits(box, rivets.contact) +
+          W_CONTACT * (hits(box, rivets.contact) + hits(box, startCells)) +
           W_SOFT * starts +
           W_RIVET * hits(box, rivets.free) +
           Math.abs(offset) +
@@ -169,7 +169,8 @@ function candidates(
 /**
  * Picks where to draw each wall's name badge: on its wall or shifted sideways by at most 3/4 of a
  * cell. In order of priority it avoids hiding an enemy or the goal, leaving the board, hiding a
- * wall end mark where two pieces touch, and hiding a start label or another badge; then it avoids
+ * wall end mark where two pieces touch or covering part of a start cell, and hiding another badge;
+ * then it avoids
  * other end marks and prefers a badge on the wall, near its middle. Walls with the fewest free
  * spots are placed first. `wallEndPoints[i]` holds the end marks of `walls[i]` (SVG units).
  * Returns one point per wall, in the order of `walls`.
@@ -181,9 +182,9 @@ export function placeWallLabels(
   wallEndPoints: readonly (readonly LabelPoint[])[] = [],
 ): LabelPoint[] {
   const symbols = symbolCells.map((c) => cellBox(c, SYMBOL_HALF, SYMBOL_HALF));
-  const startLabels = startCells.map((c) => cellBox(c, START_HALF_X, START_HALF_Y));
+  const starts = startCells.map((c) => cellBox(c, START_HALF, START_HALF));
   const rivets = classifyRivets(walls, wallEndPoints);
-  const options = walls.map((wall) => candidates(wall, symbols, startLabels, rivets));
+  const options = walls.map((wall) => candidates(wall, symbols, starts, rivets));
   const free = options.map((list) => list.filter((c) => c.base < W_SOFT).length);
   const order = walls.map((_, i) => i).sort((i, j) => free[i] - free[j] || i - j);
 
