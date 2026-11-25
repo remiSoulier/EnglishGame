@@ -117,3 +117,8 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #25 Rivets aux deux bouts de chaque mur pour distinguer les pièces qui se touchent (ui-dev)
 
 | 2026-11-24 | #25 | VALIDÉ after 1 refusal: badges hid junction rivets on ~12% of boards; fixed (badges now avoid all rivets) and re-validated. Merged into main. |
+- [x] #26 Écran gagnant retiré, bouton End game dans le menu (ui-dev)
+- [~] #27 Style SILVA de la maquette (ui-dev)
+- [ ] #28 Nom SILVA dans le manifeste, la page et les icônes (setup-dev)
+
+| 2026-11-25 | #26 | VALIDÉ (no defect, D13). Merged into main. |
