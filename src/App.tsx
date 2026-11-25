@@ -2,21 +2,21 @@
  * Navigation (backlog #12, decision D8): the game reducer owns `screen`, there is no router.
  * The full map (each screen → the screens it leads to) is `NAVIGATION` in src/state/navigation.ts.
  * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
- * turn (at any time, no turn order: decision D11) → New board → Board; Board menu → New board (confirm) / We have a winner → Winner / Quit
- * to home (confirm, game kept) → Home → Continue game. The browser / Android back button maps to
+ * turn (at any time, no turn order: decision D11) → New board → Board; Board menu → New board
+ * (confirm) / End game (confirm, game deleted: decision D13) → Home / Quit to home (confirm, game
+ * kept) → Home → Continue game. The browser / Android back button maps to
  * the in-app Back where there is one (useSystemBack), and focus moves to the new screen's <h1>.
  */
 import { useEffect, useRef, useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
 import { getQuestion, newCode } from './engine';
-import { BoardScreen, NewBoardConfirm, QuitConfirm } from './screens/Board';
+import { BoardScreen, EndGameConfirm, NewBoardConfirm, QuitConfirm } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
 import { NewGameScreen } from './screens/NewGame';
 import { QuestionScreen } from './screens/Question';
 import { QuestionPopupScreen } from './screens/QuestionPopup';
 import { ResultScreen } from './screens/Result';
-import { WinnerScreen } from './screens/Winner';
 import { GameProvider, useGame } from './state/GameContext';
 import { canGoBack } from './state/navigation';
 import { openQuestionAction } from './state/questionFlow';
@@ -34,16 +34,15 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
   question: 'Question',
   result: 'Result',
   newBoard: 'New board',
-  winner: 'We have a winner',
 };
 
 /** Confirmation dialogs of the board menu (local UI state, not saved). */
-type BoardDialog = null | 'newBoard' | 'quit';
+type BoardDialog = null | 'newBoard' | 'endGame' | 'quit';
 
 /**
  * Moves focus to the new screen's <h1> when the screen changes, unless something on the new
- * screen already has it (a dialog, or a screen that focuses its own heading such as Result and
- * Winner, or the Question button the popup returns focus to on Cancel).
+ * screen already has it (a dialog, or a screen that focuses its own heading such as Result, or
+ * the Question button the popup returns focus to on Cancel).
  */
 function useHeadingFocus(screen: string): void {
   const previous = useRef(screen);
@@ -67,7 +66,8 @@ function useHeadingFocus(screen: string): void {
 function Screens() {
   const { state, dispatch } = useGame();
   const { screen, game } = state;
-  // Local UI state: the "Start a new board?" / "Quit this game?" confirmation over the board.
+  // Local UI state: the "Start a new board?" / "End this game?" / "Quit this game?" confirmation
+  // over the board.
   const [boardDialog, setBoardDialog] = useState<BoardDialog>(null);
   const dialog = screen === 'board' ? boardDialog : null;
 
@@ -112,7 +112,7 @@ function Screens() {
             onQuestion={() => dispatch(openQuestionAction(game.askedQuestionIds))}
             onEndTurn={() => dispatch({ type: 'END_TURN' })}
             onNewBoard={() => setBoardDialog('newBoard')}
-            onWinner={() => dispatch({ type: 'OPEN_WINNER' })}
+            onEndGame={() => setBoardDialog('endGame')}
             onQuit={() => setBoardDialog('quit')}
           />
         </div>
@@ -132,6 +132,15 @@ function Screens() {
             onCancel={() => setBoardDialog(null)}
           />
         )}
+        {dialog === 'endGame' && (
+          <EndGameConfirm
+            onConfirm={() => {
+              setBoardDialog(null);
+              dispatch({ type: 'END_GAME' });
+            }}
+            onCancel={() => setBoardDialog(null)}
+          />
+        )}
         {dialog === 'quit' && (
           <QuitConfirm
             onConfirm={() => {
@@ -142,19 +151,6 @@ function Screens() {
           />
         )}
       </>
-    );
-  }
-
-  if (game && screen === 'winner') {
-    return (
-      <WinnerScreen
-        playerCount={game.playerCount}
-        winner={game.winner}
-        onDeclare={(player) => dispatch({ type: 'DECLARE_WINNER', player })}
-        onBack={() => dispatch({ type: 'BACK' })}
-        onPlayAgain={() => dispatch({ type: 'PLAY_AGAIN', code: newCode() })}
-        onHome={() => dispatch({ type: 'GO_HOME' })}
-      />
     );
   }
 

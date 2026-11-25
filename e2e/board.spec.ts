@@ -67,11 +67,7 @@ test('menu opens, closes on Escape (focus on trigger) and on outside click', asy
   await trigger.click();
   const menu = page.getByRole('menu');
   await expect(menu).toBeVisible();
-  await expect(menu.getByRole('menuitem')).toHaveText([
-    'New board',
-    'We have a winner',
-    'Quit to home',
-  ]);
+  await expect(menu.getByRole('menuitem')).toHaveText(['New board', 'End game', 'Quit to home']);
   await expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
   await page.keyboard.press('Escape');
@@ -84,9 +80,9 @@ test('menu opens, closes on Escape (focus on trigger) and on outside click', asy
   await expect(menu).toHaveCount(0);
 
   await trigger.click();
-  await page.getByRole('menuitem', { name: 'We have a winner' }).click();
+  await page.getByRole('menuitem', { name: 'End game' }).click();
   await expect(menu).toHaveCount(0);
-  await expect(page.getByRole('heading', { level: 1, name: 'We have a winner' })).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'End this game?' })).toBeVisible();
 });
 
 test('every button is at least 44x44 px (menu open and closed)', async ({ page }) => {

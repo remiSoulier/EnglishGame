@@ -14,7 +14,6 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     board: generateBoard('ABCD-EFG', 1, 'medium'),
     askedQuestionIds: [],
     pendingQuestion: null,
-    winner: null,
     ...overrides,
   };
 }
@@ -28,7 +27,6 @@ describe('QUIT_TO_HOME / CONTINUE_GAME', () => {
     ['questionPopup', { pendingQuestion: pending }],
     ['question', { pendingQuestion: pending }],
     ['result', { pendingQuestion: { ...pending, answer: 'A', correct: false } }],
-    ['winner', {}],
   ])('quits %s to home keeping the game, then continues on it', (screen, overrides) => {
     const game = makeGame(overrides);
     const home = gameReducer({ screen, game }, { type: 'QUIT_TO_HOME' });
@@ -87,12 +85,16 @@ describe('canGoBack', () => {
       { screen: 'questionPopup', game: makeGame({ pendingQuestion: pending }) },
       { screen: 'question', game: makeGame({ pendingQuestion: pending }) },
       { screen: 'newBoard', game: makeGame() },
-      { screen: 'winner', game: makeGame() },
-      { screen: 'winner', game: makeGame({ winner: 1 }) },
+      { screen: 'result', game: makeGame({ pendingQuestion: { ...pending, answer: 'A' } }) },
+      { screen: 'home', game: { ...makeGame(), lastScreen: 'board' } },
     ];
     for (const s of states) {
       expect(canGoBack(s), s.screen).toBe(gameReducer(s, { type: 'BACK' }) !== s);
     }
+  });
+
+  it('is false on the board: the End game dialog is local UI state (D13)', () => {
+    expect(canGoBack({ screen: 'board', game: makeGame() })).toBe(false);
   });
 
   it('every Back exit of the map is a BACK action', () => {

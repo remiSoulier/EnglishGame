@@ -20,7 +20,7 @@ export type GameAction =
   /** Any screen → 'board': new game, turn 1. Invalid code / settings → no-op. */
   | { type: 'START_GAME'; playerCount: PlayerCount; difficulty: Difficulty; code: string }
   /**
-   * 'board', no winner → next turn's board (same goal), 'newBoard'. The app does not track whose
+   * 'board' → next turn's board (same goal), 'newBoard'. The app does not track whose
    * turn it is (decision D11): End turn can be tapped at any time.
    */
   | { type: 'END_TURN' }
@@ -42,17 +42,11 @@ export type GameAction =
   | { type: 'ANSWER_QUESTION'; answer: AnswerLetter }
   /** 'result' → 'board', pending question cleared. */
   | { type: 'CONTINUE' }
-  /** 'board' → 'winner' (choose the winner). */
-  | { type: 'OPEN_WINNER' }
-  /** 'winner', no winner yet, valid player → winner set; stays on 'winner' ("Player X wins!"). */
-  | { type: 'DECLARE_WINNER'; player: number }
-  /** 'winner' once declared → new game with this code, same players and difficulty. */
-  | { type: 'PLAY_AGAIN'; code: string }
   /**
-   * Any screen → 'home', game dropped. Used by the winner screen's Home button once the game is
-   * over; to leave a game that goes on, use `QUIT_TO_HOME`.
+   * 'board' (menu "End game", after confirmation) → 'home', game dropped: no "Continue game"
+   * (decision D13). Elsewhere a no-op. To leave a game that goes on, use `QUIT_TO_HOME`.
    */
-  | { type: 'GO_HOME' }
+  | { type: 'END_GAME' }
   /**
    * Any game screen → 'home', game KEPT (saved) with `lastScreen` set to the screen it was on.
    * On 'home' / 'newGame' or without a game, a no-op.
@@ -69,8 +63,7 @@ export type GameAction =
    */
   | { type: 'GO_NEW_GAME' }
   /**
-   * Back: 'newGame' → 'home'; 'questionPopup' → 'board' (like CANCEL_QUESTION);
-   * 'winner' before a winner is declared → 'board'. Elsewhere a no-op.
+   * Back: 'newGame' → 'home'; 'questionPopup' → 'board' (like CANCEL_QUESTION). Elsewhere a no-op.
    */
   | { type: 'BACK' };
 
@@ -104,7 +97,6 @@ function newGame(playerCount: PlayerCount, difficulty: Difficulty, code: string)
     board,
     askedQuestionIds: [],
     pendingQuestion: null,
-    winner: null,
   };
 }
 
@@ -138,9 +130,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'START_GAME':
       return startGame(state, action.playerCount, action.difficulty, action.code);
 
-    case 'GO_HOME':
-      return screen === 'home' && game === null ? state : { screen: 'home', game: null };
-
     case 'QUIT_TO_HOME':
       if (!game || screen === 'home' || screen === 'newGame') return state;
       return { screen: 'home', game: { ...game, lastScreen: screen } };
@@ -159,7 +148,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       if (screen === 'questionPopup' && game) {
         return { screen: 'board', game: { ...game, pendingQuestion: null } };
       }
-      if (screen === 'winner' && game && game.winner === null) return { ...state, screen: 'board' };
       return state;
   }
 
@@ -168,7 +156,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
   switch (action.type) {
     case 'END_TURN': {
-      if (screen !== 'board' || game.winner !== null) return state;
+      if (screen !== 'board') return state;
       const turn = game.turn + 1;
       return {
         screen: 'newBoard',
@@ -183,6 +171,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'START_TURN':
       return screen === 'newBoard' ? { ...state, screen: 'board' } : state;
+
+    case 'END_GAME':
+      return screen === 'board' ? { screen: 'home', game: null } : state;
 
     case 'NEW_BOARD':
       return screen === 'board'
@@ -245,26 +236,6 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     case 'CONTINUE':
       return screen === 'result'
         ? { screen: 'board', game: { ...game, pendingQuestion: null } }
-        : state;
-
-    case 'OPEN_WINNER':
-      return screen === 'board' ? { ...state, screen: 'winner' } : state;
-
-    case 'DECLARE_WINNER':
-      if (
-        screen !== 'winner' ||
-        game.winner !== null ||
-        !Number.isInteger(action.player) ||
-        action.player < 1 ||
-        action.player > game.playerCount
-      ) {
-        return state;
-      }
-      return { ...state, game: { ...game, winner: action.player } };
-
-    case 'PLAY_AGAIN':
-      return screen === 'winner' && game.winner !== null
-        ? startGame(state, game.playerCount, game.difficulty, action.code)
         : state;
 
     default: {

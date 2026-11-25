@@ -11,7 +11,7 @@ function setup(overrides: Partial<BoardScreenProps> = {}) {
     onQuestion: vi.fn(),
     onEndTurn: vi.fn(),
     onNewBoard: vi.fn(),
-    onWinner: vi.fn(),
+    onEndGame: vi.fn(),
     ...overrides,
   };
   render(<BoardScreen {...props} />);
@@ -37,8 +37,8 @@ describe('BoardScreen', () => {
     const menuButton = screen.getByRole('button', { name: 'Menu' });
     await user.click(menuButton);
     expect(menuButton).toHaveAttribute('aria-expanded', 'true');
-    await user.click(screen.getByRole('menuitem', { name: 'We have a winner' }));
-    expect(props.onWinner).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole('menuitem', { name: 'End game' }));
+    expect(props.onEndGame).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });

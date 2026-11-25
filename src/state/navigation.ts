@@ -26,7 +26,6 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
     { via: 'Continue game', action: 'CONTINUE_GAME', to: 'questionPopup' },
     { via: 'Continue game', action: 'CONTINUE_GAME', to: 'question' },
     { via: 'Continue game', action: 'CONTINUE_GAME', to: 'result' },
-    { via: 'Continue game', action: 'CONTINUE_GAME', to: 'winner' },
     { via: 'New game', action: 'GO_NEW_GAME', to: 'newGame' },
     // "How to play" and "Lexicon" are disabled (coming soon).
   ],
@@ -37,11 +36,12 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
   ],
   board: [
     { via: 'Question', action: 'OPEN_QUESTION', to: 'questionPopup' },
-    // Always shown (decision D11: no turn order); refused once a winner is declared.
+    // Always shown (decision D11: no turn order).
     { via: 'End turn', action: 'END_TURN', to: 'newBoard' },
-    // Menu. New board and Quit to home ask for a confirmation first (Cancel stays on the board).
+    // Menu. Every item asks for a confirmation first (Cancel stays on the board).
     { via: 'Menu › New board › New board', action: 'NEW_BOARD', to: 'board' },
-    { via: 'Menu › We have a winner', action: 'OPEN_WINNER', to: 'winner' },
+    // Decision D13: the game is deleted, Home offers no "Continue game".
+    { via: 'Menu › End game › End game', action: 'END_GAME', to: 'home' },
     { via: 'Menu › Quit to home › Quit', action: 'QUIT_TO_HOME', to: 'home' },
   ],
   questionPopup: [
@@ -53,23 +53,14 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
   question: [{ via: 'An answer (A–D)', action: 'ANSWER_QUESTION', to: 'result' }],
   result: [{ via: 'Continue', action: 'CONTINUE', to: 'board' }],
   newBoard: [{ via: 'Start turn N+1', action: 'START_TURN', to: 'board' }],
-  winner: [
-    // Step 1 (no winner yet).
-    { via: 'Player X', action: 'DECLARE_WINNER', to: 'winner' },
-    { via: 'Back', action: 'BACK', to: 'board' },
-    // Step 2 ("Player X wins!").
-    { via: 'Play again', action: 'PLAY_AGAIN', to: 'board' },
-    { via: 'Home', action: 'GO_HOME', to: 'home' },
-  ],
 };
 
 /**
- * True when `BACK` leads somewhere from this state: 'newGame', 'questionPopup' and the winner
- * screen before a winner is declared. Mirrors the `BACK` rules of `gameReducer`.
+ * True when `BACK` leads somewhere from this state: 'newGame' and 'questionPopup'. Mirrors the
+ * `BACK` rules of `gameReducer`.
  */
 export function canGoBack({ screen, game }: GameState): boolean {
   if (screen === 'newGame') return true;
   if (screen === 'questionPopup') return game !== null;
-  if (screen === 'winner') return game !== null && game.winner === null;
   return false;
 }

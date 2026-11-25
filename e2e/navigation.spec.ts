@@ -20,7 +20,7 @@ const starts = async (page: Page) =>
   ).split(', ');
 const grid = (page: Page) => page.getByRole('img', { name: /^Board, turn \d+\./ });
 
-async function openMenuItem(page: Page, name: 'New board' | 'We have a winner' | 'Quit to home') {
+async function openMenuItem(page: Page, name: 'New board' | 'End game' | 'Quit to home') {
   await page.getByRole('button', { name: 'Menu' }).click();
   await page.getByRole('menuitem', { name }).click();
 }
@@ -199,11 +199,10 @@ test.describe('quit to home and continue', () => {
     await expect(continueButton(page)).toContainText('Turn 1 · HJKM-NPQ');
   });
 
-  test('winner → Home clears the game (no Continue, even after a reload)', async ({ page }) => {
+  test('End game → Home clears the game (no Continue, even after a reload)', async ({ page }) => {
     await startGame(page, { players: 2 });
-    await openMenuItem(page, 'We have a winner');
-    await page.getByRole('button', { name: 'Player 2' }).click();
-    await page.getByRole('button', { name: 'Home' }).click();
+    await openMenuItem(page, 'End game');
+    await page.getByRole('dialog').getByRole('button', { name: 'End game' }).click();
     await expect(home(page)).toBeVisible();
     await expect(continueButton(page)).toHaveCount(0);
     await page.reload();
@@ -270,17 +269,7 @@ test.describe('system back', () => {
     expect(state.game.askedQuestionIds).toEqual([]);
   });
 
-  test('on winner step 1 → board', async ({ page }) => {
-    const before = await midGame(page);
-    await openMenuItem(page, 'We have a winner');
-    await expect(h1(page)).toHaveText('We have a winner');
-    await page.goBack();
-    await expect(h1(page)).toHaveText('Turn 2');
-    await expectH1Focused(page);
-    expect(await boardSnapshot(page)).toEqual(before);
-  });
-
-  for (const item of ['Quit to home', 'New board'] as const) {
+  for (const item of ['Quit to home', 'New board', 'End game'] as const) {
     test(`with the ${item} dialog open → the dialog closes, game unchanged`, async ({ page }) => {
       const before = await midGame(page);
       const saved = await savedState(page);
@@ -403,16 +392,15 @@ test.describe('focus on navigation', () => {
     await expect(h1(page)).toHaveText('Turn 2');
     await expectH1Focused(page);
 
-    await openMenuItem(page, 'We have a winner');
-    await expectH1Focused(page);
-    await page.getByRole('button', { name: 'Back' }).click();
-    await expect(h1(page)).toHaveText('Turn 2');
-    await expectH1Focused(page);
-
     await quitToHome(page);
     await expectH1Focused(page);
     await continueButton(page).click();
     await expect(h1(page)).toHaveText('Turn 2');
+    await expectH1Focused(page);
+
+    await openMenuItem(page, 'End game');
+    await page.getByRole('dialog').getByRole('button', { name: 'End game' }).click();
+    await expect(home(page)).toBeVisible();
     await expectH1Focused(page);
   });
 });

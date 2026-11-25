@@ -142,7 +142,7 @@ test.describe('service worker and offline', () => {
     expect(net.failed).toEqual([]);
   });
 
-  test('offline: a full game from Home to the win screen', async ({ page, context, baseURL }) => {
+  test('offline: a full game from Home to End game', async ({ page, context, baseURL }) => {
     const net = watchNetwork(context, new URL(baseURL!).origin);
     await page.goto('/');
     await expect(h1(page)).toHaveText(APP_NAME);
@@ -180,14 +180,12 @@ test.describe('service worker and offline', () => {
     await page.getByRole('button', { name: 'Start turn 2' }).click();
     await expect(h1(page)).toHaveText('Turn 2');
 
-    // Winner.
+    // End game (D13).
     await page.getByRole('button', { name: 'Menu' }).click();
-    await page.getByRole('menuitem', { name: 'We have a winner' }).click();
-    await expect(h1(page)).toHaveText('We have a winner');
-    await page.getByRole('button', { name: 'Player 1' }).click();
-    await expect(h1(page)).toHaveText('Player 1 wins!');
-    await page.getByRole('button', { name: 'Home' }).click();
+    await page.getByRole('menuitem', { name: 'End game' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'End game' }).click();
     await expect(h1(page)).toHaveText(APP_NAME);
+    await expect(page.getByRole('button', { name: /^Continue game/ })).toHaveCount(0);
 
     expect(net.foreign()).toEqual([]);
     expect(net.failed).toEqual([]);

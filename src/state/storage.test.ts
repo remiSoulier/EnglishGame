@@ -90,7 +90,7 @@ describe('saveState / loadState round trip', () => {
     expect(loadState()).toEqual(s);
   });
 
-  it('restores a later turn with questions, answers and a winner', () => {
+  it('restores a later turn with questions and answers', () => {
     let s = started();
     s = gameReducer(s, { type: 'OPEN_QUESTION', questionId: 1, cards: 2 });
     s = gameReducer(s, { type: 'SHOW_QUESTION' });
@@ -105,10 +105,9 @@ describe('saveState / loadState round trip', () => {
     expect(loadState()!.screen).toBe('newBoard');
 
     s = gameReducer(s, { type: 'START_TURN' });
-    s = gameReducer(s, { type: 'OPEN_WINNER' });
-    s = gameReducer(s, { type: 'DECLARE_WINNER', player: 3 });
     saveState(s);
     expect(loadState()).toEqual(s);
+    expect(loadState()!.game).not.toHaveProperty('winner');
   });
 
   it.each<GameState>([
@@ -151,7 +150,7 @@ describe('loadState rejects bad data', () => {
     expect(loadState()).toBeNull();
   });
 
-  it.each(['menu', '', undefined, 3])('unknown screen %j → null', (screen) => {
+  it.each(['menu', '', undefined, 3, 'Winner', 'winners'])('unknown screen %j → null', (screen) => {
     write(wrap({ screen, game: null }));
     expect(loadState()).toBeNull();
   });
@@ -203,9 +202,6 @@ describe('loadState rejects bad data', () => {
       'pending correct not boolean',
       (g) => (g.pendingQuestion = { questionId: 1, cards: 1, correct: 'yes' }),
     ],
-    ['winner missing', (g) => delete g.winner],
-    ['winner 0', (g) => (g.winner = 0)],
-    ['winner > playerCount', (g) => (g.winner = 4)],
   ];
 
   it.each(breakages)('malformed game (%s) → null', (_, breakIt) => {
@@ -249,7 +245,7 @@ describe('localStorage unavailable', () => {
 });
 
 describe('screen repair on load', () => {
-  it.each<Screen>(['board', 'questionPopup', 'question', 'result', 'newBoard', 'winner'])(
+  it.each<string>(['board', 'questionPopup', 'question', 'result', 'newBoard', 'winner'])(
     'without a game, %s → home',
     (screen) => {
       write(wrap({ screen, game: null }));
@@ -287,33 +283,141 @@ describe('screen repair on load', () => {
     },
   );
 
-  it.each<Screen>(['board', 'newBoard', 'winner'])('%s with a game is kept', (screen) => {
+  it.each<Screen>(['board', 'newBoard'])('%s with a game is kept', (screen) => {
     write(wrap({ screen, game: savedGame() }));
     expect(loadState()!.screen).toBe(screen);
   });
 });
 
-describe('finished game (#15)', () => {
-  const won = (): GameState => {
-    let s = gameReducer(started(), { type: 'OPEN_WINNER' });
-    s = gameReducer(s, { type: 'DECLARE_WINNER', player: 2 });
-    return s;
-  };
-
-  it('Home saves no game: a reload starts on home', () => {
-    saveState(gameReducer(won(), { type: 'GO_HOME' }));
+describe('ended game (End game, D13)', () => {
+  it('END_GAME saves no game: a reload starts on home without a game', () => {
+    const ended = gameReducer(started(), { type: 'END_GAME' });
+    saveState(ended);
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({
+      version: 2,
+      state: { screen: 'home', game: null },
+    });
     expect(loadState()).toEqual({ screen: 'home', game: null });
   });
 
-  it('Play again saves a fresh game at turn 1', () => {
-    saveState(gameReducer(won(), { type: 'PLAY_AGAIN', code: 'HJKM-NPQ' }));
-    const game = loadState()!.game!;
-    expect(game).toMatchObject({ code: 'HJKM-NPQ', turn: 1, winner: null, askedQuestionIds: [] });
+  it('an ended game replaces a previously saved one', () => {
+    saveState(started());
+    expect(loadState()!.game).not.toBeNull();
+    saveState(gameReducer(started(), { type: 'END_GAME' }));
+    expect(loadState()!.game).toBeNull();
+  });
+});
+
+describe('legacy v2 saves of the removed winner screen (D13)', () => {
+  /** The saved game, plus extra fields as an older v2 version wrote them. */
+  const legacyGame = (extra: Record<string, unknown>) => ({ ...savedGame(), ...extra });
+
+  it.each<[string, unknown]>([
+    ['no winner declared', null],
+    ['player 1', 1],
+    ['player 3', 3],
+  ])('screen winner (%s) loads on the board without a winner field', (_, winner) => {
+    write(wrap({ screen: 'winner', game: legacyGame({ winner }) }));
+    const loaded = loadState()!;
+    expect(loaded).toEqual({ screen: 'board', game: started().game });
+    expect(loaded.game).not.toHaveProperty('winner');
+  });
+
+  it('screen winner without any winner field loads on the board', () => {
+    write(wrap({ screen: 'winner', game: savedGame() }));
+    expect(loadState()).toEqual({ screen: 'board', game: started().game });
+  });
+
+  it.each<unknown>([0, 5, -1, 1.5, 'x', '2', true, {}, [], null])(
+    'a stray winner field %j on the board is dropped',
+    (winner) => {
+      write(wrap({ screen: 'board', game: legacyGame({ winner }) }));
+      const loaded = loadState()!;
+      expect(loaded).toEqual({ screen: 'board', game: started().game });
+      expect(loaded.game).not.toHaveProperty('winner');
+    },
+  );
+
+  it.each<Screen>(['newBoard', 'questionPopup', 'question', 'result'])(
+    'a stray winner field on %s is dropped, the screen kept',
+    (screen) => {
+      const pendingQuestion = { questionId: 1, cards: 2, answer: 'A', correct: false };
+      write(wrap({ screen, game: legacyGame({ winner: 2, pendingQuestion }) }));
+      const loaded = loadState()!;
+      expect(loaded.screen).toBe(screen);
+      expect(loaded.game).not.toHaveProperty('winner');
+    },
+  );
+
+  it.each<[string, unknown]>([
+    ['none', null],
+    ['player 2', 2],
+  ])('home with lastScreen winner (%s) → lastScreen board, no winner', (_, winner) => {
+    write(wrap({ screen: 'home', game: legacyGame({ winner, lastScreen: 'winner' }) }));
+    const loaded = loadState()!;
+    expect(loaded).toEqual({ screen: 'home', game: { ...started().game, lastScreen: 'board' } });
+    expect(loaded.game).not.toHaveProperty('winner');
+    expect(gameReducer(loaded, { type: 'CONTINUE_GAME' })).toEqual({
+      screen: 'board',
+      game: started().game,
+    });
+  });
+
+  it('newGame with lastScreen winner → lastScreen board', () => {
+    write(wrap({ screen: 'newGame', game: legacyGame({ winner: 1, lastScreen: 'winner' }) }));
+    expect(loadState()).toEqual({
+      screen: 'newGame',
+      game: { ...started().game, lastScreen: 'board' },
+    });
+  });
+
+  it('screen winner with lastScreen winner → board, lastScreen dropped', () => {
+    write(wrap({ screen: 'winner', game: legacyGame({ winner: 4, lastScreen: 'winner' }) }));
+    const loaded = loadState()!;
+    expect(loaded).toEqual({ screen: 'board', game: started().game });
+    expect(loaded.game).not.toHaveProperty('lastScreen');
+  });
+
+  it('a repaired legacy save is saved back without any trace of the winner', () => {
+    write(wrap({ screen: 'winner', game: legacyGame({ winner: 2, lastScreen: 'winner' }) }));
+    saveState(loadState()!);
+    const raw = localStorage.getItem(STORAGE_KEY)!;
+    expect(raw).not.toContain('winner');
+    expect(loadState()).toEqual({ screen: 'board', game: started().game });
+  });
+
+  it('the repaired game can be ended with END_GAME', () => {
+    write(wrap({ screen: 'winner', game: legacyGame({ winner: 2 }) }));
+    expect(gameReducer(loadState()!, { type: 'END_GAME' })).toEqual(initialState);
+  });
+
+  it.each<[string, (g: Record<string, unknown>) => void]>([
+    ['invalid code', (g) => (g.code = 'nope')],
+    ['playerCount 5', (g) => (g.playerCount = 5)],
+    ['turn 0', (g) => (g.turn = 0)],
+    ['board missing', (g) => delete g.board],
+    ['pending cards 4', (g) => (g.pendingQuestion = { questionId: 1, cards: 4 })],
+    ['invalid lastScreen', (g) => (g.lastScreen = 'menu')],
+  ])('a legacy winner save that is otherwise invalid (%s) → null', (_, breakIt) => {
+    const game = legacyGame({ winner: 1 });
+    breakIt(game);
+    write(wrap({ screen: 'winner', game }));
+    expect(loadState()).toBeNull();
+  });
+
+  it('a legacy winner save of another version → null', () => {
+    write({ version: 1, state: { screen: 'winner', game: legacyGame({ winner: 1 }) } });
+    expect(loadState()).toBeNull();
+  });
+
+  it('a legacy winner save with a non-object game → null', () => {
+    write(wrap({ screen: 'winner', game: 'game' }));
+    expect(loadState()).toBeNull();
   });
 });
 
 describe('lastScreen (quit to home, #12 D10)', () => {
-  it.each<GameScreen>(['board', 'newBoard', 'winner'])(
+  it.each<GameScreen>(['board', 'newBoard'])(
     'home with lastScreen %s round-trips unchanged',
     (lastScreen) => {
       const s: GameState = { screen: 'home', game: { ...started().game!, lastScreen } };
@@ -354,10 +458,10 @@ describe('lastScreen (quit to home, #12 D10)', () => {
     expect(loadState()!.game!.lastScreen).toBe('board');
   });
 
-  it.each<Screen>(['board', 'newBoard', 'winner'])(
+  it.each<Screen>(['board', 'newBoard'])(
     'a game screen (%s) drops a stray lastScreen',
     (screen) => {
-      write(wrap({ screen, game: { ...savedGame(), lastScreen: 'winner' } }));
+      write(wrap({ screen, game: { ...savedGame(), lastScreen: 'newBoard' } }));
       const loaded = loadState()!;
       expect(loaded.screen).toBe(screen);
       expect(loaded.game).toEqual(started().game);

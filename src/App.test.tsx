@@ -51,7 +51,7 @@ function savedGame(): Record<string, unknown> | null {
 
 type User = ReturnType<typeof userEvent.setup>;
 
-async function openMenuItem(user: User, name: 'New board' | 'We have a winner' | 'Quit to home') {
+async function openMenuItem(user: User, name: 'New board' | 'End game' | 'Quit to home') {
   await user.click(screen.getByRole('button', { name: 'Menu' }));
   await user.click(screen.getByRole('menuitem', { name }));
 }
@@ -294,11 +294,14 @@ describe('App', () => {
     },
   );
 
-  it('the menu "We have a winner" shows the winner screen', async () => {
+  it('the menu "End game" asks first (no winner screen any more, D13)', async () => {
     const { user } = await renderGame();
     await user.click(screen.getByRole('button', { name: 'Menu' }));
-    await user.click(screen.getByRole('menuitem', { name: 'We have a winner' }));
-    expect(screen.getByRole('heading', { level: 1, name: 'We have a winner' })).toBeInTheDocument();
+    await user.click(screen.getByRole('menuitem', { name: 'End game' }));
+    expect(screen.getByRole('dialog', { name: 'End this game?' })).toBeInTheDocument();
+    // The board stays behind the dialog (inert, so out of the accessibility tree).
+    expect(document.querySelector('h1')).toHaveTextContent(/^Turn 1$/);
+    expect(screen.queryByText(/we have a winner|wins!|play again/i)).toBeNull();
   });
 
   it('the menu "New board" asks first, then starts turn 1 with a new code', async () => {
@@ -380,133 +383,152 @@ describe('App', () => {
         turn: 1,
         playerCount: 3,
         difficulty: 'hard',
-        winner: null,
         pendingQuestion: null,
       });
       expect(game).not.toHaveProperty('activePlayer');
+      expect(game).not.toHaveProperty('winner');
       expect(gridLabel()).toContain(
         `Goal on ${cellName(generateBoard(after.code, 1, 'hard').goal)}.`,
       );
     });
   });
 
-  describe('We have a winner (#15)', () => {
-    it.each([2, 3, 4] as const)('lists exactly %i players', async (count) => {
+  describe('End game (#26, D13)', () => {
+    /** Plays to turn 2 on a 3-player Hard game, with one question answered; returns the snapshot. */
+    async function midGame() {
       const user = userEvent.setup();
-      render(<App />);
-      await startGame(user, { players: count, difficulty: 'Easy' });
-      await openMenuItem(user, 'We have a winner');
-      const buttons = screen.getAllByRole('button', { name: /^Player \d$/ });
-      expect(buttons.map((b) => b.textContent)).toEqual(
-        Array.from({ length: count }, (_, i) => `Player ${i + 1}`),
-      );
-    });
-
-    it.each([2, 3, 4] as const)(
-      'lists Player 1…%i after End turn and questions too (D11)',
-      async (count) => {
-        const user = userEvent.setup();
-        render(<App />);
-        await startGame(user, { players: count, difficulty: 'Easy' });
-        await user.click(screen.getByRole('button', { name: 'Question' }));
-        await user.click(screen.getByRole('button', { name: 'Show the question' }));
-        await user.click(screen.getByRole('button', { name: /^A: / }));
-        await user.click(screen.getByRole('button', { name: 'Continue' }));
-        await user.click(screen.getByRole('button', { name: 'End turn' }));
-        await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
-        await openMenuItem(user, 'We have a winner');
-        expect(screen.getAllByRole('button', { name: /^Player \d$/ })).toHaveLength(count);
-        await user.click(screen.getByRole('button', { name: `Player ${count}` }));
-        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
-          new RegExp(`^Player ${count} wins!$`),
-        );
-      },
-    );
-
-    it('Back returns to the same board (same turn, code, grid, players)', async () => {
-      const { user } = await renderGame();
-      await user.click(screen.getByRole('button', { name: 'End turn' }));
-      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
-      const before = snapshot();
-      await openMenuItem(user, 'We have a winner');
-      expect(screen.getByRole('heading', { level: 1 })).toHaveFocus();
-      await user.click(screen.getByRole('button', { name: 'Back' }));
-      expect(snapshot()).toEqual(before);
-      expect(before.heading).toBe('Turn 2');
-      expect(before.starts).toHaveLength(4);
-    });
-
-    it.each([1, 2, 3, 4])('declaring Player %i shows "Player %i wins!"', async (n) => {
-      const { user } = await renderGame();
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: `Player ${n}` }));
-      const h1 = screen.getByRole('heading', { level: 1 });
-      expect(h1).toHaveTextContent(new RegExp(`^Player ${n} wins!$`));
-      expect(h1).toHaveFocus();
-      expect(savedGame()).toMatchObject({ winner: n });
-    });
-
-    it('reload on the win screen shows the win screen again', async () => {
-      const { user, unmount } = await renderGame();
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Player 3' }));
-      unmount();
-      render(<App />);
-      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Player 3 wins!$/);
-      expect(screen.getByRole('button', { name: 'Play again' })).toBeInTheDocument();
-    });
-
-    it('Home goes to the Home screen and clears the saved game (reload → Home)', async () => {
-      const { user, unmount } = await renderGame();
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Player 2' }));
-      await user.click(screen.getByRole('button', { name: 'Home' }));
-      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
-      expect(JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null')).toMatchObject({
-        state: { screen: 'home', game: null },
-      });
-      unmount();
-      render(<App />);
-      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
-      expect(screen.queryByRole('list', { name: 'Players' })).toBeNull();
-      expect(screen.queryByRole('button', { name: /resume|continue/i })).toBeNull();
-    });
-
-    it('Play again starts turn 1: new code, same players & difficulty, no asked questions', async () => {
-      const user = userEvent.setup();
-      const first = render(<App />);
+      const utils = render(<App />);
       await startGame(user, { players: 3, difficulty: 'Hard' });
-      const code = snapshot().code;
-      // Ask (and answer) one question so askedQuestionIds is not empty before the win.
       await user.click(screen.getByRole('button', { name: 'Question' }));
       await user.click(screen.getByRole('button', { name: 'Show the question' }));
       await user.click(screen.getByRole('button', { name: /^A: / }));
       await user.click(screen.getByRole('button', { name: 'Continue' }));
-      expect(savedGame()?.askedQuestionIds).toHaveLength(1);
+      await user.click(screen.getByRole('button', { name: 'End turn' }));
+      await user.click(screen.getByRole('button', { name: 'Start turn 2' }));
+      return { user, ...utils, snapshot: snapshot() };
+    }
 
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Player 2' }));
-      await user.click(screen.getByRole('button', { name: 'Play again' }));
+    const continueGame = () => screen.queryByRole('button', { name: /^Continue game/ });
 
-      const after = snapshot();
-      expect(after.heading).toBe('Turn 1');
-      expect(after.code).not.toBe(code);
-      expect(after.starts).toHaveLength(3);
-      expect(after.difficulty).toBe('Hard');
-      expect(savedGame()).toMatchObject({
-        code: after.code,
-        turn: 1,
-        playerCount: 3,
-        difficulty: 'hard',
-        askedQuestionIds: [],
-        pendingQuestion: null,
-        winner: null,
+    it('the board menu lists exactly New board, End game, Quit to home', async () => {
+      const { user } = await renderGame();
+      await user.click(screen.getByRole('button', { name: 'Menu' }));
+      const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
+      expect(items.map((m) => m.textContent)).toEqual(['New board', 'End game', 'Quit to home']);
+      expect(screen.queryByText(/winner/i)).toBeNull();
+    });
+
+    it('shows "End this game?" with its text, End game then Cancel, Cancel focused, board inert', async () => {
+      const { user } = await midGame();
+      await openMenuItem(user, 'End game');
+      const dialog = screen.getByRole('dialog', { name: 'End this game?' });
+      expect(
+        within(dialog).getByText('The game will be deleted. You will go back to the home screen.'),
+      ).toBeInTheDocument();
+      expect(
+        within(dialog)
+          .getAllByRole('button')
+          .map((b) => b.textContent),
+      ).toEqual(['End game', 'Cancel']);
+      expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus();
+      const board = document.querySelector('[inert]');
+      expect(board).not.toBeNull();
+      expect(board).toContainElement(document.querySelector('h1'));
+      expect(board).not.toContainElement(dialog);
+    });
+
+    it('confirm → Home, focus on its h1, no Continue game, the save holds no game', async () => {
+      const { user } = await midGame();
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      const h1 = screen.getByRole('heading', { level: 1, name: APP_NAME });
+      expect(h1).toHaveFocus();
+      expect(continueGame()).toBeNull();
+      expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!)).toEqual({
+        version: 2,
+        state: { screen: 'home', game: null },
       });
+      expect(savedGame()).toBeNull();
+    });
 
-      // The fresh game is what survives a reload.
-      first.unmount();
+    it('an ended game stays ended after a reload (remount): Home, no Continue game', async () => {
+      const { user, unmount } = await midGame();
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      unmount();
       render(<App />);
-      expect(snapshot()).toEqual(after);
+      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
+      expect(continueGame()).toBeNull();
+      expect(screen.queryByRole('button', { name: /resume|continue/i })).toBeNull();
+      // New game has no replace notice: there is no game left to replace.
+      await user.click(screen.getByRole('button', { name: 'New game' }));
+      expect(screen.queryByText('This will replace your current game.')).toBeNull();
+    });
+
+    it('after End game, a new game starts at turn 1 with nothing asked', async () => {
+      const { user, snapshot: before } = await midGame();
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      await startGame(user, { players: 2, difficulty: 'Easy' });
+      expect(readCodeAny()).not.toBe(before.code);
+      expect(startCells()).toHaveLength(2);
+      expect(savedGame()).toMatchObject({ turn: 1, playerCount: 2, askedQuestionIds: [] });
+    });
+
+    it.each(['Cancel', 'Escape', 'backdrop'] as const)(
+      '%s keeps the exact same game (code, turn, board, players, save)',
+      async (how) => {
+        const { user, snapshot: before } = await midGame();
+        const saved = localStorage.getItem(STORAGE_KEY);
+        await openMenuItem(user, 'End game');
+        if (how === 'Cancel') await user.click(screen.getByRole('button', { name: 'Cancel' }));
+        else if (how === 'Escape') await user.keyboard('{Escape}');
+        else await user.click(screen.getByTestId('modal-backdrop'));
+        expect(screen.queryByRole('dialog')).toBeNull();
+        expect(snapshot()).toEqual(before);
+        expect(before.heading).toBe('Turn 2');
+        expect(localStorage.getItem(STORAGE_KEY)).toBe(saved);
+        expect(document.querySelector('[inert]')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Menu' })).toHaveFocus();
+      },
+    );
+
+    it('Cancel then a reload still restores the game', async () => {
+      const { user, snapshot: before, unmount } = await midGame();
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'Cancel' }));
+      unmount();
+      render(<App />);
+      expect(snapshot()).toEqual(before);
+    });
+
+    it('a game quit to home can be continued, then ended from its board', async () => {
+      const { user } = await midGame();
+      await openMenuItem(user, 'Quit to home');
+      await user.click(screen.getByRole('button', { name: 'Quit' }));
+      await user.click(continueGame()!);
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
+      expect(continueGame()).toBeNull();
+    });
+
+    it('a legacy save on the removed winner screen reopens on its board', () => {
+      const game = gameReducer(initialState, {
+        type: 'START_GAME',
+        playerCount: 3,
+        difficulty: 'medium',
+        code: 'K7F2-9QX',
+      }).game!;
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ version: 2, state: { screen: 'winner', game: { ...game, winner: 2 } } }),
+      );
+      render(<App />);
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
+      expect(readCodeAny()).toBe('K7F2-9QX');
+      expect(screen.queryByText(/wins!|play again/i)).toBeNull();
     });
   });
 });
@@ -753,12 +775,12 @@ describe('Navigation (#12, D10)', () => {
       return { user, ...rest, before: snapshot() };
     }
 
-    it('the board menu lists New board, We have a winner, Quit to home', async () => {
+    it('the board menu lists New board, End game, Quit to home', async () => {
       const { user } = await renderGame();
       await user.click(screen.getByRole('button', { name: 'Menu' }));
       expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual([
         'New board',
-        'We have a winner',
+        'End game',
         'Quit to home',
       ]);
     });
@@ -862,11 +884,10 @@ describe('Navigation (#12, D10)', () => {
       expect(screen.queryByText('This will replace your current game.')).toBeNull();
     });
 
-    it('winner → Home clears the game: no Continue, even after a reload', async () => {
+    it('End game → Home clears the game: no Continue, even after a reload', async () => {
       const { user, unmount } = await renderGame();
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Player 1' }));
-      await user.click(screen.getByRole('button', { name: 'Home' }));
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
       expect(continueButton()).toBeNull();
       expect(savedGame()).toBeNull();
       unmount();
@@ -883,12 +904,6 @@ describe('Navigation (#12, D10)', () => {
       ['questionPopup', toPopup, /^Turn 1$/],
       ['question', toQuestion, new RegExp(`^${escape(q.question)}$`)],
       ['result', toResult, /Correct!$/],
-      ['winner', [{ type: 'OPEN_WINNER' }], /^We have a winner$/],
-      [
-        'winner',
-        [{ type: 'OPEN_WINNER' }, { type: 'DECLARE_WINNER', player: 2 }],
-        /^Player 2 wins!$/,
-      ],
     ];
 
     it.each(cases)('%s (%#)', async (screenName, actions, heading) => {
@@ -935,16 +950,18 @@ describe('Navigation (#12, D10)', () => {
       await openMenuItem(user, 'New board');
       await user.click(screen.getByRole('button', { name: 'New board' }));
       expect(h1()).toHaveTextContent('Turn 1');
-      await openMenuItem(user, 'We have a winner');
-      expect(h1()).toHaveTextContent('We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Back' }));
-      expect(h1()).toHaveTextContent('Turn 1');
       await openMenuItem(user, 'Quit to home');
       await user.click(screen.getByRole('button', { name: 'Quit' }));
       expect(h1()).toHaveTextContent(APP_NAME);
+      await user.click(continueButton()!);
+      expect(h1()).toHaveTextContent('Turn 1');
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(continueButton()).toBeNull();
     });
 
-    it('questionPopup → question → result → board; winner steps 1 and 2', async () => {
+    it('questionPopup → question → result → board → End game → home', async () => {
       const { user } = await renderGame();
       await user.click(screen.getByRole('button', { name: 'Question' }));
       await user.click(screen.getByRole('button', { name: 'Show the question' }));
@@ -955,11 +972,9 @@ describe('Navigation (#12, D10)', () => {
       expect(h1()).toHaveTextContent(/(Correct!|Wrong answer)$/);
       await user.click(screen.getByRole('button', { name: 'Continue' }));
       expect(h1()).toHaveTextContent('Turn 1');
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Player 2' }));
-      expect(h1()).toHaveTextContent('Player 2 wins!');
-      await user.click(screen.getByRole('button', { name: 'Play again' }));
-      expect(h1()).toHaveTextContent('Turn 1');
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
     });
   });
 
@@ -999,11 +1014,10 @@ describe('Navigation (#12, D10)', () => {
       expect(h1()).toHaveTextContent('Turn 2');
       expect(h1()).toHaveFocus();
 
-      await openMenuItem(user, 'We have a winner');
-      expect(h1()).toHaveFocus();
-      await user.click(screen.getByRole('button', { name: 'Back' }));
+      await openMenuItem(user, 'End game');
+      expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+      await user.click(screen.getByRole('button', { name: 'Cancel' }));
       expect(h1()).toHaveTextContent('Turn 2');
-      expect(h1()).toHaveFocus();
 
       await openMenuItem(user, 'Quit to home');
       await user.click(screen.getByRole('button', { name: 'Quit' }));
@@ -1013,10 +1027,8 @@ describe('Navigation (#12, D10)', () => {
       expect(h1()).toHaveTextContent('Turn 2');
       expect(h1()).toHaveFocus();
 
-      await openMenuItem(user, 'We have a winner');
-      await user.click(screen.getByRole('button', { name: 'Player 1' }));
-      expect(h1()).toHaveFocus();
-      await user.click(screen.getByRole('button', { name: 'Home' }));
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
       expect(h1()).toHaveTextContent(APP_NAME);
       expect(h1()).toHaveFocus();
     });
@@ -1062,14 +1074,7 @@ describe('Navigation (#12, D10)', () => {
       expect(screen.getByRole('button', { name: 'Question' })).toHaveFocus();
     });
 
-    it('on winner step 1 → board', async () => {
-      const { user } = await renderGame();
-      await openMenuItem(user, 'We have a winner');
-      await systemBack();
-      await waitFor(() => expect(h1()).toHaveTextContent('Turn 1'));
-    });
-
-    it.each(['Quit to home', 'New board'] as const)(
+    it.each(['Quit to home', 'New board', 'End game'] as const)(
       'with the %s dialog open → the dialog closes, game unchanged',
       async (item) => {
         const { user } = await renderGame();
@@ -1083,6 +1088,19 @@ describe('Navigation (#12, D10)', () => {
         expect(localStorage.getItem(STORAGE_KEY)).toBe(saved);
       },
     );
+
+    it('with the End game dialog open → closes it; the game is kept, End game still works', async () => {
+      const { user } = await renderGame();
+      await openMenuItem(user, 'End game');
+      await systemBack();
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(h1()).toHaveTextContent('Turn 1');
+      expect(savedGame()).not.toBeNull();
+      await openMenuItem(user, 'End game');
+      await user.click(screen.getByRole('button', { name: 'End game' }));
+      expect(h1()).toHaveTextContent(APP_NAME);
+      expect(continueButton()).toBeNull();
+    });
   });
 });
 

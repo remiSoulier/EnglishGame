@@ -7,7 +7,8 @@ export const STORAGE_KEY = 'bgc.game.v2';
 
 /**
  * Version of the saved shape; bump it when `GameState` changes incompatibly. v2 (decision D11):
- * no active player any more; v1 saves (key `bgc.game.v1`) are ignored.
+ * no active player any more; v1 saves (key `bgc.game.v1`) are ignored. Decision D13 (no winner
+ * screen) keeps v2: older v2 saves are repaired on load (see `repairLegacyWinner`).
  */
 export const STORAGE_VERSION = 2;
 
@@ -24,8 +25,10 @@ const SCREENS: readonly Screen[] = [
   'question',
   'result',
   'newBoard',
-  'winner',
 ];
+
+/** Screen of the winner flow removed by decision D13; may still be found in v2 saves. */
+const LEGACY_WINNER_SCREEN = 'winner';
 
 /** Screens that need a pending question. */
 const QUESTION_SCREENS: readonly Screen[] = ['questionPopup', 'question', 'result'];
@@ -80,11 +83,26 @@ function isValidGame(v: unknown): boolean {
     Array.isArray(v.askedQuestionIds) &&
     v.askedQuestionIds.every((id) => isInt(id, 0)) &&
     isValidPending(v.pendingQuestion) &&
-    (v.winner === null || isInt(v.winner, 1, playerCount)) &&
     (v.lastScreen === undefined ||
       (SCREENS.includes(v.lastScreen as Screen) &&
         !NO_GAME_SCREENS.includes(v.lastScreen as Screen)))
   );
+}
+
+/**
+ * Repairs a v2 save written before decision D13 (winner screen removed), in place on the parsed
+ * JSON: the 'winner' screen (or `lastScreen`) becomes 'board' and the `winner` field is dropped,
+ * whatever its value. A game that was on the winner screen, even with a winner declared, thus
+ * comes back on its board (Home offers "Continue game" only for a game quit to home, as before);
+ * the players can then end it with the menu's End game. Repairing rather than ignoring keeps the
+ * game of anyone who updates the app mid-game; anything else invalid is still rejected afterwards.
+ */
+function repairLegacyWinner(state: Record<string, unknown>): void {
+  if (state.screen === LEGACY_WINNER_SCREEN) state.screen = 'board';
+  const { game } = state;
+  if (!isObject(game)) return;
+  delete game.winner;
+  if (game.lastScreen === LEGACY_WINNER_SCREEN) game.lastScreen = 'board';
 }
 
 /**
@@ -123,6 +141,7 @@ export function loadState(): GameState | null {
     if (!isObject(saved) || saved.version !== STORAGE_VERSION || !isObject(saved.state)) {
       return null;
     }
+    repairLegacyWinner(saved.state);
     const { screen, game } = saved.state;
     if (!SCREENS.includes(screen as Screen)) return null;
     if (game !== null && !isValidGame(game)) return null;
@@ -135,12 +154,10 @@ export function loadState(): GameState | null {
 /**
  * Saves the whole state (errors such as a full or disabled storage are ignored).
  *
- * Finished games (#15): the state is saved as is, so a reload on "Player X wins!" shows the win
- * screen again (the game has `winner` set and `END_TURN` is refused, so it cannot go on). Leaving
- * that screen clears it: Home (`GO_HOME`) saves `{ screen: 'home', game: null }`, i.e. no game at
- * all, and Play again saves a fresh game (turn 1, new code, no asked questions). We keep writing
- * the key rather than removing it when `game` is null, so that 'newGame' survives a reload too;
- * a saved state without a game never restores one.
+ * Ended games (decision D13): End game (`END_GAME`) saves `{ screen: 'home', game: null }`, i.e.
+ * no game at all, so Home offers no "Continue game", even after a reload. We keep writing the key
+ * rather than removing it when `game` is null, so that 'newGame' survives a reload too; a saved
+ * state without a game never restores one.
  */
 export function saveState(state: GameState): void {
   try {

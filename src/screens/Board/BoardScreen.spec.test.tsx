@@ -12,7 +12,7 @@ function setup(overrides: Partial<BoardScreenProps> = {}) {
     onQuestion: vi.fn(),
     onEndTurn: vi.fn(),
     onNewBoard: vi.fn(),
-    onWinner: vi.fn(),
+    onEndGame: vi.fn(),
     ...overrides,
   };
   const utils = render(<BoardScreen {...props} />);
@@ -69,7 +69,7 @@ describe('BoardScreen (spec screen 3)', () => {
     const { props, user } = setup();
     await user.click(screen.getByRole('button', { name: 'Question' }));
     expect(props.onQuestion).toHaveBeenCalledTimes(1);
-    for (const fn of [props.onEndTurn, props.onNewBoard, props.onWinner]) {
+    for (const fn of [props.onEndTurn, props.onNewBoard, props.onEndGame]) {
       expect(fn).not.toHaveBeenCalled();
     }
   });
@@ -80,14 +80,14 @@ describe('BoardScreen (spec screen 3)', () => {
     expect(props.onEndTurn).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole('button', { name: 'End turn' }));
     expect(props.onEndTurn).toHaveBeenCalledTimes(2);
-    for (const fn of [props.onQuestion, props.onNewBoard, props.onWinner]) {
+    for (const fn of [props.onQuestion, props.onNewBoard, props.onEndGame]) {
       expect(fn).not.toHaveBeenCalled();
     }
   });
 
   it.each([
-    ['New board', 'onNewBoard', 'onWinner'],
-    ['We have a winner', 'onWinner', 'onNewBoard'],
+    ['New board', 'onNewBoard', 'onEndGame'],
+    ['End game', 'onEndGame', 'onNewBoard'],
   ] as const)('menu item "%s" fires %s and closes the menu', async (label, fired, notFired) => {
     const { props, user } = setup();
     const trigger = screen.getByRole('button', { name: 'Menu' });
@@ -115,7 +115,25 @@ describe('BoardScreen (spec screen 3)', () => {
     await user.click(screen.getByRole('heading', { level: 1 }));
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(props.onNewBoard).not.toHaveBeenCalled();
-    expect(props.onWinner).not.toHaveBeenCalled();
+    expect(props.onEndGame).not.toHaveBeenCalled();
+  });
+
+  it('menu lists exactly New board, End game, Quit to home (D13)', async () => {
+    const { user } = setup({ onQuit: vi.fn() });
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
+    expect(items.map((i) => i.textContent)).toEqual(['New board', 'End game', 'Quit to home']);
+    expect(screen.queryByText(/winner/i)).not.toBeInTheDocument();
+  });
+
+  it('menu item "End game" fires onEndGame only (the confirmation is up to the caller)', async () => {
+    const { props, user } = setup({ onQuit: vi.fn() });
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'End game' }));
+    expect(props.onEndGame).toHaveBeenCalledTimes(1);
+    for (const fn of [props.onQuestion, props.onEndTurn, props.onNewBoard, props.onQuit]) {
+      expect(fn).not.toHaveBeenCalled();
+    }
   });
 
   it('every action is a real <button>', async () => {
