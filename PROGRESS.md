@@ -128,3 +128,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #30 Fond d'accueil, texture du plateau, personnages sur les cases de départ (ui-dev)
 
 | 2026-11-25 | #29, #30 | #29 VALIDÉ. #30 VALIDÉ after 1 refusal (walls hid P1/P3 labels; fixed, regression test proven to fail before the fix; re-checked by the orchestrator after the user asked to stop using subagents). Merged into main. |
+- [x] #31 Rôles des personnages : joueurs chat, chauve-souris, champignon, hérisson ; objectif dragon ; ennemis croco et fantôme (orchestrateur)
+- [x] #32 Les murs ne se croisent plus (orchestrateur)
+
+| 2026-11-25 | #31, #32 | Done by the orchestrator itself (user asked to stop using subagents): D15 character roles, D16 no crossing walls (0 crossings on 9 000 boards). 1680 unit tests, 101 e2e. Merged into main. |
