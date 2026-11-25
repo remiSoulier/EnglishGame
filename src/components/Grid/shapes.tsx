@@ -42,33 +42,78 @@ interface StartShapeProps {
   /** Top-left corner of the cell in SVG user units. */
   x: number;
   y: number;
-  label: string;
+  /** Player label ("P1" … "P4"), on a small plate under the character. */
+  label?: string;
+  /** Character art URL (decorative), fitted in the cell above the label. */
+  character?: string;
 }
 
-/** Start cell: dashed square outline (on a dark halo) with a small player label. */
-export function StartShape({ x, y, label }: StartShapeProps) {
-  const inset = 4;
+/** Inset of the dashed start outline in the cell. */
+const START_INSET = 4;
+/** Label plate under the character: size, and distance of its centre from the cell bottom. */
+const PLATE_WIDTH = 22;
+const PLATE_HEIGHT = 13;
+const PLATE_FROM_BOTTOM = 7.5;
+/** Soft disc behind the character (a rounded rect: circles are kept for enemies and rivets). */
+const GLOW_RADIUS = 13;
+
+/**
+ * Start cell: dashed square outline (on a dark halo, so it reads on the board art), the
+ * player's character and a small player label on a board-coloured plate (text 6.63:1).
+ */
+export function StartShape({ x, y, label, character }: StartShapeProps) {
+  const side = CELL - START_INSET * 2;
+  const plateY = y + CELL - PLATE_FROM_BOTTOM;
+  // With a label the character sits above the plate; alone it fills the outline.
+  const art = label
+    ? { x: x + 3, y: y + 1, width: CELL - 6, height: CELL - 11 }
+    : { x: x + 5, y: y + 5, width: CELL - 10, height: CELL - 10 };
   return (
     <g>
       <rect
         className={styles.startHalo}
-        x={x + inset}
-        y={y + inset}
-        width={CELL - inset * 2}
-        height={CELL - inset * 2}
+        x={x + START_INSET}
+        y={y + START_INSET}
+        width={side}
+        height={side}
         rx={2}
       />
       <rect
         className={styles.start}
-        x={x + inset}
-        y={y + inset}
-        width={CELL - inset * 2}
-        height={CELL - inset * 2}
+        x={x + START_INSET}
+        y={y + START_INSET}
+        width={side}
+        height={side}
         rx={2}
       />
-      <text className={styles.startLabel} x={x + CELL / 2} y={y + CELL / 2}>
-        {label}
-      </text>
+      {character && (
+        <>
+          <rect
+            className={styles.startGlow}
+            x={x + CELL / 2 - GLOW_RADIUS}
+            y={art.y + art.height / 2 - GLOW_RADIUS}
+            width={GLOW_RADIUS * 2}
+            height={GLOW_RADIUS * 2}
+            rx={GLOW_RADIUS}
+          />
+          <image href={character} {...art} preserveAspectRatio="xMidYMid meet" aria-hidden="true" />
+        </>
+      )}
+      {label && (
+        <>
+          <rect
+            className={styles.startPlate}
+            x={x + CELL / 2 - PLATE_WIDTH / 2}
+            y={plateY - PLATE_HEIGHT / 2}
+            width={PLATE_WIDTH}
+            height={PLATE_HEIGHT}
+            rx={PLATE_HEIGHT / 2}
+          />
+          <text className={styles.startLabel} x={x + CELL / 2} y={plateY}>
+            {label}
+          </text>
+        </>
+      )}
     </g>
   );
 }

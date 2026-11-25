@@ -6,6 +6,7 @@ import {
   START_CELLS,
   type Board,
 } from '../../engine';
+import { playerCharacter } from '../../state/players';
 import { describeBoard } from './describeBoard';
 import { CELL } from './geometry';
 import styles from './Grid.module.css';
@@ -119,7 +120,12 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
         {starts.map((cell, i) => (
           <g key={cellName(cell)} data-cell={cellName(cell)}>
             <title>{`Start P${i + 1}: ${cellName(cell)}`}</title>
-            <StartShape x={cell.x * CELL} y={cell.y * CELL} label={`P${i + 1}`} />
+            <StartShape
+              x={cell.x * CELL}
+              y={cell.y * CELL}
+              label={`P${i + 1}`}
+              character={playerCharacter(i).src}
+            />
           </g>
         ))}
       </g>

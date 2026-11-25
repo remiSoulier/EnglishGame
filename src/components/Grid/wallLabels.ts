@@ -20,9 +20,12 @@ export const BADGE_HEIGHT = 17;
 
 /** Half-size of the box covered by an enemy or goal symbol (goal star outer radius 0.42 cell). */
 const SYMBOL_HALF = 17;
-/** Half-size of the box covered by a start label ("P1" … "P4", 12 px bold). */
-const START_HALF_X = 10;
-const START_HALF_Y = 8;
+/**
+ * Half-size of the box covered by a start cell's character and its "P1" … "P4" label (drawn
+ * below the character, see `StartShape`): most of the cell, centred on it.
+ */
+const START_HALF_X = 16;
+const START_HALF_Y = 18;
 
 /** Sideways shifts of a candidate, perpendicular to its side (SVG units, < 1 cell). */
 const OFFSETS = [0, -10, 10, -20, 20, -30, 30];

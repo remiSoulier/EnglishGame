@@ -121,6 +121,20 @@
   stroke-dasharray: 5 3;
 }
 
+/* Soft lavender glow behind a character, so dark characters stand out on the board. */
+.startGlow {
+  fill: var(--color-start);
+  opacity: 0.28;
+}
+
+/* Plate under the "P1" … "P4" label: board fill, lavender ring (6.63:1 like the outline). */
+.startPlate {
+  fill: var(--color-board-bg);
+  stroke: var(--color-start);
+  stroke-width: 1;
+}
+
+/* --color-start on the --color-board-bg plate: 6.63:1. */
 .startLabel {
   fill: var(--color-start);
   font-family: var(--font-family);
