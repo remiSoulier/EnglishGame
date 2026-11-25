@@ -183,17 +183,27 @@ describe('Grid — enemies and goal', () => {
     expect(svg).toBeInTheDocument();
   });
 
-  it('centres an enemy diamond in its cell', () => {
+  it('fills an enemy cell with its character and keeps a diamond badge in that cell (D15)', () => {
     const svg = renderGrid(board({ enemies: [{ x: 2, y: 2 }] }));
-    const pts = svg
-      .querySelector('[data-testid="enemies"] [data-cell="C3"] polygon')!
+    const g = svg.querySelector('[data-testid="enemies"] [data-cell="C3"]')!;
+    const img = g.querySelector('image')!;
+    expect(img.getAttribute('href')).toBe('/art/char-croco.webp');
+    const ix = Number(img.getAttribute('x'));
+    const iy = Number(img.getAttribute('y'));
+    expect(ix + Number(img.getAttribute('width')) / 2).toBeCloseTo(2 * CELL + CELL / 2);
+    expect(iy + Number(img.getAttribute('height')) / 2).toBeCloseTo(2 * CELL + CELL / 2);
+    const pts = g
+      .querySelector('polygon')!
       .getAttribute('points')!
       .split(' ')
       .map((p) => p.split(',').map(Number));
-    const cx = pts.reduce((s, [x]) => s + x, 0) / pts.length;
-    const cy = pts.reduce((s, [, y]) => s + y, 0) / pts.length;
-    expect(cx).toBeCloseTo(2 * CELL + CELL / 2);
-    expect(cy).toBeCloseTo(2 * CELL + CELL / 2);
+    expect(pts).toHaveLength(4);
+    for (const [x, y] of pts) {
+      expect(x).toBeGreaterThanOrEqual(2 * CELL);
+      expect(x).toBeLessThanOrEqual(3 * CELL);
+      expect(y).toBeGreaterThanOrEqual(2 * CELL);
+      expect(y).toBeLessThanOrEqual(3 * CELL);
+    }
   });
 
   it('draws the goal as a 10-point star on its cell', () => {

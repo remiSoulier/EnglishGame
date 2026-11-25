@@ -169,26 +169,34 @@ describe('Grid — player characters on start cells', () => {
     });
   });
 
-  it('defaults to 4 players: kitkat, croco, dragon, toad', () => {
+  it('defaults to 4 players: kitkat, bat, mushroom (toad), hedgehog (gus) (D15)', () => {
     renderGrid(FIXTURE_BOARD);
     const hrefs = [...screen.getByTestId('starts').querySelectorAll('image')].map((i) =>
       i.getAttribute('href'),
     );
     expect(hrefs).toEqual([
       '/art/char-kitkat.webp',
-      '/art/char-croco.webp',
-      '/art/char-dragon.webp',
+      '/art/char-batman.webp',
       '/art/char-toad.webp',
+      '/art/char-gus.webp',
     ]);
   });
 
-  it('draws no character anywhere else on the board', () => {
+  it('draws characters only on starts, the goal (dragon) and enemies (croco, ghost) (D15)', () => {
     const svg = renderGrid(FIXTURE_BOARD, 2);
     const chars = [...svg.querySelectorAll('image')].filter((i) =>
       (i.getAttribute('href') ?? '').includes('/char-'),
     );
-    expect(chars).toHaveLength(2);
-    for (const c of chars) expect(c.closest('[data-testid="starts"]')).not.toBeNull();
+    const where = (testid: string) =>
+      chars.filter((c) => c.closest(`[data-testid="${testid}"]`) !== null);
+    expect(where('starts')).toHaveLength(2);
+    expect(where('goal').map((c) => c.getAttribute('href'))).toEqual(['/art/char-dragon.webp']);
+    const enemies = where('enemies').map((c) => c.getAttribute('href'));
+    expect(enemies).toHaveLength(FIXTURE_BOARD.enemies.length);
+    enemies.forEach((href, i) =>
+      expect(href).toBe(i % 2 === 0 ? '/art/char-croco.webp' : '/art/char-croque-mort.webp'),
+    );
+    expect(chars).toHaveLength(2 + 1 + FIXTURE_BOARD.enemies.length);
   });
 });
 
@@ -368,18 +376,14 @@ describe('Grid — player label plates stay clear of walls, rivets and badges', 
     throw new Error(`no board with a wall on ${side}`);
   }
 
-  it('8EVP-FVC (4 players) with W8 on I1-S: the P3 plate is clear', () => {
-    let found = 0;
+  it('8EVP-FVC (4 players), turns 1–6: every plate is clear', () => {
+    // The validator's board had W8 on I1-S; since D16 changed the wall draw the code gives other
+    // layouts, so the I1-S case itself is covered by the generated-board test just below.
     for (const difficulty of DIFFICULTIES) {
       for (let turn = 1; turn <= 6; turn++) {
-        const board = generateBoard('8EVP-FVC', turn, difficulty);
-        const w8 = board.walls.find((w) => w.id === 'W8');
-        if (!w8?.sides.includes('I1-S')) continue;
-        found++;
-        checkPlates(board, `8EVP-FVC/${turn}/${difficulty}`);
+        checkPlates(generateBoard('8EVP-FVC', turn, difficulty), `8EVP-FVC/${turn}/${difficulty}`);
       }
     }
-    expect(found, '8EVP-FVC has W8 on I1-S for some turn/difficulty').toBeGreaterThan(0);
   });
 
   it.each(['A1-S', 'I1-S', 'A8-S', 'I8-S'])('a wall on %s keeps the plates clear', (side) => {

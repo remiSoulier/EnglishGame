@@ -98,6 +98,26 @@
   fill: var(--color-enemy-mark);
 }
 
+/*
+ * Tinted plates behind the enemy and goal characters: a board-coloured base with a coloured
+ * ring, so each character stands out on the forest art and its role reads at a glance (the
+ * corner diamond / star badge stays the shape cue). Ring vs board: enemy 6.01:1, goal 7.58:1.
+ */
+.enemyBack,
+.goalBack {
+  fill: var(--color-board-bg);
+  fill-opacity: 0.85;
+  stroke-width: 1.5;
+}
+
+.enemyBack {
+  stroke: var(--color-enemy);
+}
+
+.goalBack {
+  stroke: var(--color-goal);
+}
+
 /* Rounded star with a board-coloured outline under its fill (see .enemyBody). */
 .goal {
   fill: var(--color-goal);

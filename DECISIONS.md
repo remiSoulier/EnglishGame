@@ -71,3 +71,13 @@ Sur demande de l'utilisateur, l'écran 8 (choix du gagnant, « Player X wins! »
 
 ## D14 — Style « SILVA » de la maquette (2026-11-25, demande utilisateur)
 L'utilisateur a fourni une maquette (fichier `docs/design/silva-mockup.webp`). Choix de l'utilisateur : reprendre **le style seulement** et le nom **SILVA** (« Program your way to the goal »), en gardant les décisions récentes : pas de tour par tour (D11), murs fixes W1–W8 (D12), *End game* au lieu de l'écran gagnant (D13). Les éléments de la maquette qui les contredisent (barre P1…P4 « now », « We have a winner », texte « a wrong answer ends your turn ») ne sont pas repris. Les tuiles de végétation illustrées sont approchées par des couleurs et motifs simples (pas d'images sources).
+
+## D15 — Rôles des personnages (2026-11-25, demande utilisateur)
+- Protagonistes (joueurs P1–P4) : le chat (`kitkat`), la chauve-souris (`batman`), le champignon (`toad`), le hérisson (`gus`).
+- Objectif : le dragon blanc ailé (`dragon`).
+- Ennemis : le crocodile (`croco`) et le fantôme (`croque-mort`, choix de l'utilisateur), utilisés en alternance. L'araignée sera ajoutée quand son illustration existera.
+- Sur le plateau, l'objectif et chaque ennemi montrent leur personnage sur une plaque colorée (or / corail) ; l'étoile et le losange « ! » restent en petit badge dans le coin de la case, pour garder un repère de forme. Les étiquettes des murs évitent désormais toute la case d'un ennemi ou de l'objectif.
+- Le mapping est dans `src/state/players.ts`.
+
+## D16 — Les murs ne se croisent pas (2026-11-25, demande utilisateur)
+« Les murs ne doivent pas se chevaucher » : en plus de ne jamais partager un côté de case, deux pièces ne peuvent pas se **croiser** (un même coin de grille à l'intérieur de deux pièces, ce qui les poserait l'une sur l'autre). Elles peuvent toujours se toucher bout à bout ou en T (le bout d'une pièce contre le flanc d'une autre).

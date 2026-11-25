@@ -18,8 +18,11 @@ export interface LabelPoint {
 export const BADGE_WIDTH = 26;
 export const BADGE_HEIGHT = 17;
 
-/** Half-size of the box covered by an enemy or goal symbol (goal star outer radius 0.42 cell). */
-const SYMBOL_HALF = 17;
+/**
+ * Half-size of the box covered by an enemy or the goal: the whole 40 × 40 cell, since their
+ * character art fills the cell and the diamond / star badge sits in its corner (D15).
+ */
+const SYMBOL_HALF = CELL / 2;
 /**
  * Half-size of the box reserved around a start cell (character, "P1" … "P4" plate and dashed
  * outline, see `StartShape`): the whole 40 × 40 cell. Overlaps of 0 area (touching) are fine.

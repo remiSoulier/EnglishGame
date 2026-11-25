@@ -8,24 +8,93 @@ interface ShapeProps {
   cy: number;
 }
 
-/** Enemy: red diamond with a white exclamation mark. */
-export function EnemyShape({ cx, cy }: ShapeProps) {
-  const r = CELL * 0.4;
+interface CharacterShapeProps extends ShapeProps {
+  /**
+   * Character art URL (decorative). When set, the character fills the cell on a tinted plate
+   * and the shape (diamond / star) becomes a small badge in the bottom-right corner, so the
+   * element stays shape-coded, not colour-only.
+   */
+  character?: string;
+}
+
+/** Badge size when a character is shown: the shape shrinks to the cell's bottom-right corner. */
+const BADGE_SCALE = 0.42;
+/** Offset of that corner badge from the cell centre. */
+const BADGE_OFFSET = CELL * 0.3;
+/** Character art inset in its cell, and its tinted plate inset. */
+const ART_INSET = 2.5;
+const BACK_INSET = 1.5;
+
+/** Tinted rounded plate and character art filling the cell centred on (cx, cy). */
+function CharacterArt({
+  cx,
+  cy,
+  src,
+  back,
+}: {
+  cx: number;
+  cy: number;
+  src: string;
+  back: string;
+}) {
+  const half = CELL / 2;
   return (
-    <g>
+    <>
+      <rect
+        className={back}
+        x={cx - half + BACK_INSET}
+        y={cy - half + BACK_INSET}
+        width={CELL - BACK_INSET * 2}
+        height={CELL - BACK_INSET * 2}
+        rx={8}
+      />
+      <image
+        href={src}
+        x={cx - half + ART_INSET}
+        y={cy - half + ART_INSET}
+        width={CELL - ART_INSET * 2}
+        height={CELL - ART_INSET * 2}
+        preserveAspectRatio="xMidYMid meet"
+        aria-hidden="true"
+      />
+    </>
+  );
+}
+
+/** Red diamond with a white exclamation mark, of half-diagonal `r`, centred on (cx, cy). */
+function Diamond({ cx, cy, r }: ShapeProps & { r: number }) {
+  return (
+    <>
       <polygon
         className={styles.enemyBody}
         points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
       />
       <line className={styles.enemyMark} x1={cx} y1={cy - r * 0.5} x2={cx} y2={cy + r * 0.12} />
-      <circle className={styles.enemyDot} cx={cx} cy={cy + r * 0.42} r={2.4} />
+      <circle className={styles.enemyDot} cx={cx} cy={cy + r * 0.42} r={Math.min(2.4, r * 0.15)} />
+    </>
+  );
+}
+
+/** Enemy: red diamond with a white exclamation mark (a corner badge when a character is shown). */
+export function EnemyShape({ cx, cy, character }: CharacterShapeProps) {
+  const r = CELL * 0.4;
+  if (!character) {
+    return (
+      <g>
+        <Diamond cx={cx} cy={cy} r={r} />
+      </g>
+    );
+  }
+  return (
+    <g>
+      <CharacterArt cx={cx} cy={cy} src={character} back={styles.enemyBack} />
+      <Diamond cx={cx + BADGE_OFFSET} cy={cy + BADGE_OFFSET} r={r * BADGE_SCALE} />
     </g>
   );
 }
 
-/** Goal: five-pointed star. */
-export function GoalShape({ cx, cy }: ShapeProps) {
-  const outer = CELL * 0.42;
+/** Five-pointed star points with outer radius `outer`, centred on (cx, cy). */
+function starPoints(cx: number, cy: number, outer: number): string {
   const inner = outer * 0.45;
   const points: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -35,7 +104,22 @@ export function GoalShape({ cx, cy }: ShapeProps) {
       `${(cx + r * Math.cos(angle)).toFixed(2)},${(cy + r * Math.sin(angle)).toFixed(2)}`,
     );
   }
-  return <polygon className={styles.goal} points={points.join(' ')} />;
+  return points.join(' ');
+}
+
+/** Goal: five-pointed star (a corner badge when the goal character is shown). */
+export function GoalShape({ cx, cy, character }: CharacterShapeProps) {
+  const outer = CELL * 0.42;
+  if (!character) return <polygon className={styles.goal} points={starPoints(cx, cy, outer)} />;
+  return (
+    <g>
+      <CharacterArt cx={cx} cy={cy} src={character} back={styles.goalBack} />
+      <polygon
+        className={styles.goal}
+        points={starPoints(cx + BADGE_OFFSET, cy + BADGE_OFFSET, outer * BADGE_SCALE * 1.15)}
+      />
+    </g>
+  );
 }
 
 interface StartShapeProps {

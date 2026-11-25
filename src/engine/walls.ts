@@ -167,6 +167,46 @@ export function wallsOverlap(walls: readonly WallSides[]): boolean {
   return false;
 }
 
+/** Key of a grid corner (lattice point), e.g. "3,2". */
+function pointKey(p: GridPoint): string {
+  return `${p.px},${p.py}`;
+}
+
+/**
+ * Interior points of a wall: the grid corners it passes through that are not one of its two
+ * ends (for an L, the corner of the L is interior). Computed from the sides' end points: a point
+ * shared by two sides of the wall is interior.
+ */
+export function wallInteriorPoints(wall: WallSides): Set<string> {
+  const seen = new Set<string>();
+  const interior = new Set<string>();
+  for (const raw of wall.sides) {
+    for (const p of sideEndpoints(raw)) {
+      const key = pointKey(p);
+      if (seen.has(key)) interior.add(key);
+      seen.add(key);
+    }
+  }
+  return interior;
+}
+
+/**
+ * True if two different walls cross: a grid corner is interior to both, so one physical piece
+ * would lie on top of the other (decision D16). Touching end to end, or a piece's end against the
+ * flank of another (a T), is not a crossing.
+ */
+export function wallsCross(walls: readonly WallSides[]): boolean {
+  const owner = new Map<string, number>();
+  for (let i = 0; i < walls.length; i++) {
+    for (const key of wallInteriorPoints(walls[i])) {
+      const prev = owner.get(key);
+      if (prev !== undefined && prev !== i) return true;
+      owner.set(key, i);
+    }
+  }
+  return false;
+}
+
 /**
  * True if `wall` is a legal placement of its piece `wall.id` (see `WALL_PIECES`): valid shape
  * (`wallShape`), the piece's number of sides, and for an L piece its arm lengths and handedness.
@@ -309,14 +349,26 @@ const PLACEMENTS: readonly { id: WallId; byOrientation: SideKey[][][] }[] =
 
 const ID_RANK: ReadonlyMap<WallId, number> = new Map(WALL_PIECES.map((p, i) => [p.id, i]));
 
+/** Interior points of each precomputed placement, cached by placement (they never change). */
+const INTERIOR_CACHE = new WeakMap<readonly SideKey[], Set<string>>();
+function interiorOf(sides: SideKey[]): Set<string> {
+  let points = INTERIOR_CACHE.get(sides);
+  if (!points) {
+    points = wallInteriorPoints({ sides });
+    INTERIOR_CACHE.set(sides, points);
+  }
+  return points;
+}
+
 /**
  * Lays the `WALL_COUNT` fixed pieces of `WALL_PIECES`, each exactly once, on random places.
  *
  * Pieces are laid in `WALL_PLACEMENT_ORDER`. For each piece, one draw = a uniform orientation
  * (`randInt`: 2 for a straight piece, 4 rotations for an L piece) then a uniform anchor among the
  * anchors where that orientation stays on inner sides (`randInt`), i.e. never on or past the
- * border. A draw that shares a side with an already laid piece is redrawn (touching at a corner
- * is allowed); after `MAX_TRIES_PER_PIECE` failed draws the whole layout restarts.
+ * border. A draw that shares a side with an already laid piece, or crosses one (a grid corner
+ * interior to both pieces, decision D16), is redrawn; touching end to end or in a T is allowed.
+ * After `MAX_TRIES_PER_PIECE` failed draws the whole layout restarts.
  *
  * Each wall is `{ id, sides }` with canonical keys in path order (see `matchesPiece`); walls are
  * returned in id order W1 … W8. Deterministic for a given `rng` sequence. Connectivity is not
@@ -326,13 +378,17 @@ const ID_RANK: ReadonlyMap<WallId, number> = new Map(WALL_PIECES.map((p, i) => [
 export function placeWalls(rng: Rng): Wall[] {
   for (let attempt = 0; attempt < MAX_LAYOUT_ATTEMPTS; attempt++) {
     const used = new Set<SideKey>();
+    const interiorUsed = new Set<string>();
     const walls: Wall[] = [];
     for (const { id, byOrientation } of PLACEMENTS) {
       let sides: SideKey[] | null = null;
       for (let tries = 0; tries < MAX_TRIES_PER_PIECE && sides === null; tries++) {
         const options = byOrientation[randInt(rng, 0, byOrientation.length - 1)];
         const candidate = options[randInt(rng, 0, options.length - 1)];
-        if (candidate.every((key) => !used.has(key))) {
+        if (
+          candidate.every((key) => !used.has(key)) &&
+          [...interiorOf(candidate)].every((p) => !interiorUsed.has(p))
+        ) {
           sides = candidate;
         }
       }
@@ -341,6 +397,9 @@ export function placeWalls(rng: Rng): Wall[] {
       }
       for (const key of sides) {
         used.add(key);
+      }
+      for (const p of interiorOf(sides)) {
+        interiorUsed.add(p);
       }
       walls.push({ id, sides: sides.slice() });
     }
