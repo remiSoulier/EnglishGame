@@ -29,7 +29,6 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     board: generateBoard(code, turn, difficulty, goal),
     askedQuestionIds: [],
     pendingQuestion: null,
-    winner: null,
     ...overrides,
   };
 }
@@ -49,8 +48,15 @@ const ALL_SCREENS: Screen[] = [
   'question',
   'result',
   'newBoard',
-  'winner',
 ];
+
+/** Actions of the winner flow removed by decision D13. */
+const REMOVED_WINNER_ACTIONS = [
+  { type: 'OPEN_WINNER' },
+  { type: 'DECLARE_WINNER', player: 1 },
+  { type: 'PLAY_AGAIN', code: OTHER_CODE },
+  { type: 'GO_HOME' },
+] as unknown as GameAction[];
 
 const q1 = questions[0];
 const wrongLetter = (['A', 'B', 'C', 'D'] as const).find((l) => l !== q1.answer)!;
@@ -83,9 +89,9 @@ describe('START_GAME', () => {
         board: generateBoard(CODE, 1, d),
         askedQuestionIds: [],
         pendingQuestion: null,
-        winner: null,
       },
     });
+    expect(next.game).not.toHaveProperty('winner');
   });
 
   it('normalises the code to its canonical form', () => {
@@ -220,9 +226,14 @@ describe('END_TURN', () => {
     expect(reduce(s, { type: 'END_TURN' }).screen).toBe('newBoard');
   });
 
-  it('is a no-op once a winner is declared', () => {
-    const prev = state('board', makeGame({ winner: 2 }));
-    expect(reduce(prev, { type: 'END_TURN' })).toBe(prev);
+  it('only depends on the screen: no winner concept any more (D13)', () => {
+    let s = state('board', makeGame({ turn: 7 }));
+    s = reduce(s, { type: 'END_TURN' });
+    expect(s.screen).toBe('newBoard');
+    expect(s.game!.turn).toBe(8);
+    expect(s.game).not.toHaveProperty('winner');
+    s = reduce(s, { type: 'START_TURN' });
+    expect(reduce(s, { type: 'END_TURN' }).game!.turn).toBe(9);
   });
 
   it.each(ALL_SCREENS.filter((s) => s !== 'board'))('is a no-op on screen %s', (screen) => {
@@ -277,9 +288,9 @@ describe('NEW_BOARD', () => {
         board: generateBoard(OTHER_CODE, 1, 'hard'),
         askedQuestionIds: [],
         pendingQuestion: null,
-        winner: null,
       },
     });
+    expect(next.game).not.toHaveProperty('winner');
   });
 
   it('is a no-op with an invalid code', () => {
@@ -455,7 +466,7 @@ describe('question flow', () => {
     },
   );
 
-  it.each(['CANCEL_QUESTION', 'SHOW_QUESTION', 'CONTINUE', 'OPEN_WINNER'] as const)(
+  it.each(['CANCEL_QUESTION', 'SHOW_QUESTION', 'CONTINUE', 'END_GAME'] as const)(
     '%s is a no-op without a game',
     (type) => {
       const prev = state('home', null);
@@ -477,115 +488,67 @@ describe('question flow', () => {
   });
 });
 
-describe('winner flow', () => {
-  it('OPEN_WINNER goes from the board to the winner screen', () => {
-    const prev = state('board');
-    const next = reduce(prev, { type: 'OPEN_WINNER' });
-    expect(next.screen).toBe('winner');
-    expect(next.game).toBe(prev.game);
+describe('END_GAME (D13)', () => {
+  it('board → home, game dropped (no Continue game)', () => {
+    const prev = state(
+      'board',
+      makeGame({ turn: 5, playerCount: 3, askedQuestionIds: [1, 2], difficulty: 'hard' }),
+    );
+    expect(reduce(prev, { type: 'END_GAME' })).toEqual({ screen: 'home', game: null });
+  });
+
+  it('gives exactly the initial state', () => {
+    expect(reduce(state('board'), { type: 'END_GAME' })).toEqual(initialState);
+  });
+
+  it('works right after START_GAME and after several turns', () => {
+    let s: GameState = reduce(initialState, {
+      type: 'START_GAME',
+      playerCount: 2,
+      difficulty: 'easy',
+      code: CODE,
+    });
+    expect(reduce(s, { type: 'END_GAME' })).toEqual(initialState);
+    for (let i = 0; i < 3; i++) {
+      s = reduce(s, { type: 'END_TURN' });
+      s = reduce(s, { type: 'START_TURN' });
+    }
+    expect(s.game!.turn).toBe(4);
+    expect(reduce(s, { type: 'END_GAME' })).toEqual(initialState);
   });
 
   it.each(ALL_SCREENS.filter((s) => s !== 'board'))(
-    'OPEN_WINNER is a no-op on screen %s',
+    'is a no-op on screen %s (same object)',
     (screen) => {
-      const prev = state(screen);
-      expect(reduce(prev, { type: 'OPEN_WINNER' })).toBe(prev);
+      const prev = state(screen, makeGame({ pendingQuestion: { questionId: q1.id, cards: 1 } }));
+      expect(reduce(prev, { type: 'END_GAME' })).toBe(prev);
     },
   );
 
-  it.each([1, 2, 3, 4])('DECLARE_WINNER sets player %i as the winner and stays', (p) => {
-    const prev = state('winner');
-    const next = reduce(prev, { type: 'DECLARE_WINNER', player: p });
-    expect(next.screen).toBe('winner');
-    expect(next.game!.winner).toBe(p);
+  it.each(['home', 'newGame'] as const)('keeps a saved game on %s (no-op)', (screen) => {
+    const prev = state(screen, makeGame({ turn: 4, lastScreen: 'newBoard' }));
+    expect(reduce(prev, { type: 'END_GAME' })).toBe(prev);
   });
 
-  it.each([0, 5, -1, 1.5, NaN])('DECLARE_WINNER is a no-op for player %s', (p) => {
-    const prev = state('winner');
-    expect(reduce(prev, { type: 'DECLARE_WINNER', player: p })).toBe(prev);
-  });
-
-  it('DECLARE_WINNER is a no-op for player 3 in a 2-player game', () => {
-    const prev = state('winner', makeGame({ playerCount: 2 }));
-    expect(reduce(prev, { type: 'DECLARE_WINNER', player: 3 })).toBe(prev);
-  });
-
-  it('DECLARE_WINNER is a no-op once a winner is declared', () => {
-    const prev = state('winner', makeGame({ winner: 1 }));
-    expect(reduce(prev, { type: 'DECLARE_WINNER', player: 2 })).toBe(prev);
-  });
-
-  it.each(ALL_SCREENS.filter((s) => s !== 'winner'))(
-    'DECLARE_WINNER is a no-op on screen %s',
-    (screen) => {
-      const prev = state(screen);
-      expect(reduce(prev, { type: 'DECLARE_WINNER', player: 1 })).toBe(prev);
-    },
-  );
-
-  it('DECLARE_WINNER is a no-op without a game', () => {
-    const prev = state('winner', null);
-    expect(reduce(prev, { type: 'DECLARE_WINNER', player: 1 })).toBe(prev);
-  });
-
-  it('PLAY_AGAIN starts a new game with the same players and difficulty', () => {
-    const prev = state(
-      'winner',
-      makeGame({ playerCount: 2, difficulty: 'easy', turn: 5, winner: 2, askedQuestionIds: [1] }),
-    );
-    const next = reduce(prev, { type: 'PLAY_AGAIN', code: OTHER_CODE });
-    expect(next).toEqual({
-      screen: 'board',
-      game: {
-        code: OTHER_CODE,
-        difficulty: 'easy',
-        playerCount: 2,
-        turn: 1,
-        board: generateBoard(OTHER_CODE, 1, 'easy'),
-        askedQuestionIds: [],
-        pendingQuestion: null,
-        winner: null,
-      },
-    });
-  });
-
-  it('PLAY_AGAIN is a no-op before a winner is declared', () => {
-    const prev = state('winner');
-    expect(reduce(prev, { type: 'PLAY_AGAIN', code: OTHER_CODE })).toBe(prev);
-  });
-
-  it('PLAY_AGAIN is a no-op with an invalid code', () => {
-    const prev = state('winner', makeGame({ winner: 1 }));
-    expect(reduce(prev, { type: 'PLAY_AGAIN', code: 'bad' })).toBe(prev);
-  });
-
-  it.each(ALL_SCREENS.filter((s) => s !== 'winner'))(
-    'PLAY_AGAIN is a no-op on screen %s',
-    (screen) => {
-      const prev = state(screen, makeGame({ winner: 1 }));
-      expect(reduce(prev, { type: 'PLAY_AGAIN', code: OTHER_CODE })).toBe(prev);
-    },
-  );
-
-  it('PLAY_AGAIN is a no-op without a game', () => {
-    const prev = state('winner', null);
-    expect(reduce(prev, { type: 'PLAY_AGAIN', code: OTHER_CODE })).toBe(prev);
+  it.each(ALL_SCREENS)('is a no-op on %s without a game', (screen) => {
+    const prev = state(screen, null);
+    expect(reduce(prev, { type: 'END_GAME' })).toBe(prev);
   });
 });
 
-describe('GO_HOME', () => {
-  it.each(ALL_SCREENS)('drops the game and goes home from screen %s', (screen) => {
-    const next = reduce(state(screen), { type: 'GO_HOME' });
-    expect(next).toEqual({ screen: 'home', game: null });
+describe('winner flow (removed, D13)', () => {
+  it.each(ALL_SCREENS)('every removed winner action is a no-op on screen %s', (screen) => {
+    const prev = state(screen);
+    for (const action of REMOVED_WINNER_ACTIONS) {
+      expect(reduce(prev, action), action.type).toBe(prev);
+    }
   });
 
-  it('goes home from newGame without a game', () => {
-    expect(reduce(state('newGame', null), { type: 'GO_HOME' })).toEqual(initialState);
-  });
-
-  it('is a no-op when already home without a game', () => {
+  it('every removed winner action is a no-op without a game', () => {
     const prev = state('home', null);
-    expect(reduce(prev, { type: 'GO_HOME' })).toBe(prev);
+    for (const action of REMOVED_WINNER_ACTIONS) {
+      expect(reduce(prev, action), action.type).toBe(prev);
+    }
   });
 });
 
@@ -617,18 +580,6 @@ describe('BACK', () => {
     expect(next.game!.askedQuestionIds).toEqual([]);
   });
 
-  it('winner (none declared) → board', () => {
-    const prev = state('winner');
-    const next = reduce(prev, { type: 'BACK' });
-    expect(next.screen).toBe('board');
-    expect(next.game).toBe(prev.game);
-  });
-
-  it('winner (declared) is a no-op', () => {
-    const prev = state('winner', makeGame({ winner: 3 }));
-    expect(reduce(prev, { type: 'BACK' })).toBe(prev);
-  });
-
   it.each(['home', 'board', 'question', 'result', 'newBoard'] as const)(
     'is a no-op on screen %s',
     (screen) => {
@@ -637,8 +588,8 @@ describe('BACK', () => {
     },
   );
 
-  it.each(['questionPopup', 'winner'] as const)('is a no-op on %s without a game', (screen) => {
-    const prev = state(screen, null);
+  it('is a no-op on questionPopup without a game', () => {
+    const prev = state('questionPopup', null);
     expect(reduce(prev, { type: 'BACK' })).toBe(prev);
   });
 });
@@ -661,12 +612,6 @@ describe('QUIT_TO_HOME (#12 D10)', () => {
     expect(next).toEqual({ screen: 'home', game: { ...game, lastScreen: screen } });
   });
 
-  it('keeps a declared winner (winner step 2)', () => {
-    const game = makeGame({ winner: 2 });
-    const next = reduce(state('winner', game), { type: 'QUIT_TO_HOME' });
-    expect(next).toEqual({ screen: 'home', game: { ...game, lastScreen: 'winner' } });
-  });
-
   it.each(['home', 'newGame'] as const)('is a no-op on %s with a game', (screen) => {
     const prev = state(screen, makeGame({ lastScreen: 'board' }));
     expect(reduce(prev, { type: 'QUIT_TO_HOME' })).toBe(prev);
@@ -685,8 +630,6 @@ describe('CONTINUE_GAME (#12 D10)', () => {
     ['questionPopup', { pendingQuestion: { questionId: q1.id, cards: 1 } }],
     ['question', { pendingQuestion: { questionId: q1.id, cards: 3 } }],
     ['result', { pendingQuestion: { questionId: q1.id, cards: 2, answer: 'B', correct: true } }],
-    ['winner', {}],
-    ['winner', { winner: 4 }],
   ])('home with lastScreen %s → back on it, lastScreen cleared', (lastScreen, overrides) => {
     const game = makeGame(overrides);
     const quit = reduce(state(lastScreen, game), { type: 'QUIT_TO_HOME' });
@@ -757,8 +700,17 @@ describe('saved game and New game (#12 D10)', () => {
     expect(next.game).not.toHaveProperty('lastScreen');
   });
 
-  it('GO_HOME from home drops a saved game', () => {
-    expect(reduce(saved(), { type: 'GO_HOME' })).toEqual(initialState);
+  it('END_GAME from home keeps the saved game (only the board can end it, D13)', () => {
+    const prev = saved();
+    expect(reduce(prev, { type: 'END_GAME' })).toBe(prev);
+  });
+
+  it('a game ended from the board leaves nothing to continue', () => {
+    const board = reduce(saved(), { type: 'CONTINUE_GAME' });
+    const started = reduce(board, { type: 'START_TURN' });
+    const ended = reduce(started, { type: 'END_GAME' });
+    expect(ended).toEqual(initialState);
+    expect(reduce(ended, { type: 'CONTINUE_GAME' })).toBe(ended);
   });
 });
 
@@ -784,10 +736,7 @@ describe('purity', () => {
       { type: 'OPEN_QUESTION', questionId: 2, cards: 3 },
       { type: 'BACK' },
       { type: 'NEW_BOARD', code: OTHER_CODE },
-      { type: 'OPEN_WINNER' },
-      { type: 'DECLARE_WINNER', player: 2 },
-      { type: 'PLAY_AGAIN', code: CODE },
-      { type: 'GO_HOME' },
+      { type: 'END_GAME' },
     ];
     for (const action of actions) {
       const before = JSON.stringify(s);

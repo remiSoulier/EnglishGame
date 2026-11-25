@@ -15,7 +15,6 @@ const SCREENS: Screen[] = [
   'question',
   'result',
   'newBoard',
-  'winner',
 ];
 
 const q1 = questions[0];
@@ -29,7 +28,6 @@ function makeGame(overrides: Partial<Game> = {}): Game {
     board: generateBoard('ABCD-EFG', 1, 'medium'),
     askedQuestionIds: [],
     pendingQuestion: null,
-    winner: null,
     ...overrides,
   };
 }
@@ -72,7 +70,7 @@ function fixture(screen: Screen, exit: NavigationExit): [GameState, GameAction] 
         { type: 'OPEN_QUESTION', questionId: q1.id, cards: 1 },
       ];
     case 'END_TURN':
-      // Any board state without a winner (D11: no turn order).
+      // Any board state (D11: no turn order; D13: no winner).
       return [{ screen, game: makeGame() }, action];
     case 'NEW_BOARD':
       return [
@@ -89,18 +87,6 @@ function fixture(screen: Screen, exit: NavigationExit): [GameState, GameAction] 
       ];
     case 'CONTINUE':
       return [{ screen, game: makeGame({ pendingQuestion: answered }) }, action];
-    case 'DECLARE_WINNER':
-      return [
-        { screen, game: makeGame() },
-        { type: 'DECLARE_WINNER', player: 2 },
-      ];
-    case 'PLAY_AGAIN':
-      return [
-        { screen, game: makeGame({ winner: 1 }) },
-        { type: 'PLAY_AGAIN', code: 'HJKM-NPQ' },
-      ];
-    case 'GO_HOME':
-      return [{ screen, game: makeGame({ winner: 1 }) }, action];
     default:
       return [{ screen, game: makeGame() }, action];
   }
@@ -124,12 +110,12 @@ describe('NAVIGATION map (#12)', () => {
 
   it('only Question (one try) has neither Back nor Cancel nor Quit; it leads to Result only', () => {
     const backLike = (e: NavigationExit) =>
-      ['BACK', 'CANCEL_QUESTION', 'QUIT_TO_HOME', 'GO_HOME'].includes(e.action);
+      ['BACK', 'CANCEL_QUESTION', 'QUIT_TO_HOME', 'END_GAME'].includes(e.action);
     expect(NAVIGATION.question.some(backLike)).toBe(false);
     expect(NAVIGATION.question.map((e) => e.to)).toEqual(['result']);
     // In-app Back exists exactly where canGoBack can be true.
     const withBack = SCREENS.filter((s) => NAVIGATION[s].some((e) => e.action === 'BACK'));
-    expect(withBack.sort()).toEqual(['newGame', 'questionPopup', 'winner']);
+    expect(withBack.sort()).toEqual(['newGame', 'questionPopup']);
   });
 
   it('every screen is reachable from home, and home is reachable from every screen', () => {
@@ -160,6 +146,34 @@ describe('NAVIGATION map (#12)', () => {
     });
   });
 
+  it('board menu offers exactly New board, End game, Quit to home, each confirmed (D13)', () => {
+    const menu = NAVIGATION.board.filter((e) => e.via.startsWith('Menu › '));
+    expect(menu).toEqual([
+      { via: 'Menu › New board › New board', action: 'NEW_BOARD', to: 'board' },
+      { via: 'Menu › End game › End game', action: 'END_GAME', to: 'home' },
+      { via: 'Menu › Quit to home › Quit', action: 'QUIT_TO_HOME', to: 'home' },
+    ]);
+  });
+
+  it('has no winner screen, winner action nor "We have a winner" (D13)', () => {
+    expect(Object.keys(NAVIGATION)).not.toContain('winner');
+    const all = Object.values(NAVIGATION).flat();
+    for (const e of all) {
+      expect(e.to).not.toBe('winner');
+      expect(['OPEN_WINNER', 'DECLARE_WINNER', 'PLAY_AGAIN', 'GO_HOME']).not.toContain(e.action);
+      expect(e.via).not.toMatch(/winner|play again/i);
+    }
+  });
+
+  it('End game is the only exit that drops the game (D13)', () => {
+    const [state, action] = fixture('board', {
+      via: 'Menu › End game › End game',
+      action: 'END_GAME',
+      to: 'home',
+    });
+    expect(gameReducer(state, action)).toEqual({ screen: 'home', game: null });
+  });
+
   it('board offers Question and End turn, and no Next player (D11)', () => {
     const board = NAVIGATION.board;
     expect(board).toContainEqual({ via: 'Question', action: 'OPEN_QUESTION', to: 'questionPopup' });
@@ -175,7 +189,7 @@ describe('NAVIGATION map (#12)', () => {
   it('home offers Continue game to every game screen', () => {
     const continues = NAVIGATION.home.filter((e) => e.action === 'CONTINUE_GAME').map((e) => e.to);
     expect(continues.sort()).toEqual(
-      ['board', 'newBoard', 'questionPopup', 'question', 'result', 'winner'].sort(),
+      ['board', 'newBoard', 'questionPopup', 'question', 'result'].sort(),
     );
   });
 
@@ -203,9 +217,8 @@ describe('canGoBack (#12 D10)', () => {
     [{ screen: 'question', game: makeGame({ pendingQuestion: pending }) }, false],
     [{ screen: 'result', game: makeGame({ pendingQuestion: answered }) }, false],
     [{ screen: 'newBoard', game: makeGame() }, false],
-    [{ screen: 'winner', game: makeGame() }, true],
-    [{ screen: 'winner', game: makeGame({ winner: 2 }) }, false],
-    [{ screen: 'winner', game: null }, false],
+    [{ screen: 'newBoard', game: null }, false],
+    [{ screen: 'board', game: null }, false],
   ];
 
   it.each(cases)('%o → %s, and agrees with the reducer BACK', (state, expected) => {

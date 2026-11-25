@@ -81,7 +81,8 @@ describe('GameProvider', () => {
     expect(result.current.state.screen).toBe('board');
     expect(saved()).toEqual({ version: 2, state: result.current.state });
 
-    act(() => result.current.dispatch({ type: 'GO_HOME' }));
+    act(() => result.current.dispatch({ type: 'END_GAME' }));
+    expect(result.current.state).toEqual(initialState);
     expect(saved()).toEqual({ version: 2, state: initialState });
   });
 
