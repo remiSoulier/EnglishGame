@@ -24,10 +24,37 @@ import {
  * other cell (`isFullyConnected`), so the goal is reachable from each start cell.
  */
 
-/** Cells allowed for the goal: every cell except the four start corners (row-major order). */
-const GOAL_CANDIDATES: readonly Cell[] = Object.freeze(allCells().filter((c) => !isStartCell(c)));
+/** Cells that are not a start corner (row-major order): where enemies may stand. */
+const NON_START_CELLS: readonly Cell[] = Object.freeze(allCells().filter((c) => !isStartCell(c)));
 
-/** Uniformly random cell that is not a start cell. Consumes exactly one `rng()` value. */
+/** Minimum number of grid steps between the goal and every start corner (decision D17). */
+export const GOAL_MIN_STEPS = 6;
+/** Maximum difference of steps to the goal between the nearest and farthest start (D17). */
+export const GOAL_MAX_SPREAD = 4;
+
+/** Grid steps (Manhattan distance) from the goal cell to each of the four start corners. */
+export function goalStepsToStarts(goal: Cell): number[] {
+  return START_CELLS.map((s) => Math.abs(goal.x - s.x) + Math.abs(goal.y - s.y));
+}
+
+/**
+ * True if `goal` is a fair start position (decision D17): at least `GOAL_MIN_STEPS` grid steps
+ * from every start corner, and no start more than `GOAL_MAX_SPREAD` steps closer than another.
+ * Distances ignore walls, since walls move every turn while the goal stays. All four corners are
+ * used whatever the player count, so a code gives the same board for 2, 3 or 4 players.
+ */
+export function isFairGoal(goal: Cell): boolean {
+  const steps = goalStepsToStarts(goal);
+  return (
+    Math.min(...steps) >= GOAL_MIN_STEPS &&
+    Math.max(...steps) - Math.min(...steps) <= GOAL_MAX_SPREAD
+  );
+}
+
+/** Cells allowed for a newly drawn goal: the 13 central cells of `isFairGoal` (row-major). */
+export const GOAL_CANDIDATES: readonly Cell[] = Object.freeze(allCells().filter(isFairGoal));
+
+/** Uniformly random fair goal cell (`isFairGoal`). Consumes exactly one `rng()` value. */
 export function placeGoal(rng: Rng): Cell {
   const cell = pick(rng, GOAL_CANDIDATES);
   return { x: cell.x, y: cell.y };
@@ -49,7 +76,7 @@ function assertValidGoal(goal: Cell): void {
  */
 export function placeEnemies(rng: Rng, count: number, goal: Cell): Cell[] {
   assertValidGoal(goal);
-  const candidates = GOAL_CANDIDATES.filter((c) => !sameCell(c, goal)).map((c) => ({ ...c }));
+  const candidates = NON_START_CELLS.filter((c) => !sameCell(c, goal)).map((c) => ({ ...c }));
   if (!Number.isInteger(count) || count < 0 || count > candidates.length) {
     throw new Error(`Invalid enemy count: ${count}`);
   }
