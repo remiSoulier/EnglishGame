@@ -118,7 +118,9 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 
 | 2026-11-24 | #25 | VALIDÉ after 1 refusal: badges hid junction rivets on ~12% of boards; fixed (badges now avoid all rivets) and re-validated. Merged into main. |
 - [x] #26 Écran gagnant retiré, bouton End game dans le menu (ui-dev)
-- [~] #27 Style SILVA de la maquette (ui-dev)
-- [ ] #28 Nom SILVA dans le manifeste, la page et les icônes (setup-dev)
+- [x] #27 Style SILVA de la maquette (ui-dev)
+- [x] #28 Nom SILVA dans le manifeste, la page et les icônes (setup-dev)
 
 | 2026-11-25 | #26 | VALIDÉ (no defect, D13). Merged into main. |
+
+| 2026-11-25 | #27, #28 | VALIDÉ both (D14): SILVA style from the user mockup and SILVA name, manifest, icons. Merged into main. |
