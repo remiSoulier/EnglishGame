@@ -5,41 +5,68 @@
   min-height: 100dvh;
   max-width: 480px;
   margin: 0 auto;
-  padding: 12px 16px;
-  padding-top: max(12px, env(safe-area-inset-top));
+  padding: 16px;
+  padding-top: max(16px, env(safe-area-inset-top));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
 }
 
 .header {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 4px 12px;
+  gap: 6px 12px;
 }
 
+/* Navy pill, white text: 13.47:1. */
 .cards {
   margin: 0;
-  font-size: 17px;
-  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .tag {
   margin: 0;
-  padding: 2px 8px;
-  border-radius: 999px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
   color: var(--color-text-muted);
   font-size: 14px;
   font-weight: 600;
 }
 
+.programLabel {
+  margin: 8px 0 -4px;
+  color: var(--color-text-muted);
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .question {
   margin: 8px 0 4px;
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 800;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+/* Framed program text (multi-line questions). */
+.program {
+  display: block;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.45;
+  white-space: pre-wrap;
 }
 
 .choices {
@@ -51,27 +78,38 @@
   list-style: none;
 }
 
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
 .choice {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   width: 100%;
+  height: 100%;
   min-height: var(--choice-min-height);
-  padding: 10px 14px;
-  border: 2px solid var(--color-primary);
+  padding: 12px 14px;
+  border: 2px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
   color: var(--color-text);
   font-family: inherit;
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
   text-align: left;
   cursor: pointer;
   touch-action: manipulation;
 }
 
+.grid .choice {
+  min-height: 72px;
+}
+
 .choice:hover:not(:disabled) {
+  border-color: var(--color-primary);
   background: var(--color-surface);
 }
 
@@ -81,20 +119,29 @@
 }
 
 .choice:disabled {
-  border-color: var(--color-border);
   cursor: default;
 }
 
+/* The tapped choice: mint fill (text 11.42:1), dark border. */
+.picked,
+.picked:disabled {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+/* Letter chip: dark text on the surface tint (14.88:1), outlined. */
 .key {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--color-border);
+  border-radius: 9px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 15px;
   font-weight: 800;
 }
 

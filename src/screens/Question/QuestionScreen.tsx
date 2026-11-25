@@ -11,15 +11,31 @@ export interface QuestionScreenProps {
   onAnswer: (answer: ChoiceKey) => void;
 }
 
-/** Question screen: the question and its 2–4 choices as big buttons; the first tap answers. */
+/** Longest choice text that still fits a half-width card at 390 px. */
+const GRID_MAX_CHARS = 12;
+
+/**
+ * Question screen: the question and its 2–4 choices as big buttons; the first tap answers.
+ * A question with line breaks is a program to read: its lines before the last one are shown in
+ * a framed box. Short choices are laid out as a 2×2 grid of cards, longer ones as a list.
+ */
 export function QuestionScreen({ question, cards, onAnswer }: QuestionScreenProps) {
-  const [answered, setAnswered] = useState(false);
+  const [picked, setPicked] = useState<ChoiceKey | null>(null);
 
   const answer = (key: ChoiceKey) => {
-    if (answered) return;
-    setAnswered(true);
+    if (picked !== null) return;
+    setPicked(key);
     onAnswer(key);
   };
+
+  const keys = choiceKeys(question);
+  const grid =
+    keys.length % 2 === 0 &&
+    keys.every((k) => (question.choices[k] ?? '').length <= GRID_MAX_CHARS);
+
+  const lines = question.question.split('\n');
+  const program = lines.length > 1 ? lines.slice(0, -1).join('\n') : null;
+  const prompt = lines[lines.length - 1];
 
   return (
     <main className={styles.screen}>
@@ -28,15 +44,22 @@ export function QuestionScreen({ question, cards, onAnswer }: QuestionScreenProp
         <p className={styles.tag}>{questionTag(question.category, question.difficulty)}</p>
       </header>
 
-      <h1 className={styles.question}>{question.question}</h1>
+      {program !== null && <p className={styles.programLabel}>Read the program:</p>}
+      <h1 className={styles.question}>
+        {program !== null && <span className={styles.program}>{program + '\n'}</span>}
+        {prompt}
+      </h1>
 
-      <ul className={styles.choices} aria-label="Choices">
-        {choiceKeys(question).map((key) => (
+      <ul
+        className={grid ? `${styles.choices} ${styles.grid}` : styles.choices}
+        aria-label="Choices"
+      >
+        {keys.map((key) => (
           <li key={key}>
             <button
               type="button"
-              className={styles.choice}
-              disabled={answered}
+              className={key === picked ? `${styles.choice} ${styles.picked}` : styles.choice}
+              disabled={picked !== null}
               aria-label={`${key}: ${question.choices[key]}`}
               onClick={() => answer(key)}
             >

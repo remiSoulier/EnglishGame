@@ -14,6 +14,34 @@ export interface ResultScreenProps {
   onContinue: () => void;
 }
 
+/** Small navy instruction card with a lavender dot pattern (decorative). */
+function CardsIllustration() {
+  return (
+    <svg
+      className={styles.cardsArt}
+      viewBox="0 0 44 52"
+      width="44"
+      height="52"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="9" y="2" width="32" height="44" rx="5" fill="var(--silva-lavender)" />
+      <rect x="3" y="6" width="32" height="44" rx="5" fill="var(--silva-navy)" />
+      {[0, 1, 2].map((row) =>
+        [0, 1, 2].map((col) => (
+          <circle
+            key={`${row}-${col}`}
+            cx={11 + col * 8}
+            cy={18 + row * 10}
+            r="2.4"
+            fill={(row + col) % 2 === 0 ? 'var(--silva-lime)' : 'var(--silva-lavender)'}
+          />
+        )),
+      )}
+    </svg>
+  );
+}
+
 /**
  * Result screen: Correct! / Wrong answer (icon + text, not colour only), the cards to draw, the
  * choices with the right one and the player's pick labelled, the explanation, and Continue.
@@ -46,7 +74,13 @@ export function ResultScreen({ question, cards, answer, correct, onContinue }: R
           {correct ? 'Correct!' : 'Wrong answer'}
         </h1>
         {correct ? (
-          <p className={styles.draw}>Draw {cardsLabel(cards)}</p>
+          <div className={styles.drawCard}>
+            <CardsIllustration />
+            <div>
+              <p className={styles.draw}>Draw {cardsLabel(cards)}</p>
+              <p className={styles.drawFrom}>from the instruction card deck</p>
+            </div>
+          </div>
         ) : (
           <p className={styles.noCards}>No cards this time.</p>
         )}
@@ -75,7 +109,10 @@ export function ResultScreen({ question, cards, answer, correct, onContinue }: R
         ))}
       </ul>
 
-      <p className={styles.explanation}>{question.explanation}</p>
+      <div className={styles.why}>
+        <p className={styles.whyLabel}>Why?</p>
+        <p className={styles.explanation}>{question.explanation}</p>
+      </div>
 
       <div className={styles.actions}>
         <Button variant="primary" fullWidth onClick={onContinue}>
