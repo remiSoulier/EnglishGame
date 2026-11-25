@@ -103,10 +103,15 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
   return (
     <main className={styles.screen}>
       <header className={styles.header}>
-        <Button variant="ghost" className={styles.back} onClick={onBack}>
-          <span aria-hidden="true">←</span> Back
-        </Button>
-        <h1 className={styles.title}>New game</h1>
+        <div className={styles.titleRow}>
+          <button type="button" className={styles.back} onClick={onBack}>
+            <span aria-hidden="true" className={styles.chevron}>
+              ‹
+            </span>
+            <span className="sr-only">Back</span>
+          </button>
+          <h1 className={styles.title}>New game</h1>
+        </div>
         {replacesGame && <p className={styles.notice}>This will replace your current game.</p>}
       </header>
 
@@ -130,7 +135,7 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
 
         <fieldset className={styles.fieldset}>
           <legend className={styles.legend}>Difficulty</legend>
-          <div className={styles.segments}>
+          <div className={`${styles.segments} ${styles.stacked}`}>
             {DIFFICULTY_OPTIONS.map(({ value, label }) => (
               <Segment
                 key={value}
@@ -203,7 +208,7 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
         </fieldset>
 
         <div className={styles.actions}>
-          <Button type="submit" variant="primary" fullWidth>
+          <Button type="submit" variant="accent" fullWidth>
             Start game
           </Button>
         </div>
