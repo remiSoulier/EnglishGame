@@ -72,15 +72,15 @@ test.describe('manifest and build output', () => {
     expect(response.status()).toBe(200);
     const manifest = JSON.parse(await response.text());
     expect(manifest).toMatchObject({
-      name: 'Board Game Companion',
-      short_name: 'BG Companion',
+      name: 'SILVA',
+      short_name: 'SILVA',
       lang: 'en',
       start_url: '/',
       scope: '/',
       display: 'standalone',
       orientation: 'portrait',
-      theme_color: '#1d4ed8',
-      background_color: '#ffffff',
+      theme_color: '#0f3d3a',
+      background_color: '#0f3d3a',
     });
     expect(manifest.icons).toEqual(EXPECTED_ICONS);
 
@@ -93,7 +93,7 @@ test.describe('manifest and build output', () => {
     }
 
     // index.html head: theme-color, description, apple-touch-icon 180.
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#1d4ed8');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#0f3d3a');
     await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /\S/);
     const apple = page.locator('link[rel="apple-touch-icon"]');
     await expect(apple).toHaveAttribute('sizes', '180x180');
