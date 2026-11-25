@@ -14,6 +14,11 @@
   fill: var(--color-board-bg);
 }
 
+/* Dark veil over the board art: tones it down so it stays a background. */
+.boardVeil {
+  fill: var(--color-board-veil);
+}
+
 .gridLine {
   stroke: var(--color-grid-line);
   stroke-width: 1;
@@ -32,6 +37,15 @@
   font-weight: 600;
   text-anchor: middle;
   dominant-baseline: central;
+}
+
+/* Board-coloured halo under each wall (1.5 units each side of the 6-unit lime stroke). */
+.wallHalo {
+  fill: none;
+  stroke: var(--color-board-bg);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .wall {
@@ -65,8 +79,13 @@
   dominant-baseline: central;
 }
 
+/* Board-coloured outline (paint-order: stroke under the fill), so the art never touches it. */
 .enemyBody {
   fill: var(--color-enemy);
+  stroke: var(--color-board-bg);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  paint-order: stroke;
 }
 
 .enemyMark {
@@ -79,11 +98,20 @@
   fill: var(--color-enemy-mark);
 }
 
+/* Rounded star with a board-coloured outline under its fill (see .enemyBody). */
 .goal {
   fill: var(--color-goal);
-  stroke: var(--color-goal);
-  stroke-width: 1.5;
+  stroke: var(--color-board-bg);
+  stroke-width: 3;
   stroke-linejoin: round;
+  paint-order: stroke;
+}
+
+/* Solid board-coloured band under the dashed outline (and its gaps). */
+.startHalo {
+  fill: none;
+  stroke: var(--color-board-bg);
+  stroke-width: 5;
 }
 
 .start {
@@ -93,6 +121,20 @@
   stroke-dasharray: 5 3;
 }
 
+/* Soft lavender glow behind a character, so dark characters stand out on the board. */
+.startGlow {
+  fill: var(--color-start);
+  opacity: 0.28;
+}
+
+/* Plate under the "P1" … "P4" label: board fill, lavender ring (6.63:1 like the outline). */
+.startPlate {
+  fill: var(--color-board-bg);
+  stroke: var(--color-start);
+  stroke-width: 1;
+}
+
+/* --color-start on the --color-board-bg plate: 6.63:1. */
 .startLabel {
   fill: var(--color-start);
   font-family: var(--font-family);

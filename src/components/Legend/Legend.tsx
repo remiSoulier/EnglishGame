@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { playerCharacter } from '../../state/players';
 import { CELL } from '../Grid/geometry';
 import { EnemyShape, GoalShape, StartShape, WallEnd, WallShape } from '../Grid/shapes';
 import styles from './Legend.module.css';
@@ -50,7 +51,7 @@ export function Legend({ className }: LegendProps) {
       </li>
       <li className={styles.item}>
         <Icon>
-          <StartShape x={0} y={0} label="P" />
+          <StartShape x={0} y={0} character={playerCharacter(0).src} />
         </Icon>
         Start
       </li>

@@ -17,7 +17,8 @@
     "format": "prettier --write .",
     "icons": "node scripts/generate-icons.mjs",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "art": "node scripts/optimize-art.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

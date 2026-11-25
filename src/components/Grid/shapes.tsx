@@ -42,25 +42,96 @@ interface StartShapeProps {
   /** Top-left corner of the cell in SVG user units. */
   x: number;
   y: number;
-  label: string;
+  /** Player label ("P1" … "P4"), on a small plate beside the character. */
+  label?: string;
+  /**
+   * Cell edge the label plate sits against: the one on the board border, which never carries a
+   * wall (D12), so no wall, halo or rivet can cover the label. Default `bottom`.
+   */
+  labelEdge?: 'top' | 'bottom';
+  /** Character art URL (decorative), fitted in the cell beside the label. */
+  character?: string;
 }
 
-/** Start cell: dashed square outline with a small player label. */
-export function StartShape({ x, y, label }: StartShapeProps) {
-  const inset = 4;
+/** Inset of the dashed start outline in the cell. */
+const START_INSET = 4;
+/**
+ * Label plate: size, and distance of its centre from its (border) edge. It spans 1 … 14 units
+ * from that edge and x 9 … 31 in the cell, so it stays clear of a wall on any other edge (lime
+ * stroke 3 + halo 1.5 = 4.5 units deep) and of a rivet on a corner (radius 5.5).
+ */
+const PLATE_WIDTH = 22;
+const PLATE_HEIGHT = 13;
+const PLATE_FROM_EDGE = 7.5;
+/** Height of the character box when it shares the cell with the label plate. */
+const ART_WITH_LABEL = 24;
+/** Soft disc behind the character (a rounded rect: circles are kept for enemies and rivets). */
+const GLOW_RADIUS = 13;
+
+/**
+ * Start cell: dashed square outline (on a dark halo, so it reads on the board art), the
+ * player's character and a small player label on a board-coloured plate (text 6.63:1).
+ */
+export function StartShape({ x, y, label, labelEdge = 'bottom', character }: StartShapeProps) {
+  const side = CELL - START_INSET * 2;
+  const top = labelEdge === 'top';
+  const plateY = top ? y + PLATE_FROM_EDGE : y + CELL - PLATE_FROM_EDGE;
+  // With a label the character fills the dashed outline on the other side of the plate; alone
+  // it fills the whole outline.
+  const art = label
+    ? {
+        x: x + 3,
+        y: top ? y + CELL - START_INSET - ART_WITH_LABEL : y + START_INSET,
+        width: CELL - 6,
+        height: ART_WITH_LABEL,
+      }
+    : { x: x + 5, y: y + 5, width: CELL - 10, height: CELL - 10 };
   return (
     <g>
       <rect
-        className={styles.start}
-        x={x + inset}
-        y={y + inset}
-        width={CELL - inset * 2}
-        height={CELL - inset * 2}
+        className={styles.startHalo}
+        x={x + START_INSET}
+        y={y + START_INSET}
+        width={side}
+        height={side}
         rx={2}
       />
-      <text className={styles.startLabel} x={x + CELL / 2} y={y + CELL / 2}>
-        {label}
-      </text>
+      <rect
+        className={styles.start}
+        x={x + START_INSET}
+        y={y + START_INSET}
+        width={side}
+        height={side}
+        rx={2}
+      />
+      {character && (
+        <>
+          <rect
+            className={styles.startGlow}
+            x={x + CELL / 2 - GLOW_RADIUS}
+            y={art.y + art.height / 2 - GLOW_RADIUS}
+            width={GLOW_RADIUS * 2}
+            height={GLOW_RADIUS * 2}
+            rx={GLOW_RADIUS}
+          />
+          <image href={character} {...art} preserveAspectRatio="xMidYMid meet" aria-hidden="true" />
+        </>
+      )}
+      {label && (
+        <>
+          <rect
+            className={styles.startPlate}
+            x={x + CELL / 2 - PLATE_WIDTH / 2}
+            y={plateY - PLATE_HEIGHT / 2}
+            width={PLATE_WIDTH}
+            height={PLATE_HEIGHT}
+            rx={PLATE_HEIGHT / 2}
+          />
+          <text className={styles.startLabel} x={x + CELL / 2} y={plateY}>
+            {label}
+          </text>
+        </>
+      )}
     </g>
   );
 }
@@ -73,10 +144,22 @@ export interface Segment {
   y2: number;
 }
 
+/** SVG path data of a wall's segments. */
+function wallPath(segments: Segment[]): string {
+  return segments.map((s) => `M${s.x1} ${s.y1}L${s.x2} ${s.y2}`).join('');
+}
+
 /** A wall: one path made of thick, round-capped segments. */
 export function WallShape({ segments }: { segments: Segment[] }) {
-  const d = segments.map((s) => `M${s.x1} ${s.y1}L${s.x2} ${s.y2}`).join('');
-  return <path className={styles.wall} d={d} />;
+  return <path className={styles.wall} d={wallPath(segments)} />;
+}
+
+/**
+ * Dark halo under a wall (wider, board-coloured stroke), so the lime wall keeps its 9.64:1
+ * contrast wherever it crosses a light spot of the board art.
+ */
+export function WallHalo({ segments }: { segments: Segment[] }) {
+  return <path className={styles.wallHalo} d={wallPath(segments)} />;
 }
 
 /** Radius of a wall end mark, in SVG user units (outer edge = radius + half the 2-unit stroke). */

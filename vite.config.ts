@@ -40,7 +40,7 @@ export default defineConfig({
       },
       workbox: {
         // Everything in dist/ (public/ icons included); the manifest is added by the plugin.
-        globPatterns: ['**/*.{js,css,html,svg,png,json,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,json,woff2}'],
         navigateFallback: 'index.html',
         cleanupOutdatedCaches: true,
       },

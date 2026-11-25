@@ -15,14 +15,17 @@
   --silva-forest: #0f3d3a;
   --silva-forest-2: #1f5c4f;
   --silva-ink: #142420;
-  /* Decorative only (home dots): no text on it. */
-  --silva-orange: #f2994a;
 
   --color-bg: #ffffff;
   --color-text: #142420; /* 16.12:1 on --color-bg */
 
-  /* Board (dark forest). Ratios against --color-board-bg (#0f3d3a). */
+  /*
+   * Board (dark forest). Ratios against --color-board-bg (#0f3d3a). The 9×9 cells show the
+   * board art (public/art/board-texture.webp) under --color-board-veil; walls, enemies, goal and
+   * start outlines get a --color-board-bg halo, so their ratios hold over any spot of the art.
+   */
   --color-board-bg: #0f3d3a;
+  --color-board-veil: rgb(5 25 24 / 40%);
   /* Decorative only (thin cell lines, 2.39:1): the border and walls carry the structure. */
   --color-grid-line: #3d7a69;
   --color-board-border: #8cc4ad; /* 6.07:1 */
@@ -57,6 +60,14 @@
   --color-home-tagline: #c5ded5; /* 8.45:1 */
   --color-home-outline: #8cc4ad; /* 6.07:1, outlined button boundary */
   --color-home-disabled: #a7bdb4; /* 6.05:1 (disabled: exempt, kept readable) */
+  /*
+   * Home art (public/art/bg-vert.webp): navy sky with a white moon, teal hills. Dark veils over
+   * it, behind the title (top) and the menu (bottom); measured ratios are in HomeScreen.module.css.
+   */
+  --color-home-veil: rgb(6 20 40 / 45%);
+  --color-home-veil-strong: rgb(5 25 24 / 72%);
+  /* Title card behind the logo, title and tagline (over clouds and white strokes). */
+  --color-home-card: rgb(6 20 40 / 75%);
 
   /* Question results. Never the only cue: always paired with an icon and a text label. */
   --color-success: #035e44; /* 7.81:1; 5.54:1 on --color-success-bg */

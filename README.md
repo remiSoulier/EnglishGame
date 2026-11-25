@@ -123,6 +123,11 @@ plateau.
   `public/favicon.svg`, dans le style SILVA (cadre et grille vert citron sur vert forêt). Elles sont
   générées par `npm run icons` (`scripts/generate-icons.mjs`, nécessite Chromium de Playwright).
   Pour de vraies icônes, remplacez les fichiers en gardant les mêmes noms et tailles.
+- **Illustrations** : `public/art/*.webp` (fonds `bg-*`, texture du plateau `board-texture`,
+  personnages `char-*`), précachées pour le hors ligne. Les originaux PNG exportés de Figma sont
+  dans `docs/design/art-src/`. Pour les régénérer : `npm run art` (`scripts/optimize-art.mjs`,
+  nécessite `cwebp` et `dwebp` de libwebp, `brew install webp`) — fonds à 780 px de large, texture
+  à sa taille, personnages détourés et ramenés à 256 px de côté maximum.
 
 ## Personnaliser le nom du jeu
 
@@ -187,8 +192,8 @@ src/
   data/         questions.json + questions.ts (chargement et validation)
   styles/       tokens.css (couleurs, espacements), global.css
 e2e/            tests Playwright
-public/         favicon et icônes PWA
-scripts/        generate-icons.mjs
+public/         favicon, icônes PWA et illustrations (art/)
+scripts/        generate-icons.mjs, optimize-art.mjs
 ```
 
 ## Conventions
