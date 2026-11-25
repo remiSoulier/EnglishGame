@@ -5,7 +5,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PLAYER_CHARACTERS } from './state/players';
+import { ENEMY_CHARACTERS, GOAL_CHARACTER, PLAYER_CHARACTERS } from './state/players';
 
 const ROOT = process.cwd();
 const ART = resolve(ROOT, 'public/art');
@@ -105,14 +105,19 @@ describe('public/art (optimised Figma art)', () => {
     expect(existsSync(resolve(SRC, `${name}.png`))).toBe(true);
   });
 
-  it('every player character points to an existing art file', () => {
+  it('every character (players, goal, enemies) points to an existing art file (D15)', () => {
     expect(PLAYER_CHARACTERS.map((c) => c.src)).toEqual([
       '/art/char-kitkat.webp',
-      '/art/char-croco.webp',
-      '/art/char-dragon.webp',
+      '/art/char-batman.webp',
       '/art/char-toad.webp',
+      '/art/char-gus.webp',
     ]);
-    for (const { src } of PLAYER_CHARACTERS) {
+    expect(GOAL_CHARACTER.src).toBe('/art/char-dragon.webp');
+    expect(ENEMY_CHARACTERS.map((c) => c.src)).toEqual([
+      '/art/char-croco.webp',
+      '/art/char-croque-mort.webp',
+    ]);
+    for (const { src } of [...PLAYER_CHARACTERS, GOAL_CHARACTER, ...ENEMY_CHARACTERS]) {
       expect(existsSync(resolve(ROOT, 'public', src.slice(1))), src).toBe(true);
     }
   });

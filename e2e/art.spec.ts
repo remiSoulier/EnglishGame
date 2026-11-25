@@ -29,13 +29,19 @@ const ART = [
   'char-toad',
 ];
 const HOME_ART = ['/art/bg-vert.webp'];
+/** Distinct art on a 4-player board (D15): texture, 4 players, the dragon goal, 2 enemies. */
 const BOARD_ART = [
   '/art/board-texture.webp',
   '/art/char-kitkat.webp',
-  '/art/char-croco.webp',
-  '/art/char-dragon.webp',
+  '/art/char-batman.webp',
   '/art/char-toad.webp',
+  '/art/char-gus.webp',
+  '/art/char-dragon.webp',
+  '/art/char-croco.webp',
+  '/art/char-croque-mort.webp',
 ];
+/** Distinct hrefs in first-seen order (enemies repeat their two characters). */
+const distinct = (hrefs: string[]) => [...new Set(hrefs)];
 const BOARD_BG = 'rgb(15, 61, 58)';
 
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
@@ -301,7 +307,7 @@ test('Board: texture and the four characters load; marks keep their outlines', a
   await expectDecoded(page, BOARD_ART, 'board');
 
   const images = await page.evaluate<BoardImage[]>(BOARD_IMAGES_SCRIPT);
-  expect(images.map((i) => i.href)).toEqual(BOARD_ART);
+  expect(distinct(images.map((i) => i.href))).toEqual(BOARD_ART);
   for (const i of images) {
     expect(i.width, `${i.href} drawn`).toBeGreaterThan(0);
     expect(i.height, `${i.href} drawn`).toBeGreaterThan(0);
@@ -371,7 +377,7 @@ test.describe('offline', () => {
     await startGame(page, { players: 4, goto: false });
     await expectDecoded(page, BOARD_ART, 'offline board');
     const images = await page.evaluate<BoardImage[]>(BOARD_IMAGES_SCRIPT);
-    expect(images.map((i) => i.href)).toEqual(BOARD_ART);
+    expect(distinct(images.map((i) => i.href))).toEqual(BOARD_ART);
 
     const paths = art.map((r) => new URL(r.url()).pathname);
     for (const url of [...HOME_ART, ...BOARD_ART]) expect(paths, url).toContain(url);
