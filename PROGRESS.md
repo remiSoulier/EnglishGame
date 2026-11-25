@@ -132,3 +132,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #32 Les murs ne se croisent plus (orchestrateur)
 
 | 2026-11-25 | #31, #32 | Done by the orchestrator itself (user asked to stop using subagents): D15 character roles, D16 no crossing walls (0 crossings on 9 000 boards). 1680 unit tests, 101 e2e. Merged into main. |
+- [x] #33 Araignée ajoutée comme troisième ennemi (orchestrateur)
+
+| 2026-11-25 | #33 | Done by the orchestrator: spider cut out of its background, third enemy. 1683 unit tests, 101 e2e. Merged into main. |
