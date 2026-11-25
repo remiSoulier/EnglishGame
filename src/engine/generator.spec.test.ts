@@ -92,7 +92,7 @@ describe('constants', () => {
 });
 
 describe('placeGoal', HEAVY, () => {
-  it('is never a start cell and covers all 77 allowed cells', () => {
+  it('is never a start cell and covers exactly the 13 fair cells (D17)', () => {
     const rng = mulberry32(42);
     const hits = new Map<string, number>();
     for (let i = 0; i < 5000; i++) {
@@ -100,10 +100,10 @@ describe('placeGoal', HEAVY, () => {
       if (!inBoard(g) || isCorner(g)) throw new Error(`bad goal ${key(g)} at draw ${i}`);
       hits.set(key(g), (hits.get(key(g)) ?? 0) + 1);
     }
-    expect(hits.size).toBe(77);
-    // Roughly uniform: expected ~65 per cell.
-    expect(Math.min(...hits.values())).toBeGreaterThan(25);
-    expect(Math.max(...hits.values())).toBeLessThan(120);
+    expect(hits.size).toBe(13);
+    // Roughly uniform: expected ~385 per cell.
+    expect(Math.min(...hits.values())).toBeGreaterThan(300);
+    expect(Math.max(...hits.values())).toBeLessThan(470);
   });
 
   it('maps rng extremes onto valid cells and consumes one value', () => {
@@ -112,9 +112,9 @@ describe('placeGoal', HEAVY, () => {
       calls++;
       return 0;
     };
-    expect(cellName(placeGoal(counting))).toBe('B1');
+    expect(cellName(placeGoal(counting))).toBe('E3');
     expect(calls).toBe(1);
-    expect(cellName(placeGoal(() => 0.999999999))).toBe('H9');
+    expect(cellName(placeGoal(() => 0.999999999))).toBe('E7');
   });
 
   it('is deterministic per seed', () => {
