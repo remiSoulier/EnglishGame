@@ -124,3 +124,7 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 | 2026-11-25 | #26 | VALIDÉ (no defect, D13). Merged into main. |
 
 | 2026-11-25 | #27, #28 | VALIDÉ both (D14): SILVA style from the user mockup and SILVA name, manifest, icons. Merged into main. |
+- [x] #29 Illustrations Figma optimisées en WebP et mises en cache (setup-dev)
+- [x] #30 Fond d'accueil, texture du plateau, personnages sur les cases de départ (ui-dev)
+
+| 2026-11-25 | #29, #30 | #29 VALIDÉ. #30 VALIDÉ after 1 refusal (walls hid P1/P3 labels; fixed, regression test proven to fail before the fix; re-checked by the orchestrator after the user asked to stop using subagents). Merged into main. |
