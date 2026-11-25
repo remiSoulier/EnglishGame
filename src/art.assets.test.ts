@@ -19,6 +19,7 @@ const CHARACTERS = [
   'char-dragon',
   'char-gus',
   'char-kitkat',
+  'char-spider',
   'char-toad',
 ];
 const ALL = [...BACKGROUNDS, 'board-texture', ...CHARACTERS];
@@ -72,7 +73,7 @@ function webp(file: string): WebpInfo {
 }
 
 describe('public/art (optimised Figma art)', () => {
-  it('holds exactly the 13 expected WebP files', () => {
+  it('holds exactly the 14 expected WebP files', () => {
     const files = readdirSync(ART).filter((f) => !f.startsWith('.'));
     expect(files.sort()).toEqual(ALL.map((n) => `${n}.webp`).sort());
   });
@@ -116,6 +117,7 @@ describe('public/art (optimised Figma art)', () => {
     expect(ENEMY_CHARACTERS.map((c) => c.src)).toEqual([
       '/art/char-croco.webp',
       '/art/char-croque-mort.webp',
+      '/art/char-spider.webp',
     ]);
     for (const { src } of [...PLAYER_CHARACTERS, GOAL_CHARACTER, ...ENEMY_CHARACTERS]) {
       expect(existsSync(resolve(ROOT, 'public', src.slice(1))), src).toBe(true);

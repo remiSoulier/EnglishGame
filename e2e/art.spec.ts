@@ -26,10 +26,11 @@ const ART = [
   'char-dragon',
   'char-gus',
   'char-kitkat',
+  'char-spider',
   'char-toad',
 ];
 const HOME_ART = ['/art/bg-vert.webp'];
-/** Distinct art on a 4-player board (D15): texture, 4 players, the dragon goal, 2 enemies. */
+/** Distinct art on a 4-player board (D15): texture, 4 players, the dragon goal, 3 enemies. */
 const BOARD_ART = [
   '/art/board-texture.webp',
   '/art/char-kitkat.webp',
@@ -39,8 +40,9 @@ const BOARD_ART = [
   '/art/char-dragon.webp',
   '/art/char-croco.webp',
   '/art/char-croque-mort.webp',
+  '/art/char-spider.webp',
 ];
-/** Distinct hrefs in first-seen order (enemies repeat their two characters). */
+/** Distinct hrefs in first-seen order (enemies cycle through their three characters). */
 const distinct = (hrefs: string[]) => [...new Set(hrefs)];
 const BOARD_BG = 'rgb(15, 61, 58)';
 
@@ -234,7 +236,7 @@ const OUTLINES_SCRIPT = `(() => {
 
 test.use({ viewport: VIEWPORT });
 
-test('dist/sw.js precaches all 13 art files', () => {
+test('dist/sw.js precaches all 14 art files', () => {
   const sw = readFileSync(new URL('sw.js', DIST), 'utf8');
   for (const name of ART) {
     expect(sw, `precache of art/${name}.webp`).toContain(`"art/${name}.webp"`);
