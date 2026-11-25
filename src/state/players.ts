@@ -8,9 +8,8 @@ export interface PlayerCharacter {
 
 /**
  * Character roles chosen by the user (decision D15): the cat, the bat, the mushroom and the
- * hedgehog are the protagonists (players), the dragon is the goal, the crocodile and the ghost
- * (the hooded "croque-mort") are the enemies. A spider enemy will be added when its art exists.
- * Change the mapping here only.
+ * hedgehog are the protagonists (players), the dragon is the goal, the crocodile, the ghost (the
+ * hooded "croque-mort") and the spider are the enemies. Change the mapping here only.
  */
 
 /** Default character of each player, in player order (P1, P2, P3, P4). */
@@ -28,6 +27,7 @@ export const GOAL_CHARACTER: PlayerCharacter = { name: 'Dragon', src: '/art/char
 export const ENEMY_CHARACTERS: readonly PlayerCharacter[] = [
   { name: 'Croco', src: '/art/char-croco.webp' },
   { name: 'Ghost', src: '/art/char-croque-mort.webp' },
+  { name: 'Spider', src: '/art/char-spider.webp' },
 ];
 
 /** Character of player `index` (0-based), cycling if there are more players than characters. */

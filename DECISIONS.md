@@ -75,7 +75,7 @@ L'utilisateur a fourni une maquette (fichier `docs/design/silva-mockup.webp`). C
 ## D15 — Rôles des personnages (2026-11-25, demande utilisateur)
 - Protagonistes (joueurs P1–P4) : le chat (`kitkat`), la chauve-souris (`batman`), le champignon (`toad`), le hérisson (`gus`).
 - Objectif : le dragon blanc ailé (`dragon`).
-- Ennemis : le crocodile (`croco`) et le fantôme (`croque-mort`, choix de l'utilisateur), utilisés en alternance. L'araignée sera ajoutée quand son illustration existera.
+- Ennemis : le crocodile (`croco`), le fantôme (`croque-mort`, choix de l'utilisateur) et l'araignée (`spider`), utilisés à tour de rôle. L'araignée a été fournie sur un fond de nuit : elle a été détourée par l'orchestrateur (original dans `docs/design/spider-original.png`, détourage dans `docs/design/art-src/char-spider.png`).
 - Sur le plateau, l'objectif et chaque ennemi montrent leur personnage sur une plaque colorée (or / corail) ; l'étoile et le losange « ! » restent en petit badge dans le coin de la case, pour garder un repère de forme. Les étiquettes des murs évitent désormais toute la case d'un ennemi ou de l'objectif.
 - Le mapping est dans `src/state/players.ts`.
 

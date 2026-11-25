@@ -182,7 +182,7 @@ describe('Grid — player characters on start cells', () => {
     ]);
   });
 
-  it('draws characters only on starts, the goal (dragon) and enemies (croco, ghost) (D15)', () => {
+  it('draws characters only on starts, the goal (dragon) and enemies (croco, ghost, spider) (D15)', () => {
     const svg = renderGrid(FIXTURE_BOARD, 2);
     const chars = [...svg.querySelectorAll('image')].filter((i) =>
       (i.getAttribute('href') ?? '').includes('/char-'),
@@ -194,7 +194,9 @@ describe('Grid — player characters on start cells', () => {
     const enemies = where('enemies').map((c) => c.getAttribute('href'));
     expect(enemies).toHaveLength(FIXTURE_BOARD.enemies.length);
     enemies.forEach((href, i) =>
-      expect(href).toBe(i % 2 === 0 ? '/art/char-croco.webp' : '/art/char-croque-mort.webp'),
+      expect(href).toBe(
+        ['/art/char-croco.webp', '/art/char-croque-mort.webp', '/art/char-spider.webp'][i % 3],
+      ),
     );
     expect(chars).toHaveLength(2 + 1 + FIXTURE_BOARD.enemies.length);
   });
