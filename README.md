@@ -1,8 +1,8 @@
-# Board Game Companion
+# SILVA
 
-Application web mobile qui accompagne un **jeu de plateau physique** compétitif pour 2 à 4 joueurs.
-L'interface est en anglais ; le nom du produit est provisoire (voir
-[Personnaliser le nom du jeu](#personnaliser-le-nom-du-jeu)).
+**SILVA — _Program your way to the goal_.** Application web mobile qui accompagne un **jeu de
+plateau physique** compétitif pour 2 à 4 joueurs. L'interface est en anglais ; pour changer le nom,
+voir [Personnaliser le nom du jeu](#personnaliser-le-nom-du-jeu).
 
 ## Présentation
 
@@ -119,18 +119,20 @@ plateau.
 - **Hors ligne** : après une première visite, tout le site est en cache (service worker Workbox
   généré par `vite-plugin-pwa`, mise à jour automatique au déploiement suivant). Une partie complète
   se joue sans réseau.
-- **Icônes** : `public/icons/` (192, 512, 512 maskable, apple-touch-icon 180). Elles sont générées à
-  partir du logo par `npm run icons` (`scripts/generate-icons.mjs`, nécessite Chromium de
-  Playwright). Pour de vraies icônes, remplacez les PNG en gardant les mêmes noms et tailles.
+- **Icônes** : `public/icons/` (192, 512, 512 maskable, apple-touch-icon 180) et
+  `public/favicon.svg`, dans le style SILVA (cadre et grille vert citron sur vert forêt). Elles sont
+  générées par `npm run icons` (`scripts/generate-icons.mjs`, nécessite Chromium de Playwright).
+  Pour de vraies icônes, remplacez les fichiers en gardant les mêmes noms et tailles.
 
 ## Personnaliser le nom du jeu
 
-Le nom « Board Game Companion » est provisoire. Pour le changer :
+Le jeu s'appelle **SILVA** (slogan « Program your way to the goal », décision D14). Pour changer le
+nom :
 
 1. `src/state/appInfo.ts` : `APP_NAME` (et le slogan `APP_TAGLINE`) affichés dans l'application ;
 2. `vite.config.ts` : `manifest.name`, `manifest.short_name` (≤ 12 caractères conseillé, sous
    l'icône) et `manifest.description` ;
-3. `index.html` : la balise `<title>` ;
+3. `index.html` : la balise `<title>` et la balise `<meta name="description">` ;
 4. optionnellement `name` dans `package.json` ;
 5. les tests e2e : `APP_NAME` dans `e2e/helpers.ts` et le nom attendu dans `e2e/pwa.spec.ts`.
 

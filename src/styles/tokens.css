@@ -1,44 +1,78 @@
 /*
- * Design tokens. Contrast ratios are measured against --color-board-bg (#ffffff).
+ * Design tokens — "SILVA" style (decision D14): forest-green board and home, white screens,
+ * lime / navy actions. Every text pair reaches 4.5:1 and every graphical object 3:1 (WCAG 2.2
+ * AA); ratios are given in the comments.
  */
 :root {
+  /* Palette (mockup swatches). Use the semantic tokens below in components. */
+  --silva-lime: #d9f26b;
+  --silva-lime-soft: #e9f9b8;
+  --silva-yellow: #f5c84c;
+  --silva-mint: #a8e6cf;
+  --silva-lavender: #c9b8f0;
+  --silva-navy: #0b1c8c;
+  --silva-navy-dark: #071366;
+  --silva-forest: #0f3d3a;
+  --silva-forest-2: #1f5c4f;
+  --silva-ink: #142420;
+  /* Decorative only (home dots): no text on it. */
+  --silva-orange: #f2994a;
+
   --color-bg: #ffffff;
-  --color-text: #1f2937;
+  --color-text: #142420; /* 16.12:1 on --color-bg */
 
-  --color-board-bg: #ffffff;
-  /* Decorative only (thin cell lines): not required to meet 4.5:1. */
-  --color-grid-line: #c9ced6;
-  --color-board-border: #5b6470; /* 6.00:1 */
-  --color-label: #374151; /* 10.31:1 */
+  /* Board (dark forest). Ratios against --color-board-bg (#0f3d3a). */
+  --color-board-bg: #0f3d3a;
+  /* Decorative only (thin cell lines, 2.39:1): the border and walls carry the structure. */
+  --color-grid-line: #3d7a69;
+  --color-board-border: #8cc4ad; /* 6.07:1 */
+  --color-label: #c5ded5; /* 8.45:1 (coordinate letters / numbers) */
 
-  --color-wall: #1f2937; /* 14.68:1 */
-  --color-enemy: #b91c1c; /* 6.47:1 */
-  --color-enemy-mark: #ffffff; /* 6.47:1 on --color-enemy */
-  --color-goal: #047857; /* 5.48:1 */
-  --color-start: #1d4ed8; /* 6.70:1 */
+  --color-wall: #d9f26b; /* 9.64:1 — also the badge text and ring (badge fill = board) */
+  --color-enemy: #ff9e8a; /* 6.01:1 (diamond) */
+  --color-enemy-mark: #3b0808; /* 8.58:1 on --color-enemy */
+  --color-goal: #f5c84c; /* 7.58:1 (star) */
+  --color-start: #c9b8f0; /* 6.63:1 (dashed square + P label) */
 
   /* UI chrome. Ratios against --color-bg (#ffffff) unless noted. */
-  --color-text-muted: #4b5563; /* 7.56:1 */
-  --color-primary: #1d4ed8; /* 6.70:1 */
-  --color-primary-hover: #1e40af; /* 8.72:1 */
-  --color-on-primary: #ffffff; /* 6.70:1 on --color-primary */
-  --color-surface: #f3f4f6; /* panels; --color-text on it: 13.43:1 */
-  --color-border: #6b7280; /* 4.83:1, non-text UI boundary (>= 3:1) */
-  --color-disabled-bg: #e5e7eb;
-  --color-disabled-text: #4b5563; /* 6.21:1 on --color-disabled-bg */
-  --color-focus: #1d4ed8;
+  --color-text-muted: #4b5c57; /* 7.08:1; 6.53:1 on --color-surface */
+  --color-primary: #0b1c8c; /* navy, 13.47:1 */
+  --color-primary-hover: #071366; /* 16.23:1 */
+  --color-on-primary: #ffffff; /* 13.47:1 on --color-primary */
+  --color-accent: #d9f26b; /* lime fill: 1.25:1 on white, so always with --color-accent-border */
+  --color-accent-hover: #e9f9b8;
+  --color-on-accent: #142420; /* 12.94:1 on --color-accent, 14.36:1 on --color-accent-hover */
+  --color-accent-border: #142420; /* 16.12:1 vs white: lime buttons stay identifiable */
+  --color-surface: #f2f7f4; /* panels; --color-text on it: 14.88:1 */
+  --color-border: #5a6b66; /* 5.63:1, non-text UI boundary (>= 3:1) */
+  --color-disabled-bg: #e8eeeb;
+  --color-disabled-text: #4b5c57; /* 6.02:1 on --color-disabled-bg */
+  --color-focus: #0b1c8c; /* 13.47:1 on white */
+  --color-focus-on-dark: #d9f26b; /* 9.64:1 on --silva-forest */
+
+  /* Home screen (dark forest). Ratios against --color-home-bg (#0f3d3a). */
+  --color-home-bg: #0f3d3a;
+  --color-home-title: #d9f26b; /* 9.64:1 */
+  --color-home-text: #e4eee9; /* 10.12:1 */
+  --color-home-tagline: #c5ded5; /* 8.45:1 */
+  --color-home-outline: #8cc4ad; /* 6.07:1, outlined button boundary */
+  --color-home-disabled: #a7bdb4; /* 6.05:1 (disabled: exempt, kept readable) */
 
   /* Question results. Never the only cue: always paired with an icon and a text label. */
-  --color-success: #047857; /* 5.48:1; 5.21:1 on --color-success-bg */
-  --color-success-bg: #ecfdf5; /* --color-text on it: 13.93:1 */
-  --color-error: #b91c1c; /* 6.47:1; 5.91:1 on --color-error-bg */
-  --color-error-bg: #fef2f2; /* --color-text on it: 13.42:1 */
+  --color-success: #035e44; /* 7.81:1; 5.54:1 on --color-success-bg */
+  --color-success-bg: #a8e6cf; /* mint; --color-text on it: 11.42:1 */
+  --color-error: #b91c1c; /* 6.47:1; 5.50:1 on --color-error-bg */
+  --color-error-bg: #fde8e4; /* --color-text on it: 13.69:1 */
   --choice-min-height: 56px;
-  --shadow-popover: 0 4px 16px rgb(0 0 0 / 18%);
+  --shadow-popover: 0 8px 24px rgb(15 61 58 / 22%);
   /* Dims the screen behind a dialog; decorative, no text on it. */
-  --color-backdrop: rgb(17 24 39 / 60%);
+  --color-backdrop: rgb(15 61 58 / 72%);
 
-  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Rounded geometric sans from the system (no font files: the app works offline). */
+  --font-family:
+    ui-rounded, 'SF Pro Rounded', 'Nunito', 'Varela Round', system-ui, -apple-system, 'Segoe UI',
+    Roboto, sans-serif;
   --tap-target: 48px;
-  --radius: 10px;
+  --radius: 14px;
+  --radius-pill: 999px;
 }

@@ -1,7 +1,14 @@
 import type { ButtonHTMLAttributes } from 'react';
 import styles from './Button.module.css';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost';
+/**
+ * - `primary`: navy fill, white text (main action on white screens).
+ * - `accent`: lime fill, dark text and border (start actions: New game, Start game).
+ * - `secondary`: navy outline on white.
+ * - `onDark`: light outline on the dark home background.
+ * - `ghost`: no border.
+ */
+export type ButtonVariant = 'primary' | 'accent' | 'secondary' | 'onDark' | 'ghost';
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;

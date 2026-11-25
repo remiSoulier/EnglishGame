@@ -17,6 +17,7 @@ export function NewBoardScreen({ board, playerCount, onStartTurn }: NewBoardScre
   return (
     <main className={styles.screen}>
       <header className={styles.header}>
+        {board.turn > 1 && <p className={styles.eyebrow}>End of turn {board.turn - 1}</p>}
         <h1 className={styles.title}>Walls and enemies have moved</h1>
         <p className={styles.intro}>Copy the new walls and enemies onto your board.</p>
       </header>

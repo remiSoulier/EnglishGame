@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 /** App name (mirrors src/state/appInfo.ts and the index.html <title>). */
-export const APP_NAME = 'Board Game Companion';
+export const APP_NAME = 'SILVA';
 
 export type Difficulty = 'Easy' | 'Medium' | 'Hard';
 

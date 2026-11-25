@@ -19,8 +19,13 @@ export function QuestionPopupScreen({ cards, onShow, onCancel }: QuestionPopupSc
   const titleId = useId();
   return (
     <Modal labelledBy={titleId} onCancel={onCancel}>
+      {/* Reads "Question for 2 cards"; the number is drawn as a big navy box (SILVA). */}
       <h2 id={titleId} className={styles.title}>
-        Question for {cardsLabel(cards)}
+        <span className={styles.lead}>Question for</span>{' '}
+        <span className={styles.stake}>
+          <span className={styles.count}>{cards}</span>{' '}
+          <span className={styles.unit}>{cards === 1 ? 'card' : 'cards'}</span>
+        </span>
       </h2>
       <p className={styles.text}>Answer correctly to draw {cardsLabel(cards)}. One try only.</p>
       <div className={styles.actions}>

@@ -96,7 +96,8 @@ export function Menu({ items, label = 'Menu', className }: MenuProps) {
         <span aria-hidden="true" className={styles.icon}>
           ☰
         </span>
-        {label}
+        {/* Icon-only look (SILVA mockup); the label stays the accessible name. */}
+        <span className="sr-only">{label}</span>
       </button>
       {open && (
         <div

@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-/** Primary and background colours (mirror src/styles/tokens.css). */
-const THEME_COLOR = '#1d4ed8';
-const BACKGROUND_COLOR = '#ffffff';
+/** SILVA forest green (D14), also the icon background in scripts/generate-icons.mjs. */
+const THEME_COLOR = '#0f3d3a';
+const BACKGROUND_COLOR = '#0f3d3a';
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -17,9 +17,9 @@ export default defineConfig({
       // Icons are already precached by globPatterns below.
       includeManifestIcons: false,
       manifest: {
-        name: 'Board Game Companion',
-        short_name: 'BG Companion',
-        description: 'Companion app for the board game: build your algorithm, reach the goal!',
+        name: 'SILVA',
+        short_name: 'SILVA',
+        description: 'SILVA — program your way to the goal. Companion app for the board game.',
         lang: 'en',
         start_url: '/',
         scope: '/',

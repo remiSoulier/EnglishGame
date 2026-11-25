@@ -7,7 +7,8 @@
   padding: 0;
   list-style: none;
   color: var(--color-text);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-family);
+  font-weight: 600;
   font-size: 14px;
 }
 
@@ -17,8 +18,12 @@
   gap: 6px;
 }
 
+/* Same symbols as the board, so drawn on a small board-coloured chip. */
 .icon {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   flex: none;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--color-board-bg);
 }

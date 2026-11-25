@@ -25,3 +25,20 @@ h1[tabindex='-1']:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 4px;
 }
+
+body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Text kept for screen readers (and tests) but not shown, e.g. "Back" next to a chevron. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

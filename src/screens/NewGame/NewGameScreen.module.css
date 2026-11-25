@@ -16,9 +16,44 @@
   gap: 4px;
 }
 
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Back: a square chevron button (the "Back" text is kept for screen readers). */
 .back {
-  margin-left: -12px;
-  padding: 0 12px;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-target);
+  height: var(--tap-target);
+  padding: 0;
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.back:hover {
+  background: var(--color-disabled-bg);
+}
+
+.back:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.chevron {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  transform: translateY(-2px);
 }
 
 .title {
@@ -29,7 +64,7 @@
 }
 
 .notice {
-  margin: 0;
+  margin: 4px 0 0;
   color: var(--color-text-muted);
   font-size: 16px;
 }
@@ -38,7 +73,8 @@
   display: flex;
   flex: 1 0 auto;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
+  margin-top: 8px;
 }
 
 .fieldset {
@@ -48,11 +84,15 @@
   border: 0;
 }
 
+/* Small uppercase section label (PLAYERS, DIFFICULTY, BOARD); 7.08:1. */
 .legend {
   margin-bottom: 8px;
   padding: 0;
-  font-size: 18px;
-  font-weight: 700;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .segments {
@@ -90,7 +130,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px;
+  padding: 6px 12px;
   border: 2px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
@@ -101,10 +141,23 @@
   text-align: center;
 }
 
+/* Rows (difficulty, board): label left, detail right. */
+.stacked .segmentText {
+  justify-content: space-between;
+  gap: 4px 12px;
+  padding: 6px 16px;
+  text-align: left;
+}
+
+.segment:hover .radio:not(:checked) + .segmentText {
+  background: var(--color-surface);
+}
+
+/* Selected: lime fill, dark border (16.12:1 vs white) and dark text (12.94:1). */
 .radio:checked + .segmentText {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-on-primary);
+  border-color: var(--color-accent-border);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
 }
 
 .radio:focus-visible + .segmentText {
@@ -114,14 +167,18 @@
 
 .segmentMain {
   display: block;
-  width: 100%;
 }
 
+/* Muted enemy count: 7.08:1 on white; on the selected (lime) row it turns dark (12.94:1). */
 .segmentSub {
   display: block;
-  width: 100%;
+  color: var(--color-text-muted);
   font-size: 14px;
-  font-weight: 400;
+  font-weight: 600;
+}
+
+.radio:checked + .segmentText .segmentSub {
+  color: var(--color-on-accent);
 }
 
 .codeField {
@@ -131,14 +188,17 @@
 .codeLabel {
   display: block;
   margin-bottom: 6px;
-  font-size: 17px;
-  font-weight: 700;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .codeInput {
   width: 100%;
   min-height: var(--tap-target);
-  padding: 0 12px;
+  padding: 0 14px;
   border: 2px solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
@@ -160,13 +220,13 @@
 }
 
 .codeInput[aria-invalid='true'] {
-  border-color: var(--color-enemy);
+  border-color: var(--color-error);
 }
 
 .error {
   min-height: 1.4em;
   margin: 6px 0 0;
-  color: var(--color-enemy);
+  color: var(--color-error);
   font-size: 15px;
   font-weight: 700;
 }
@@ -176,8 +236,7 @@
   bottom: 0;
   z-index: 5;
   margin: auto -16px 0;
-  padding: 10px 16px;
-  padding-bottom: max(10px, env(safe-area-inset-bottom));
-  border-top: 1px solid var(--color-grid-line);
+  padding: 12px 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
   background: var(--color-bg);
 }

@@ -1,8 +1,5 @@
 .panel {
   margin: 12px 0 0;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-bg);
   color: var(--color-text);
 }
 
@@ -10,17 +7,18 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-content: center;
   width: 100%;
   min-height: var(--tap-target);
   padding: 0 14px;
-  border: 0;
-  border-radius: var(--radius);
-  background: transparent;
-  color: var(--color-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg);
+  color: var(--color-text);
   font-family: inherit;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
-  text-align: left;
+  text-align: center;
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -40,7 +38,10 @@
 }
 
 .content {
-  padding: 4px 14px 12px;
+  margin-top: 8px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--color-surface);
   overflow-wrap: anywhere;
 }
 
