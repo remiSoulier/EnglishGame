@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { APP_NAME } from '../../state/appInfo';
+import { APP_NAME, APP_TAGLINE } from '../../state/appInfo';
 import { HomeScreen } from './HomeScreen';
 
 describe('HomeScreen', () => {
@@ -9,8 +9,10 @@ describe('HomeScreen', () => {
     const user = userEvent.setup();
     const onNewGame = vi.fn();
     render(<HomeScreen onNewGame={onNewGame} />);
-    expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
-    expect(screen.getByText('Build your algorithm, reach the goal!')).toBeInTheDocument();
+    expect(APP_NAME).toBe('SILVA');
+    expect(APP_TAGLINE).toBe('Program your way to the goal');
+    expect(screen.getByRole('heading', { level: 1, name: 'SILVA' })).toBeInTheDocument();
+    expect(screen.getByText('Program your way to the goal')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /How to play \(coming soon\)/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Lexicon \(coming soon\)/ })).toBeDisabled();
     await user.click(screen.getByRole('button', { name: 'New game' }));
