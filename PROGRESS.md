@@ -135,3 +135,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #33 Araignée ajoutée comme troisième ennemi (orchestrateur)
 
 | 2026-11-25 | #33 | Done by the orchestrator: spider cut out of its background, third enemy. 1683 unit tests, 101 e2e. Merged into main. |
+- [x] #34 Le dragon démarre à au moins 6 pas de chaque joueur, écart ≤ 4 (orchestrateur)
+
+| 2026-11-25 | #34 | Done by the orchestrator: fair goal rule C (D17), 13 central cells. 1687 unit tests, 101 e2e. Merged into main. |

@@ -81,3 +81,6 @@ L'utilisateur a fourni une maquette (fichier `docs/design/silva-mockup.webp`). C
 
 ## D16 — Les murs ne se croisent pas (2026-11-25, demande utilisateur)
 « Les murs ne doivent pas se chevaucher » : en plus de ne jamais partager un côté de case, deux pièces ne peuvent pas se **croiser** (un même coin de grille à l'intérieur de deux pièces, ce qui les poserait l'une sur l'autre). Elles peuvent toujours se toucher bout à bout ou en T (le bout d'une pièce contre le flanc d'une autre).
+
+## D17 — Le dragon n'est pas trop près d'un joueur (2026-11-25, demande utilisateur)
+Règle choisie par l'utilisateur (option C) : au premier tour, l'objectif (le dragon) est tiré parmi les cases à **au moins 6 pas** de chaque case de départ, et telles qu'**aucun joueur n'a plus de 4 pas d'avance** sur un autre. Les pas sont comptés sur la grille sans les murs (les murs bougent à chaque tour, l'objectif ne bouge pas). Les 4 coins comptent toujours, quel que soit le nombre de joueurs, pour qu'un même code donne le même plateau à 2, 3 ou 4 joueurs. Cela laisse 13 cases centrales : E3, D4, E4, F4, C5, D5, E5, F5, G5, D6, E6, F6, E7. Les parties déjà commencées gardent leur objectif sauvegardé ; un code déjà utilisé donne désormais un autre objectif.
