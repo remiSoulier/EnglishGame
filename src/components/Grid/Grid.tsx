@@ -124,6 +124,7 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
               x={cell.x * CELL}
               y={cell.y * CELL}
               label={`P${i + 1}`}
+              labelEdge={cell.y === 0 ? 'top' : 'bottom'}
               character={playerCharacter(i).src}
             />
           </g>

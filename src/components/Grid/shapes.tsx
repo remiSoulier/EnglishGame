@@ -42,18 +42,29 @@ interface StartShapeProps {
   /** Top-left corner of the cell in SVG user units. */
   x: number;
   y: number;
-  /** Player label ("P1" … "P4"), on a small plate under the character. */
+  /** Player label ("P1" … "P4"), on a small plate beside the character. */
   label?: string;
-  /** Character art URL (decorative), fitted in the cell above the label. */
+  /**
+   * Cell edge the label plate sits against: the one on the board border, which never carries a
+   * wall (D12), so no wall, halo or rivet can cover the label. Default `bottom`.
+   */
+  labelEdge?: 'top' | 'bottom';
+  /** Character art URL (decorative), fitted in the cell beside the label. */
   character?: string;
 }
 
 /** Inset of the dashed start outline in the cell. */
 const START_INSET = 4;
-/** Label plate under the character: size, and distance of its centre from the cell bottom. */
+/**
+ * Label plate: size, and distance of its centre from its (border) edge. It spans 1 … 14 units
+ * from that edge and x 9 … 31 in the cell, so it stays clear of a wall on any other edge (lime
+ * stroke 3 + halo 1.5 = 4.5 units deep) and of a rivet on a corner (radius 5.5).
+ */
 const PLATE_WIDTH = 22;
 const PLATE_HEIGHT = 13;
-const PLATE_FROM_BOTTOM = 7.5;
+const PLATE_FROM_EDGE = 7.5;
+/** Height of the character box when it shares the cell with the label plate. */
+const ART_WITH_LABEL = 24;
 /** Soft disc behind the character (a rounded rect: circles are kept for enemies and rivets). */
 const GLOW_RADIUS = 13;
 
@@ -61,12 +72,19 @@ const GLOW_RADIUS = 13;
  * Start cell: dashed square outline (on a dark halo, so it reads on the board art), the
  * player's character and a small player label on a board-coloured plate (text 6.63:1).
  */
-export function StartShape({ x, y, label, character }: StartShapeProps) {
+export function StartShape({ x, y, label, labelEdge = 'bottom', character }: StartShapeProps) {
   const side = CELL - START_INSET * 2;
-  const plateY = y + CELL - PLATE_FROM_BOTTOM;
-  // With a label the character sits above the plate; alone it fills the outline.
+  const top = labelEdge === 'top';
+  const plateY = top ? y + PLATE_FROM_EDGE : y + CELL - PLATE_FROM_EDGE;
+  // With a label the character fills the dashed outline on the other side of the plate; alone
+  // it fills the whole outline.
   const art = label
-    ? { x: x + 3, y: y + 1, width: CELL - 6, height: CELL - 11 }
+    ? {
+        x: x + 3,
+        y: top ? y + CELL - START_INSET - ART_WITH_LABEL : y + START_INSET,
+        width: CELL - 6,
+        height: ART_WITH_LABEL,
+      }
     : { x: x + 5, y: y + 5, width: CELL - 10, height: CELL - 10 };
   return (
     <g>
