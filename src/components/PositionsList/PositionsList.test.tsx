@@ -246,7 +246,7 @@ describe('PositionsList on screens', () => {
     onQuestion: vi.fn(),
     onEndTurn: vi.fn(),
     onNewBoard: vi.fn(),
-    onWinner: vi.fn(),
+    onEndGame: vi.fn(),
   };
 
   it('is on the Board screen, collapsed, and updates with the next turn board', async () => {
