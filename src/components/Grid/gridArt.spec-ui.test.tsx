@@ -267,3 +267,142 @@ describe('Grid — wall badges never cover a start cell', () => {
     }
   }, 30_000);
 });
+
+/**
+ * Validator regression (#30): a wall on the inner edge of a start cell (A1-S, I1-S, A8-S, I8-S),
+ * with its halo and rivets, hid half of the "P1" … "P4" label plate (8EVP-FVC: W8 on I1-S).
+ */
+describe('Grid — player label plates stay clear of walls, rivets and badges', () => {
+  /** Lime stroke 6 + halo 9: the wall paints 4.5 units around its centre line (round caps). */
+  const WALL_REACH = 4.5;
+  /** Rivet r 4.5 plus half its 2-unit stroke. */
+  const RIVET_REACH = 5.5;
+  /** `.startLabel` font size (12px bold), for a width estimate of "P1" … "P4". */
+  const LABEL_FONT = 12;
+  const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
+  const isStartPlate = (r: Element) =>
+    /(^|\s)_?startPlate(_|\s|$)/.test(r.getAttribute('class') ?? '');
+
+  /** Wall segments (centre lines) parsed from the drawn paths. */
+  function wallSegments(svg: SVGSVGElement): Box[] {
+    const out: Box[] = [];
+    for (const path of svg.querySelectorAll('[data-testid="walls"] path')) {
+      const d = path.getAttribute('d') ?? '';
+      for (const m of d.matchAll(/M\s*([\d.-]+)[\s,]+([\d.-]+)\s*L\s*([\d.-]+)[\s,]+([\d.-]+)/g)) {
+        const [x1, y1, x2, y2] = m.slice(1).map(Number);
+        out.push({
+          x0: Math.min(x1, x2) - WALL_REACH,
+          y0: Math.min(y1, y2) - WALL_REACH,
+          x1: Math.max(x1, x2) + WALL_REACH,
+          y1: Math.max(y1, y2) + WALL_REACH,
+        });
+      }
+    }
+    return out;
+  }
+
+  const circleHitsBox = (cx: number, cy: number, r: number, b: Box) => {
+    const dx = Math.max(b.x0 - cx, 0, cx - b.x1);
+    const dy = Math.max(b.y0 - cy, 0, cy - b.y1);
+    return dx * dx + dy * dy < r * r;
+  };
+
+  function checkPlates(board: Board, label: string): number {
+    const svg = renderGrid(board, 4);
+    const walls = wallSegments(svg);
+    expect(walls.length, `${label}: walls parsed`).toBeGreaterThan(0);
+    const rivets = [...svg.querySelectorAll('[data-testid="wall-ends"] circle')].map((c) => ({
+      cx: num(c, 'cx'),
+      cy: num(c, 'cy'),
+    }));
+    const badges = [...svg.querySelectorAll('[data-wall-label] rect')].map(rectBox);
+    const groups = [...svg.querySelectorAll('[data-testid="starts"] > [data-cell]')];
+    expect(groups).toHaveLength(4);
+    groups.forEach((g, i) => {
+      const who = `${label} P${i + 1} (${g.getAttribute('data-cell')})`;
+      const plates = [...g.querySelectorAll('rect')].filter(isStartPlate);
+      expect(plates, `${who}: one plate`).toHaveLength(1);
+      const plate = rectBox(plates[0]);
+      const cell = cellBox(START_CELLS[i].x, START_CELLS[i].y);
+      expect(inside(plate, cell), `${who}: plate inside its cell`).toBe(true);
+
+      // Label text: centred in the plate, and its estimated width/height fit in it.
+      const text = within(g as HTMLElement).getByText(`P${i + 1}`);
+      const tx = num(text, 'x');
+      const ty = num(text, 'y');
+      const halfW = (text.textContent!.length * LABEL_FONT * 0.62) / 2;
+      const halfH = (LABEL_FONT * 0.72) / 2; // cap height, dominant-baseline: central
+      expect(
+        inside({ x0: tx - halfW, y0: ty - halfH, x1: tx + halfW, y1: ty + halfH }, plate),
+        `${who}: label text inside its plate`,
+      ).toBe(true);
+
+      walls.forEach((w, k) => {
+        expect(intersects(w, plate), `${who}: wall segment ${k} over the plate`).toBe(false);
+      });
+      for (const r of rivets) {
+        expect(
+          circleHitsBox(r.cx, r.cy, RIVET_REACH, plate),
+          `${who}: rivet at ${r.cx},${r.cy} over the plate`,
+        ).toBe(false);
+      }
+      for (const b of badges) {
+        expect(intersects(b, plate), `${who}: badge over the plate`).toBe(false);
+      }
+    });
+    svg.ownerDocument.body.innerHTML = '';
+    return walls.length;
+  }
+
+  /** First generated board (seeded codes, turns 1–4, every difficulty) with a wall on `side`. */
+  function boardWithSide(side: string): Board {
+    for (let i = 0; i < 5000; i++) {
+      const code = newCode(mulberry32(7000 + i));
+      for (const difficulty of DIFFICULTIES) {
+        for (let turn = 1; turn <= 4; turn++) {
+          const board = generateBoard(code, turn, difficulty);
+          if (board.walls.some((w) => w.sides.includes(side))) return board;
+        }
+      }
+    }
+    throw new Error(`no board with a wall on ${side}`);
+  }
+
+  it('8EVP-FVC (4 players) with W8 on I1-S: the P3 plate is clear', () => {
+    let found = 0;
+    for (const difficulty of DIFFICULTIES) {
+      for (let turn = 1; turn <= 6; turn++) {
+        const board = generateBoard('8EVP-FVC', turn, difficulty);
+        const w8 = board.walls.find((w) => w.id === 'W8');
+        if (!w8?.sides.includes('I1-S')) continue;
+        found++;
+        checkPlates(board, `8EVP-FVC/${turn}/${difficulty}`);
+      }
+    }
+    expect(found, '8EVP-FVC has W8 on I1-S for some turn/difficulty').toBeGreaterThan(0);
+  });
+
+  it.each(['A1-S', 'I1-S', 'A8-S', 'I8-S'])('a wall on %s keeps the plates clear', (side) => {
+    const board = boardWithSide(side);
+    expect(board.walls.some((w) => w.sides.includes(side))).toBe(true);
+    checkPlates(board, `${board.code}/${board.turn}/${board.difficulty} (${side})`);
+  });
+
+  it('a wall on each inner edge of every start cell keeps the plates clear', () => {
+    // Inner edges: A1-E, A1-S, I1-S, H1-E, A8-S, A9-E, I8-S, H9-E.
+    for (const side of ['A1-E', 'H1-E', 'A9-E', 'H9-E']) {
+      const board = boardWithSide(side);
+      checkPlates(board, `${board.code}/${board.turn}/${board.difficulty} (${side})`);
+    }
+  }, 30_000);
+
+  it('300 random boards (4 players)', () => {
+    for (let i = 0; i < 100; i++) {
+      const code = newCode(mulberry32(31_000 + i));
+      DIFFICULTIES.forEach((difficulty, d) => {
+        const turn = 1 + ((i + d) % 5);
+        checkPlates(generateBoard(code, turn, difficulty), `${code}/${turn}/${difficulty}`);
+      });
+    }
+  }, 30_000);
+});
