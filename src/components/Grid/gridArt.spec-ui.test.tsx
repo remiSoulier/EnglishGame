@@ -169,26 +169,34 @@ describe('Grid — player characters on start cells', () => {
     });
   });
 
-  it('defaults to 4 players: kitkat, croco, dragon, toad', () => {
+  it('defaults to 4 players: kitkat, bat, mushroom (toad), hedgehog (gus) (D15)', () => {
     renderGrid(FIXTURE_BOARD);
     const hrefs = [...screen.getByTestId('starts').querySelectorAll('image')].map((i) =>
       i.getAttribute('href'),
     );
     expect(hrefs).toEqual([
       '/art/char-kitkat.webp',
-      '/art/char-croco.webp',
-      '/art/char-dragon.webp',
+      '/art/char-batman.webp',
       '/art/char-toad.webp',
+      '/art/char-gus.webp',
     ]);
   });
 
-  it('draws no character anywhere else on the board', () => {
+  it('draws characters only on starts, the goal (dragon) and enemies (croco, ghost) (D15)', () => {
     const svg = renderGrid(FIXTURE_BOARD, 2);
     const chars = [...svg.querySelectorAll('image')].filter((i) =>
       (i.getAttribute('href') ?? '').includes('/char-'),
     );
-    expect(chars).toHaveLength(2);
-    for (const c of chars) expect(c.closest('[data-testid="starts"]')).not.toBeNull();
+    const where = (testid: string) =>
+      chars.filter((c) => c.closest(`[data-testid="${testid}"]`) !== null);
+    expect(where('starts')).toHaveLength(2);
+    expect(where('goal').map((c) => c.getAttribute('href'))).toEqual(['/art/char-dragon.webp']);
+    const enemies = where('enemies').map((c) => c.getAttribute('href'));
+    expect(enemies).toHaveLength(FIXTURE_BOARD.enemies.length);
+    enemies.forEach((href, i) =>
+      expect(href).toBe(i % 2 === 0 ? '/art/char-croco.webp' : '/art/char-croque-mort.webp'),
+    );
+    expect(chars).toHaveLength(2 + 1 + FIXTURE_BOARD.enemies.length);
   });
 });
 

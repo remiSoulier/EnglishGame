@@ -6,7 +6,7 @@ import {
   START_CELLS,
   type Board,
 } from '../../engine';
-import { playerCharacter } from '../../state/players';
+import { enemyCharacter, GOAL_CHARACTER, playerCharacter } from '../../state/players';
 import { describeBoard } from './describeBoard';
 import { CELL } from './geometry';
 import styles from './Grid.module.css';
@@ -133,14 +133,22 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
 
       <g data-testid="goal" data-cell={cellName(board.goal)}>
         <title>{`Goal: ${cellName(board.goal)}`}</title>
-        <GoalShape cx={board.goal.x * CELL + CELL / 2} cy={board.goal.y * CELL + CELL / 2} />
+        <GoalShape
+          cx={board.goal.x * CELL + CELL / 2}
+          cy={board.goal.y * CELL + CELL / 2}
+          character={GOAL_CHARACTER.src}
+        />
       </g>
 
       <g data-testid="enemies">
-        {board.enemies.map((cell) => (
+        {board.enemies.map((cell, i) => (
           <g key={cellName(cell)} data-cell={cellName(cell)}>
             <title>{`Enemy: ${cellName(cell)}`}</title>
-            <EnemyShape cx={cell.x * CELL + CELL / 2} cy={cell.y * CELL + CELL / 2} />
+            <EnemyShape
+              cx={cell.x * CELL + CELL / 2}
+              cy={cell.y * CELL + CELL / 2}
+              character={enemyCharacter(i).src}
+            />
           </g>
         ))}
       </g>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { playerCharacter } from '../../state/players';
+import { enemyCharacter, GOAL_CHARACTER, playerCharacter } from '../../state/players';
 import { CELL } from '../Grid/geometry';
 import { EnemyShape, GoalShape, StartShape, WallEnd, WallShape } from '../Grid/shapes';
 import styles from './Legend.module.css';
@@ -39,13 +39,13 @@ export function Legend({ className }: LegendProps) {
       </li>
       <li className={styles.item}>
         <Icon>
-          <EnemyShape cx={C} cy={C} />
+          <EnemyShape cx={C} cy={C} character={enemyCharacter(0).src} />
         </Icon>
         Enemy
       </li>
       <li className={styles.item}>
         <Icon>
-          <GoalShape cx={C} cy={C} />
+          <GoalShape cx={C} cy={C} character={GOAL_CHARACTER.src} />
         </Icon>
         Goal
       </li>
