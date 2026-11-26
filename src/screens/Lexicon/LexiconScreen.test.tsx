@@ -21,19 +21,23 @@ const stat = (label: string) => screen.getByText(label).nextElementSibling?.text
 describe('LexiconScreen (D25)', () => {
   beforeEach(() => localStorage.clear());
 
-  it('shows the header, the 3 stats and the 5 cards; the dragon is decorative', () => {
+  it('shows the header, the 3 stats and the 10 cards in two sections; the dragon is decorative', () => {
     const { container } = setup();
     expect(screen.getByRole('heading', { level: 1, name: 'Lexicon' })).toHaveFocus();
     expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument();
     const dragon = container.querySelector('img[src="/art/char-dragon.webp"]');
     expect(dragon).toHaveAttribute('alt', '');
     expect(dragon).toHaveAttribute('aria-hidden', 'true');
-    expect(stat('Concepts')).toBe('5');
-    expect(stat('Learned')).toBe('0 / 5');
+    expect(stat('Concepts')).toBe('10');
+    expect(stat('Learned')).toBe('0 / 10');
     expect(stat('Level')).toBe('Beginner');
     expect(screen.getByRole('heading', { level: 2, name: 'Basic concepts' })).toBeInTheDocument();
-    const list = within(screen.getByRole('list'));
-    expect(list.getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getByRole('heading', { level: 2, name: 'Going further' })).toBeInTheDocument();
+    const [basic, further] = screen.getAllByRole('list');
+    expect(within(basic).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(further).getAllByRole('listitem')).toHaveLength(5);
+    expect(within(further).getByText('If / Else')).toBeInTheDocument();
+    expect(within(further).getByText('Function')).toBeInTheDocument();
     expect(screen.getByText('Algorithm')).toBeInTheDocument();
     expect(screen.getByText('Steps to reach a goal')).toBeInTheDocument();
   });
@@ -52,11 +56,17 @@ describe('LexiconScreen (D25)', () => {
     expect(panel).not.toBeVisible();
   });
 
+  it('only one card is open across both sections', async () => {
+    const { user } = setup();
+    await user.click(toggle('Function'));
+    expect(openCards()).toEqual([toggle('Function')]);
+  });
+
   it('the open card shows the explanation, program, result and the character pill', () => {
     setup();
     const loop = LEXICON_CONCEPTS.find((c) => c.id === 'loop')!;
     const panel = document.getElementById(toggle('Loop').getAttribute('aria-controls')!)!;
-    expect(panel.querySelector('pre code')).toHaveTextContent(loop.program);
+    expect(panel.querySelector('pre code')?.textContent).toBe(loop.program);
     expect(within(panel).getByText(/^Result:/)).toBeInTheDocument();
     expect(within(panel).getByText(loop.character.name)).toBeInTheDocument();
   });
@@ -67,7 +77,7 @@ describe('LexiconScreen (D25)', () => {
     expect(tick).toHaveAttribute('aria-pressed', 'false');
     await user.click(tick);
     expect(tick).toHaveAttribute('aria-pressed', 'true');
-    expect(stat('Learned')).toBe('1 / 5');
+    expect(stat('Learned')).toBe('1 / 10');
     expect(JSON.parse(localStorage.getItem(LEXICON_STORAGE_KEY)!)).toEqual({
       version: 1,
       learned: ['algorithm'],
@@ -75,13 +85,13 @@ describe('LexiconScreen (D25)', () => {
     // Ticking does not open or close the card.
     expect(openCards()[0]).toHaveTextContent('Loop');
     await user.click(tick);
-    expect(stat('Learned')).toBe('0 / 5');
+    expect(stat('Learned')).toBe('0 / 10');
   });
 
   it('loads saved progress', () => {
     saveLearned(['loop', 'algorithm']);
     setup();
-    expect(stat('Learned')).toBe('2 / 5');
+    expect(stat('Learned')).toBe('2 / 10');
     expect(screen.getByRole('button', { name: 'Loop learned' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -96,10 +106,14 @@ describe('LexiconScreen (D25)', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('See all lists the 5 concepts with their learned rounds', async () => {
+  it('See all lists the 10 concepts by section with their learned rounds', async () => {
     const { user } = setup('all');
     expect(screen.getByRole('heading', { level: 1, name: 'All concepts' })).toHaveFocus();
-    expect(screen.getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getAllByRole('listitem')).toHaveLength(10);
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'Basic concepts',
+      'Going further',
+    ]);
     await user.click(screen.getByRole('button', { name: 'Loop learned' }));
     expect(JSON.parse(localStorage.getItem(LEXICON_STORAGE_KEY)!).learned).toEqual(['loop']);
   });

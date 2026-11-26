@@ -55,10 +55,11 @@ describe('Lexicon progress (D25)', () => {
     set.mockRestore();
   });
 
-  it('has 5 concepts with unique ids, Loop among them', () => {
+  it('has 5 basic and 5 further concepts with unique ids, Loop among them', () => {
     const ids = LEXICON_CONCEPTS.map((c) => c.id);
-    expect(ids).toHaveLength(5);
-    expect(new Set(ids).size).toBe(5);
+    expect(LEXICON_CONCEPTS.filter((c) => c.section === 'basic')).toHaveLength(5);
+    expect(LEXICON_CONCEPTS.filter((c) => c.section === 'further')).toHaveLength(5);
+    expect(new Set(ids).size).toBe(10);
     expect(ids).toContain('loop');
   });
 });

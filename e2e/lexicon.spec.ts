@@ -31,7 +31,7 @@ test('board menu → Lexicon, tick, system back: same board, same save', async (
   await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await page.getByRole('button', { name: 'Algorithm learned' }).click();
-  await expect(page.getByText('1 / 5')).toBeVisible();
+  await expect(page.getByText('1 / 10')).toBeVisible();
 
   await page.getByRole('button', { name: 'See all' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'All concepts' })).toBeVisible();

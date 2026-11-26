@@ -1,9 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
-import { DEFAULT_OPEN_CONCEPT, LEXICON_CONCEPTS, LEXICON_LEVEL } from '../../data/lexicon';
+import {
+  conceptsOf,
+  DEFAULT_OPEN_CONCEPT,
+  LEXICON_CONCEPTS,
+  LEXICON_LEVEL,
+  SECTION_TITLE,
+  type LexiconSection,
+} from '../../data/lexicon';
 import { GOAL_CHARACTER } from '../../state/players';
 import { loadLearned, saveLearned } from '../../state/lexiconProgress';
 import { ConceptCard } from './ConceptCard';
 import styles from './LexiconScreen.module.css';
+
+/** Sections, in screen order. */
+const SECTIONS: readonly LexiconSection[] = ['basic', 'further'];
 
 /** Which Lexicon screen is shown: the entry ("Basic concepts") or the full list ("See all"). */
 export type LexiconView = 'main' | 'all';
@@ -84,58 +94,73 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
             </div>
           </dl>
 
-          <section className={styles.section} aria-labelledby="lexicon-basic">
-            <div className={styles.sectionHead}>
-              <h2 id="lexicon-basic" className={styles.sectionTitle}>
-                Basic concepts
-              </h2>
-              <button type="button" className={styles.seeAll} onClick={onSeeAll}>
-                See all
-              </button>
-            </div>
-            <ul className={styles.stack}>
-              {LEXICON_CONCEPTS.map((concept) => (
-                <ConceptCard
-                  key={concept.id}
-                  concept={concept}
-                  open={openId === concept.id}
-                  learned={learned.includes(concept.id)}
-                  onToggleOpen={() => setOpenId((id) => (id === concept.id ? null : concept.id))}
-                  onToggleLearned={() => toggleLearned(concept.id)}
-                />
-              ))}
-            </ul>
-          </section>
+          {SECTIONS.map((section) => (
+            <section
+              key={section}
+              className={styles.section}
+              aria-labelledby={`lexicon-${section}`}
+            >
+              <div className={styles.sectionHead}>
+                <h2 id={`lexicon-${section}`} className={styles.sectionTitle}>
+                  {SECTION_TITLE[section]}
+                </h2>
+                {section === 'basic' && (
+                  <button type="button" className={styles.seeAll} onClick={onSeeAll}>
+                    See all
+                  </button>
+                )}
+              </div>
+              <ul className={styles.stack}>
+                {conceptsOf(section).map((concept) => (
+                  <ConceptCard
+                    key={concept.id}
+                    concept={concept}
+                    open={openId === concept.id}
+                    learned={learned.includes(concept.id)}
+                    onToggleOpen={() => setOpenId((id) => (id === concept.id ? null : concept.id))}
+                    onToggleLearned={() => toggleLearned(concept.id)}
+                  />
+                ))}
+              </ul>
+            </section>
+          ))}
         </>
       ) : (
-        // TODO(D25): provisional full list, the "See all" spec (screen 3) did not reach us.
-        <ul className={styles.list}>
-          {LEXICON_CONCEPTS.map((concept) => {
-            const done = learned.includes(concept.id);
-            return (
-              <li key={concept.id} className={styles.row}>
-                <span
-                  className={styles.rowDot}
-                  style={{ background: concept.color }}
-                  aria-hidden="true"
-                />
-                <span className={styles.rowTitles}>
-                  <span className={styles.rowWord}>{concept.word}</span>
-                  <span className={styles.rowSubtitle}>{concept.subtitle}</span>
-                </span>
-                <button
-                  type="button"
-                  className={styles.learned}
-                  aria-pressed={done}
-                  aria-label={`${concept.word} learned`}
-                  onClick={() => toggleLearned(concept.id)}
-                >
-                  <span aria-hidden="true">{done ? '✓' : ''}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        // Full list of the concepts, by section, with their learned rounds.
+        SECTIONS.map((section) => (
+          <section key={section} className={styles.section} aria-labelledby={`all-${section}`}>
+            <h2 id={`all-${section}`} className={`${styles.sectionTitle} ${styles.listTitle}`}>
+              {SECTION_TITLE[section]}
+            </h2>
+            <ul className={styles.list}>
+              {conceptsOf(section).map((concept) => {
+                const done = learned.includes(concept.id);
+                return (
+                  <li key={concept.id} className={styles.row}>
+                    <span
+                      className={styles.rowDot}
+                      style={{ background: concept.color }}
+                      aria-hidden="true"
+                    />
+                    <span className={styles.rowTitles}>
+                      <span className={styles.rowWord}>{concept.word}</span>
+                      <span className={styles.rowSubtitle}>{concept.subtitle}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.learned}
+                      aria-pressed={done}
+                      aria-label={`${concept.word} learned`}
+                      onClick={() => toggleLearned(concept.id)}
+                    >
+                      <span aria-hidden="true">{done ? '✓' : ''}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ))
       )}
     </main>
   );

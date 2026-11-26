@@ -115,7 +115,11 @@
 
 .section {
   margin-top: 20px;
-  padding: 0 16px max(24px, env(safe-area-inset-bottom));
+  padding: 0 16px;
+}
+
+.section:last-child {
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
 }
 
 .sectionHead {
@@ -335,13 +339,16 @@
 }
 
 /* "See all" (provisional): one row per concept. */
+.listTitle {
+  margin-bottom: 10px;
+}
+
 .list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 16px;
-  margin-bottom: 0;
-  padding: 0 16px max(24px, env(safe-area-inset-bottom));
+  margin: 0;
+  padding: 0;
   list-style: none;
 }
 
