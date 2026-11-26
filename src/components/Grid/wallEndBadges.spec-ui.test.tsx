@@ -91,7 +91,7 @@ interface Report {
 
 /** Renders the board and lists every badge problem found. */
 function inspect(board: Board, label: string): Report {
-  const { container, unmount } = render(<Grid board={board} />);
+  const { container, unmount } = render(<Grid wallLabels board={board} />);
   const svg = container.querySelector('svg')!;
 
   const badges = new Map<string, Box>();

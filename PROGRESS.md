@@ -147,3 +147,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #37 Accueil animé : lune-barque qui tangue, ronds dans l'eau, reflets sur le lac (D20)
 
 | 2026-11-26 | #37 | Done (D20). 1714 unit tests, 101 e2e, lint and typecheck green. Same branch, not pushed. |
+- [x] #38 Murs sans étiquettes W1 … W8 sur le plateau (D21)
+
+| 2026-11-26 | #38 | Done (D21). 1715 unit tests, 101 e2e, lint and typecheck green. |

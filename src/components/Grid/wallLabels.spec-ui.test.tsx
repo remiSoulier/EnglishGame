@@ -39,7 +39,7 @@ interface Box {
 }
 
 function renderSvg(board: Board): SVGSVGElement {
-  const { container } = render(<Grid board={board} />);
+  const { container } = render(<Grid wallLabels board={board} />);
   const svg = container.querySelector('svg');
   if (!svg) throw new Error('no svg');
   return svg;
@@ -217,5 +217,16 @@ describe('Grid — wall titles', () => {
       const g = svg.querySelector(`[data-wall="${wall.sides.join(' ')}"] > title`);
       expect(g?.textContent).toBe(`Wall ${wall.id} (${MM[wall.id]}): ${wall.sides.join(', ')}`);
     }
+  });
+});
+
+describe('Grid — no wall names by default (D21)', () => {
+  it('draws the walls without their W1 … W8 badges unless asked', () => {
+    const { container } = render(<Grid board={FIXTURE_BOARD} />);
+    expect(container.querySelector('[data-testid="wall-labels"]')).toBeNull();
+    expect(container.querySelector('[data-testid="walls"]')).not.toBeNull();
+    // No visible W1 … W8 text (the walls' <title>s, for screen readers, keep their names).
+    const visible = [...container.querySelectorAll('text')].map((t) => t.textContent ?? '');
+    expect(visible.some((t) => /^W[1-8]$/.test(t.trim()))).toBe(false);
   });
 });

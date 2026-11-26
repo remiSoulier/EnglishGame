@@ -101,3 +101,6 @@ Maquette : https://www.figma.com/design/HNw6XYnhOeh7hKIpMSd4j1 (frames « 1 · H
 ## D20 — Accueil animé : la lune-barque tangue, reflets sur le lac (2026-11-26, demande utilisateur)
 - La barque a été découpée de l'illustration du lac (`docs/design/art-src/scene-boat.png`) et le lac sans barque a été reconstitué (`docs/design/art-src/bg-lake.png`, l'original `bg-batman.png` est gardé). Sur l'accueil, la barque est un calque qui tangue doucement (rotation ±2°, léger mouvement vertical), deux ronds dans l'eau partent de sa base, et des reflets clairs scintillent rapidement sur le lac.
 - La scène reproduit le cadrage d'avant (`cover`, ancrée à 72 % en largeur) grâce aux container queries ; tout est décoratif (`aria-hidden`), ne prend aucun clic, et reste immobile avec `prefers-reduced-motion` (reflets et ronds masqués).
+
+## D21 — Les murs sans leur nom sur le plateau (2026-11-26, demande utilisateur)
+« Ne mets pas leurs noms, juste leurs designs » : le plateau n'affiche plus les étiquettes W1 … W8 sur les murs, seulement les traits et leurs extrémités. Le code des étiquettes est gardé en option (`<Grid wallLabels />`, avec ses tests). La liste des positions garde le nom et la taille de chaque pièce physique (ex. « W6 (88 + 44 mm) »), utile pour monter le vrai plateau, et les `<title>` des murs restent pour les lecteurs d'écran.

@@ -174,7 +174,8 @@ async function checkScreen(page: Page, label: string, marks: string[] = []) {
   if (marks.length > 0) await expectMarkContrast(page, label, marks);
 }
 
-const BOARD_MARKS = ['border', 'wall', 'wallEnd', 'wallBadge', 'enemyBody', 'goal', 'start'];
+// No wallBadge since D21: the walls show only their design on the board.
+const BOARD_MARKS = ['border', 'wall', 'wallEnd', 'enemyBody', 'goal', 'start'];
 
 /** Rewrites the saved game (screen + pending question) and reloads. */
 async function setPending(

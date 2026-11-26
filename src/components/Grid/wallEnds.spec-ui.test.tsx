@@ -248,7 +248,8 @@ describe('Grid — wall end marks', () => {
   }, 20_000);
 
   it('draws marks after the walls and before the badges', () => {
-    const svg = renderSvg(FIXTURE_BOARD);
+    const { container } = render(<Grid board={FIXTURE_BOARD} wallLabels />);
+    const svg = container.querySelector('svg')!;
     const walls = svg.querySelector('[data-testid="walls"]')!;
     const ends = svg.querySelector('[data-testid="wall-ends"]')!;
     const labels = svg.querySelector('[data-testid="wall-labels"]')!;

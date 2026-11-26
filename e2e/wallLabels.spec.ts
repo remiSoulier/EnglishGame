@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
-const IDS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
 /** Expected start of each positions-list wall line (decision D12). */
 const PREFIXES = [
   'W1 (88 mm): ',
@@ -19,25 +18,15 @@ function grid(page: Page) {
   return page.getByRole('img', { name: /^Board, turn 1\./ });
 }
 
+/**
+ * Decision D21: the walls show only their design on the board (no W1 … W8 badge); the positions
+ * list still names each physical piece with its size, to set up the real board.
+ */
 async function checkLabels(page: Page) {
   const svg = grid(page);
   await expect(svg).toBeVisible();
-  const labels = svg.locator('[data-testid="wall-labels"] [data-wall-label]');
-  await expect(labels).toHaveCount(8);
-  const ids = await labels.evaluateAll((els) => els.map((e) => e.getAttribute('data-wall-label')));
-  expect([...ids].sort()).toEqual(IDS);
-
-  const svgBox = (await svg.boundingBox())!;
-  for (const id of IDS) {
-    const badge = svg.locator(`[data-wall-label="${id}"]`);
-    await expect(badge).toBeVisible();
-    await expect(badge).toHaveText(id);
-    const box = (await badge.boundingBox())!;
-    expect(box.width, id).toBeGreaterThan(8);
-    expect(box.x, id).toBeGreaterThanOrEqual(svgBox.x - 1);
-    expect(box.x + box.width, id).toBeLessThanOrEqual(svgBox.x + svgBox.width + 1);
-    expect(box.x + box.width, id).toBeLessThanOrEqual(VIEWPORT.width);
-  }
+  await expect(svg.locator('[data-testid="wall-labels"], [data-wall-label]')).toHaveCount(0);
+  await expect(svg.locator('[data-testid="walls"] > g')).toHaveCount(8);
 
   const scrollWidth = await page.evaluate<number>('document.documentElement.scrollWidth');
   expect(scrollWidth).toBeLessThanOrEqual(VIEWPORT.width);
@@ -58,7 +47,9 @@ async function checkLabels(page: Page) {
   expect(after).toBeLessThanOrEqual(VIEWPORT.width);
 }
 
-test('typed code: 8 badges W1 … W8, no horizontal scroll, sized wall lines', async ({ page }) => {
+test('typed code: walls without badges, no horizontal scroll, sized wall lines', async ({
+  page,
+}) => {
   await startGame(page, { players: 4, difficulty: 'Hard', code: 'K7F29QX' });
   await checkLabels(page);
 });

@@ -93,7 +93,7 @@ describe('Grid — board texture', () => {
   it('paints the texture under the grid lines, the veil and every board mark', () => {
     const svg = renderGrid(FIXTURE_BOARD);
     const clip = svg.querySelector(`image[href="${TEXTURE}"]`)!.parentElement!;
-    for (const id of ['grid-lines', 'starts', 'goal', 'enemies', 'walls', 'wall-labels']) {
+    for (const id of ['grid-lines', 'starts', 'goal', 'enemies', 'walls', 'wall-ends']) {
       expect(before(clip, screen.getByTestId(id)), `texture under ${id}`).toBe(true);
     }
     // A full-board veil rect is drawn right after the texture, before the grid lines.

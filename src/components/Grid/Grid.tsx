@@ -29,6 +29,11 @@ export interface GridProps {
   playerCount?: 2 | 3 | 4;
   /** Character chosen by each player (decision D19); defaults to player i → character i. */
   characters?: readonly number[];
+  /**
+   * Draw the W1 … W8 badges on the walls. Off in the app since decision D21 (walls show only
+   * their design); kept as an option.
+   */
+  wallLabels?: boolean;
   className?: string;
 }
 
@@ -52,7 +57,13 @@ const TEXTURE_VIEW = '-2.19 -1.49 645.17 644.94';
 const lines = Array.from({ length: BOARD_SIZE - 1 }, (_, i) => (i + 1) * CELL);
 
 /** SVG rendering of a 9×9 board: walls, enemies, goal and start cells (never pawns). */
-export function Grid({ board, playerCount = 4, characters, className }: GridProps) {
+export function Grid({
+  board,
+  playerCount = 4,
+  characters,
+  wallLabels = false,
+  className,
+}: GridProps) {
   const summary = describeBoard(board);
   const starts = START_CELLS.slice(0, playerCount);
   const ends = board.walls.map(wallEnds);
@@ -183,18 +194,20 @@ export function Grid({ board, playerCount = 4, characters, className }: GridProp
         )}
       </g>
 
-      <g data-testid="wall-labels" aria-hidden="true">
-        {board.walls.map((wall, index) =>
-          wall.id ? (
-            <WallLabel
-              key={wall.id}
-              id={wall.id}
-              x={labelPoints[index].x}
-              y={labelPoints[index].y}
-            />
-          ) : null,
-        )}
-      </g>
+      {wallLabels && (
+        <g data-testid="wall-labels" aria-hidden="true">
+          {board.walls.map((wall, index) =>
+            wall.id ? (
+              <WallLabel
+                key={wall.id}
+                id={wall.id}
+                x={labelPoints[index].x}
+                y={labelPoints[index].y}
+              />
+            ) : null,
+          )}
+        </g>
+      )}
     </svg>
   );
 }
