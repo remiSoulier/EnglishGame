@@ -69,6 +69,10 @@
   /* Title card behind the logo, title and tagline (over clouds and white strokes). */
   --color-home-card: rgb(6 20 40 / 75%);
 
+  /* Backs of the game cards (art colours): question card navy, instruction card blue. */
+  --color-card-back: #00006d;
+  --color-card-instruction: #5d52de;
+
   /* Question results. Never the only cue: always paired with an icon and a text label. */
   --color-success: #035e44; /* 7.81:1; 5.54:1 on --color-success-bg */
   --color-success-bg: #a8e6cf; /* mint; --color-text on it: 11.42:1 */

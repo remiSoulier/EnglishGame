@@ -22,7 +22,9 @@ const CHARACTERS = [
   'char-spider',
   'char-toad',
 ];
-const ALL = [...BACKGROUNDS, 'board-texture', ...CHARACTERS];
+/** Card backs (task #35): the question card (flip animation) and the instruction card. */
+const CARDS = ['card-instruction', 'card-question'];
+const ALL = [...BACKGROUNDS, 'board-texture', ...CHARACTERS, ...CARDS];
 
 interface WebpInfo {
   /** First chunk: 'VP8 ' (lossy), 'VP8L' (lossless) or 'VP8X' (extended). */
@@ -73,7 +75,7 @@ function webp(file: string): WebpInfo {
 }
 
 describe('public/art (optimised Figma art)', () => {
-  it('holds exactly the 14 expected WebP files', () => {
+  it('holds exactly the 16 expected WebP files', () => {
     const files = readdirSync(ART).filter((f) => !f.startsWith('.'));
     expect(files.sort()).toEqual(ALL.map((n) => `${n}.webp`).sort());
   });

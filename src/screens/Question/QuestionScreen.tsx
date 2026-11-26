@@ -15,7 +15,11 @@ export interface QuestionScreenProps {
 const GRID_MAX_CHARS = 12;
 
 /**
- * Question screen: the question and its 2–4 choices as big buttons; the first tap answers.
+ * Question card, drawn over the board (Figma mockup "4 · Popup"): it opens with the back of a
+ * question card ("question ? algorithms", public/art/card-question.webp) that flips over to show
+ * the question (no animation with prefers-reduced-motion). The back face is decorative and never
+ * blocks taps, so the choices can be answered at once.
+ * The question and its 2–4 choices as big buttons; the first tap answers.
  * A question with line breaks is a program to read: its lines before the last one are shown in
  * a framed box. Short choices are laid out as a 2×2 grid of cards, longer ones as a list.
  */
@@ -39,38 +43,43 @@ export function QuestionScreen({ question, cards, onAnswer }: QuestionScreenProp
 
   return (
     <main className={styles.screen}>
-      <header className={styles.header}>
-        <p className={styles.cards}>For {cardsLabel(cards)}</p>
-        <p className={styles.tag}>{questionTag(question.category, question.difficulty)}</p>
-      </header>
+      <div className={styles.card}>
+        <div className={styles.back} aria-hidden="true" data-testid="question-card-back" />
+        <div className={styles.front}>
+          <header className={styles.header}>
+            <p className={styles.cards}>For {cardsLabel(cards)}</p>
+            <p className={styles.tag}>{questionTag(question.category, question.difficulty)}</p>
+          </header>
 
-      {program !== null && <p className={styles.programLabel}>Read the program:</p>}
-      <h1 className={styles.question}>
-        {program !== null && <span className={styles.program}>{program + '\n'}</span>}
-        {prompt}
-      </h1>
+          {program !== null && <p className={styles.programLabel}>Read the program:</p>}
+          <h1 className={styles.question}>
+            {program !== null && <span className={styles.program}>{program + '\n'}</span>}
+            {prompt}
+          </h1>
 
-      <ul
-        className={grid ? `${styles.choices} ${styles.grid}` : styles.choices}
-        aria-label="Choices"
-      >
-        {keys.map((key) => (
-          <li key={key}>
-            <button
-              type="button"
-              className={key === picked ? `${styles.choice} ${styles.picked}` : styles.choice}
-              disabled={picked !== null}
-              aria-label={`${key}: ${question.choices[key]}`}
-              onClick={() => answer(key)}
-            >
-              <span className={styles.key} aria-hidden="true">
-                {key}
-              </span>
-              <span className={styles.text}>{question.choices[key]}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+          <ul
+            className={grid ? `${styles.choices} ${styles.grid}` : styles.choices}
+            aria-label="Choices"
+          >
+            {keys.map((key) => (
+              <li key={key}>
+                <button
+                  type="button"
+                  className={key === picked ? `${styles.choice} ${styles.picked}` : styles.choice}
+                  disabled={picked !== null}
+                  aria-label={`${key}: ${question.choices[key]}`}
+                  onClick={() => answer(key)}
+                >
+                  <span className={styles.key} aria-hidden="true">
+                    {key}
+                  </span>
+                  <span className={styles.text}>{question.choices[key]}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </main>
   );
 }

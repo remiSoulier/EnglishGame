@@ -29,7 +29,7 @@ const ART = [
   'char-spider',
   'char-toad',
 ];
-const HOME_ART = ['/art/bg-vert.webp'];
+const HOME_ART = ['/art/bg-batman.webp'];
 /** Distinct art on a 4-player board (D15): texture, 4 players, the dragon goal, 3 enemies. */
 const BOARD_ART = [
   '/art/board-texture.webp',
@@ -94,7 +94,7 @@ async function expectDecoded(page: Page, urls: string[], label: string) {
 const HOME_BG_SCRIPT = String.raw`(async () => {
   const main = document.querySelector('main');
   const urls = [...getComputedStyle(main).backgroundImage.matchAll(/url\("?([^")]+)"?\)/g)];
-  const src = urls.map((m) => m[1]).find((u) => u.endsWith('/art/bg-vert.webp'));
+  const src = urls.map((m) => m[1]).find((u) => u.endsWith('/art/bg-batman.webp'));
   if (!src) return -1;
   const img = new Image();
   img.src = src;
@@ -150,7 +150,11 @@ async function measuredContrast(page: Page, selectors: Record<string, string>) {
     content: [
       MARKER,
       ...Object.values(selectors).map(
-        (s) => `${s}, ${s} * { color: transparent !important; text-shadow: none !important; }`,
+        // An image inside (the SILVA logo in the Home <h1>) is hidden too: the contrast measured
+        // is its colour (the element's `color`) against the art behind it.
+        (s) =>
+          `${s}, ${s} * { color: transparent !important; text-shadow: none !important; }\n` +
+          `${s} img { visibility: hidden !important; }`,
       ),
     ].join('\n'),
   });
@@ -257,7 +261,7 @@ test('every art file is served as image/webp and decodes', async ({ page, reques
   );
 });
 
-test('Home: the forest background loads; title and tagline readable over it', async ({ page }) => {
+test('Home: the lake background loads; logo and tagline readable over it', async ({ page }) => {
   const art = watchArt(page);
   await page.goto('/');
   await expect(h1(page)).toHaveText(APP_NAME);

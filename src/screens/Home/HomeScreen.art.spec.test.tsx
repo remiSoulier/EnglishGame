@@ -1,6 +1,7 @@
 /**
- * Task #30 — Home background: the forest illustration (public/art/bg-vert.webp) replaces the
- * decorative crescent and dots; the title "SILVA" and the tagline stay, on a dark title card.
+ * Task #30, updated by #35 (Figma mockup "1 · Home") — Home background: the night lake with the
+ * moon boat (public/art/bg-batman.webp); the title is the SILVA logo (public/silva-logo.svg),
+ * the <h1> keeps the text "SILVA" for screen readers, and the tagline sits under it.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -20,13 +21,13 @@ function rule(name: string): string {
   return m![1];
 }
 
-describe('HomeScreen — forest art background', () => {
-  it('uses /art/bg-vert.webp as the screen background, over a plain fallback colour', () => {
+describe('HomeScreen — lake art background and SILVA logo', () => {
+  it('uses /art/bg-batman.webp as the screen background, over a plain fallback colour', () => {
     const screenRule = rule('screen');
-    expect(screenRule).toMatch(/background-image:[^;]*url\(['"]?\/art\/bg-vert\.webp['"]?\)/);
+    expect(screenRule).toMatch(/background-image:[^;]*url\(['"]?\/art\/bg-batman\.webp['"]?\)/);
     expect(screenRule).toMatch(/background-color:\s*var\(--color-home-bg\)/);
     // The only art referenced by the Home styles.
-    expect(CSS.match(/url\([^)]*\)/g)).toEqual(["url('/art/bg-vert.webp')"]);
+    expect(CSS.match(/url\([^)]*\)/g)).toEqual(["url('/art/bg-batman.webp')"]);
   });
 
   it('draws the art on the <main> screen element', () => {
@@ -36,28 +37,23 @@ describe('HomeScreen — forest art background', () => {
     expect(main.className).toMatch(/(^|\s)_?screen(_|\s|$)/);
   });
 
-  it('no longer draws the decorative crescent and dots', () => {
+  it('no longer draws the decorative crescent and dots, nor the old grid logo', () => {
     const { container } = render(<HomeScreen onNewGame={() => {}} />);
-    // The logo is the only svg left (the dots / crescent were circles in a second svg).
-    const svgs = container.querySelectorAll('svg');
-    expect(svgs).toHaveLength(1);
-    expect(svgs[0].closest('header')).not.toBeNull();
-    const circles = [...container.querySelectorAll('circle')];
-    expect(circles.filter((c) => c.ownerSVGElement !== svgs[0])).toHaveLength(0);
-    expect(circles.length).toBeLessThanOrEqual(1); // the logo's start dot
+    expect(container.querySelectorAll('svg')).toHaveLength(0);
     expect(container.querySelector('[class*="decor"]')).toBeNull();
     expect(CSS).not.toMatch(/\.decor\b/);
     const tokens = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'utf8');
     expect(tokens).not.toMatch(/--silva-orange/);
   });
 
-  it('keeps the title "SILVA" and the tagline, together on a dark title card', () => {
+  it('shows the SILVA logo inside the <h1>, decorative, with the text kept for screen readers', () => {
     render(<HomeScreen onNewGame={() => {}} />);
     const title = screen.getByRole('heading', { level: 1, name: APP_NAME });
     expect(title).toHaveTextContent('SILVA');
+    const logo = title.querySelector('img')!;
+    expect(logo.getAttribute('src')).toBe('/silva-logo.svg');
+    expect(logo).toHaveAttribute('alt', '');
     const tagline = screen.getByText(APP_TAGLINE);
     expect(tagline.parentElement).toBe(title.parentElement);
-    expect(title.parentElement!.className).toMatch(/(^|\s)_?titleCard(_|\s|$)/);
-    expect(rule('titleCard')).toMatch(/background:\s*var\(--color-home-card\)/);
   });
 });

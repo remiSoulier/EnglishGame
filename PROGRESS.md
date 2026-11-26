@@ -138,3 +138,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #34 Le dragon démarre à au moins 6 pas de chaque joueur, écart ≤ 4 (orchestrateur)
 
 | 2026-11-25 | #34 | Done by the orchestrator: fair goal rule C (D17), 13 central cells. 1687 unit tests, 101 e2e. Merged into main. |
+- [x] #35 DA de la maquette Figma : accueil (fond lac, logo), question et résultat en popup sur le plateau avec carte qui se retourne, départs en ronds pointillés
+
+| 2026-11-26 | #35 | Done (D18). 1696 unit tests, 101 e2e, lint, typecheck and build green. Branch feat/silva-da-maquette, not pushed yet (to review with the group). |

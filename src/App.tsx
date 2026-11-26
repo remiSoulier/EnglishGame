@@ -1,7 +1,9 @@
 /*
  * Navigation (backlog #12, decision D8): the game reducer owns `screen`, there is no router.
  * The full map (each screen → the screens it leads to) is `NAVIGATION` in src/state/navigation.ts.
- * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board; Board → End
+ * In short: Home → New game → Board ⇄ Question popup → Question → Result → Board (the question
+ * popup, the question card and the result are all drawn over the board, as in the Figma mockup:
+ * decision D18); Board → End
  * turn (at any time, no turn order: decision D11) → New board → Board; Board menu → New board
  * (confirm) / End game (confirm, game deleted: decision D13) → Home / Quit to home (confirm, game
  * kept) → Home → Continue game. The browser / Android back button maps to
@@ -98,11 +100,21 @@ function Screens() {
     );
   }
 
-  if (game && (screen === 'board' || screen === 'questionPopup')) {
-    const pending = screen === 'questionPopup' ? game.pendingQuestion : null;
-    const covered = pending !== null || dialog !== null;
-    // Same tree for both screens, so the board is not remounted under the popup and focus can
-    // return to the Question button on Cancel.
+  const overBoard =
+    screen === 'board' ||
+    screen === 'questionPopup' ||
+    screen === 'question' ||
+    screen === 'result';
+
+  if (game && overBoard) {
+    const pending = game.pendingQuestion;
+    const question = pending ? getQuestion(pending.questionId, ALL_QUESTIONS) : undefined;
+    const popup = screen === 'questionPopup' ? pending : null;
+    const showQuestion = screen === 'question' && pending !== null && question !== undefined;
+    const showResult = screen === 'result' && pending?.answer != null && question !== undefined;
+    const covered = popup !== null || showQuestion || showResult || dialog !== null;
+    // Same tree for every screen drawn over the board, so the board is not remounted under the
+    // popup / question card / result and focus can return to the Question button on Cancel.
     return (
       <>
         <div inert={covered} aria-hidden={covered || undefined}>
@@ -116,11 +128,27 @@ function Screens() {
             onQuit={() => setBoardDialog('quit')}
           />
         </div>
-        {pending && (
+        {popup && (
           <QuestionPopupScreen
-            cards={pending.cards}
+            cards={popup.cards}
             onShow={() => dispatch({ type: 'SHOW_QUESTION' })}
             onCancel={() => dispatch({ type: 'CANCEL_QUESTION' })}
+          />
+        )}
+        {showQuestion && (
+          <QuestionScreen
+            question={question}
+            cards={pending.cards}
+            onAnswer={(answer) => dispatch({ type: 'ANSWER_QUESTION', answer })}
+          />
+        )}
+        {showResult && (
+          <ResultScreen
+            question={question}
+            cards={pending.cards}
+            answer={pending.answer!}
+            correct={pending.correct === true}
+            onContinue={() => dispatch({ type: 'CONTINUE' })}
           />
         )}
         {dialog === 'newBoard' && (
@@ -160,31 +188,6 @@ function Screens() {
         board={game.board}
         playerCount={game.playerCount}
         onStartTurn={() => dispatch({ type: 'START_TURN' })}
-      />
-    );
-  }
-
-  const pending = game?.pendingQuestion;
-  const question = pending ? getQuestion(pending.questionId, ALL_QUESTIONS) : undefined;
-
-  if (game && pending && question && screen === 'question') {
-    return (
-      <QuestionScreen
-        question={question}
-        cards={pending.cards}
-        onAnswer={(answer) => dispatch({ type: 'ANSWER_QUESTION', answer })}
-      />
-    );
-  }
-
-  if (game && pending?.answer && question && screen === 'result') {
-    return (
-      <ResultScreen
-        question={question}
-        cards={pending.cards}
-        answer={pending.answer}
-        correct={pending.correct === true}
-        onContinue={() => dispatch({ type: 'CONTINUE' })}
       />
     );
   }

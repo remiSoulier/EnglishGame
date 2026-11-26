@@ -3,7 +3,8 @@
  * public/art/, sized for their on-screen use at 2x–3x density:
  * - bg-*.png: full-screen backgrounds, resized to 780 px wide (ratio kept);
  * - board-texture.png: board texture, kept at its size (never upscaled past 720 px);
- * - char-*.png: player tokens, transparent margins trimmed, longest side 256 px.
+ * - char-*.png: player tokens, transparent margins trimmed, longest side 256 px;
+ * - card-*.png: card backs (question / instruction), longest side 720 px.
  * Alpha is preserved. Needs libwebp's `cwebp` and `dwebp` on the PATH (`brew install webp`).
  *
  * Usage: node scripts/optimize-art.mjs   (or npm run art)

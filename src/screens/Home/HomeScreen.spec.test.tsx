@@ -17,7 +17,7 @@ describe('HomeScreen (spec #11)', () => {
     expect(headings).toHaveLength(1);
     expect(headings[0]).toHaveTextContent(APP_NAME);
     expect(screen.getByText(APP_TAGLINE)).toBeInTheDocument();
-    const logo = container.querySelector('svg');
+    const logo = container.querySelector('img[src="/silva-logo.svg"]');
     expect(logo).not.toBeNull();
     expect(logo).toHaveAttribute('aria-hidden', 'true');
   });

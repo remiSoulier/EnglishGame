@@ -89,7 +89,7 @@
 
 /* Disabled on the dark home: dashed outline, muted text (6.05:1). */
 .onDark:disabled {
-  border-style: dashed;
+  border-style: solid;
   border-color: var(--color-home-disabled);
   background: transparent;
   color: var(--color-home-disabled);

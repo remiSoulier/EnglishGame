@@ -103,7 +103,7 @@ test.describe('home screen', () => {
   test('a fresh visit lands on Home: logo, name, tagline, menu', async ({ page }) => {
     await expect(home(page)).toBeVisible();
     await expect(page.getByText('Program your way to the goal', { exact: true })).toBeVisible();
-    await expect(page.locator('main header svg[aria-hidden="true"]')).toBeVisible(); // the logo
+    await expect(page.locator('main header img[src="/silva-logo.svg"]')).toBeVisible(); // the logo
     const menu = page.getByRole('navigation', { name: 'Main menu' }).getByRole('button');
     await expect(menu).toHaveText(['New game', /^How to play/, /^Lexicon/]);
     await expect(startCells(page)).toHaveCount(0);

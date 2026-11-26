@@ -153,7 +153,7 @@ const ART_WITH_LABEL = 24;
 const GLOW_RADIUS = 13;
 
 /**
- * Start cell: dashed square outline (on a dark halo, so it reads on the board art), the
+ * Start cell: dotted round outline, as in the Figma mockup (on a dark halo, so it reads on the board art), the
  * player's character and a small player label on a board-coloured plate (text 6.63:1).
  */
 export function StartShape({ x, y, label, labelEdge = 'bottom', character }: StartShapeProps) {
@@ -178,7 +178,7 @@ export function StartShape({ x, y, label, labelEdge = 'bottom', character }: Sta
         y={y + START_INSET}
         width={side}
         height={side}
-        rx={2}
+        rx={side / 2}
       />
       <rect
         className={styles.start}
@@ -186,7 +186,7 @@ export function StartShape({ x, y, label, labelEdge = 'bottom', character }: Sta
         y={y + START_INSET}
         width={side}
         height={side}
-        rx={2}
+        rx={side / 2}
       />
       {character && (
         <>

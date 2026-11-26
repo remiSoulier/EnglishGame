@@ -1,8 +1,7 @@
 /*
- * Full-bleed night forest illustration (SILVA art, precached for offline use), anchored right so
- * the crescent moon stays in view on a 390 px wide phone; the plain forest colour shows while it
- * loads. A dark veil at the top and bottom keeps the logo and buttons readable on the sky and
- * the hills.
+ * Full-bleed night lake illustration with the moon boat (SILVA art, precached for offline use),
+ * as in the Figma mockup "1 · Home". The plain dark colour shows while it loads. A dark veil at
+ * the bottom keeps the menu readable over the water.
  */
 .screen {
   position: relative;
@@ -13,15 +12,15 @@
     linear-gradient(
       to bottom,
       var(--color-home-veil) 0%,
-      transparent 18%,
-      transparent 52%,
-      var(--color-home-veil-strong) 72%,
+      transparent 30%,
+      transparent 58%,
+      var(--color-home-veil-strong) 80%,
       var(--color-home-veil-strong) 100%
     ),
-    url('/art/bg-vert.webp');
+    url('/art/bg-batman.webp');
   background-position:
     center,
-    85% top;
+    72% top;
   background-size:
     100% 100%,
     cover;
@@ -47,55 +46,42 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 6vh;
+  margin-top: 4vh;
   text-align: center;
 }
 
-/*
- * Title card: a dark translucent panel, so the title and tagline stay readable where they cross
- * the light clouds and their white strokes, while the moon above stays in view. Measured on the
- * rendered art at 390 × 844 (darkest/lightest pixel under the text): title >= 6.97:1, tagline
- * >= 6.12:1; menu text >= 11.9:1 on the bottom veil (disabled entries 7.1:1).
- */
-.titleCard {
-  padding: 12px 24px 14px;
-  border-radius: 22px;
-  background: var(--color-home-card);
-}
-
-.logoBox {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 104px;
-  height: 104px;
-  margin-bottom: 20px;
-  border: 2px solid var(--color-home-outline);
-  border-radius: 24px;
-  background: var(--color-home-card);
+/* The logo is white on the dark sky (>= 12:1 at 390 × 844); the text stays for screen readers. */
+.title {
+  margin: 0;
+  color: #ffffff; /* the logo's colour (e2e measures it against the art) */
+  line-height: 0;
 }
 
 .logo {
   display: block;
+  width: min(220px, 58vw);
+  height: auto;
+  filter: drop-shadow(0 2px 8px rgb(6 20 40 / 55%));
 }
 
-/* Lime on forest: 9.64:1; on the title card over the art, see .header. */
-.title {
-  margin: 0;
-  color: var(--color-home-title);
-  font-size: 44px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  line-height: 1.1;
+.titleText {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
+/* Tagline in white capitals, as in the mockup (>= 10:1 on the dark sky). */
 .tagline {
-  margin: 10px 0 0;
-  color: var(--color-home-tagline);
-  font-size: 15px;
+  margin: 14px 0 0;
+  color: var(--color-home-text);
+  font-size: 14px;
   font-weight: 600;
-  font-variant-caps: all-small-caps;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 6px rgb(6 20 40 / 70%);
 }
 
 .menu {

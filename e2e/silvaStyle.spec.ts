@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { APP_NAME, openNewGame, startGame } from './helpers';
+import { APP_NAME, openNewGame, startGame, waitForCardFlip } from './helpers';
 
 /**
  * Decision D14 (SILVA style) at 390 × 844, on every screen: text contrast ≥ 4.5:1, board marks
@@ -262,6 +262,7 @@ test('Question popup, question (grid and list) and result (correct and wrong)', 
   await setPending(page, 'question', { questionId: GRID_QUESTION.id, cards: 2 });
   await expect(h1(page)).toHaveText(GRID_QUESTION.question);
   await expect(page.getByText('For 2 cards')).toBeVisible();
+  await waitForCardFlip(page);
   const gridChoices = page.getByRole('list', { name: 'Choices' }).getByRole('button');
   const [a, b] = [
     (await gridChoices.nth(0).boundingBox())!,
@@ -282,6 +283,7 @@ test('Question popup, question (grid and list) and result (correct and wrong)', 
   // Long choices: one column.
   await setPending(page, 'question', { questionId: LIST_QUESTION.id, cards: 1 });
   await expect(h1(page)).toHaveText(LIST_QUESTION.question);
+  await waitForCardFlip(page);
   const listChoices = page.getByRole('list', { name: 'Choices' }).getByRole('button');
   const [la, lb] = [
     (await listChoices.nth(0).boundingBox())!,

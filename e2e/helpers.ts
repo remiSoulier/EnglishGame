@@ -45,3 +45,13 @@ export async function startGame(
   await page.getByRole('button', { name: 'Start game' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
 }
+
+/**
+ * Waits until the question card has finished flipping over (decision D18): measure layout only
+ * once every CSS animation on the page is done.
+ */
+export async function waitForCardFlip(page: Page): Promise<void> {
+  await page.waitForFunction(
+    "document.getAnimations().every((a) => a.playState === 'finished' || a.playState === 'idle')",
+  );
+}
