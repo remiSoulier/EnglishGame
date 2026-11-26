@@ -32,8 +32,8 @@
   --color-label: #c5ded5; /* 8.45:1 (coordinate letters / numbers) */
 
   --color-wall: #d9f26b; /* 9.64:1 — also the badge text and ring (badge fill = board) */
-  --color-enemy: #ff9e8a; /* 6.01:1 (diamond) */
-  --color-goal: #f5c84c; /* 7.58:1 (star) */
+  --color-enemy: #ff9e8a; /* 6.01:1 (enemy plate ring) */
+  --color-goal: #f5c84c; /* 7.58:1 (goal plate ring) */
   --color-start: #c9b8f0; /* 6.63:1 (dashed square + P label) */
 
   /* UI chrome. Ratios against --color-bg (#ffffff) unless noted. */

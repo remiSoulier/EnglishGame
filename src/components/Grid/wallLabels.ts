@@ -24,7 +24,7 @@ export const BADGE_HEIGHT = 17;
 
 /**
  * Half-size of the box covered by an enemy or the goal: the whole 40 × 40 cell, since their
- * character art fills the cell and the diamond / star badge sits in its corner (D15).
+ * character art and its ringed plate fill the cell (D15, D26).
  */
 const SYMBOL_HALF = CELL / 2;
 /**

@@ -227,8 +227,8 @@ const OUTLINES_SCRIPT = `(() => {
     return { stroke: s.stroke, width: parseFloat(s.strokeWidth), order: s.paintOrder };
   };
   return {
-    enemies: pick('enemyBody').map(stroked),
-    goal: pick('goal').map(stroked),
+    enemies: pick('enemyBack').map(stroked),
+    goal: pick('goalBack').map(stroked),
     walls: pick('wall').length,
     wallHalos: pick('wallHalo').map(stroked),
     wallWidth: parseFloat(getComputedStyle(pick('wall')[0]).strokeWidth),
@@ -323,15 +323,14 @@ test('Board: texture and the four characters load; marks keep their outlines', a
     page.getByRole('list', { name: 'Legend' }).locator('image[href="/art/char-kitkat.webp"]'),
   ).toHaveCount(1);
 
-  // Every mark is outlined in the board colour (enemy, goal: stroke under the fill; walls and
-  // start outlines: a wider halo drawn under them).
+  // Enemy and goal: a plate ringed in their colour (D26: no diamond / star). Walls and start
+  // outlines: a wider board-coloured halo drawn under them.
   const o = await page.evaluate<Outlines>(OUTLINES_SCRIPT);
   expect(o.enemies).toHaveLength(6);
   expect(o.goal).toHaveLength(1);
   for (const m of [...o.enemies, ...o.goal]) {
-    expect(m.stroke).toBe(BOARD_BG);
+    expect(m.stroke).not.toBe(BOARD_BG);
     expect(m.width).toBeGreaterThan(0);
-    expect(m.order).toMatch(/^stroke/);
   }
   expect(o.walls).toBeGreaterThan(0);
   expect(o.wallHalos).toHaveLength(o.walls);

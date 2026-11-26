@@ -153,8 +153,18 @@ describe('Grid — walls', () => {
   });
 });
 
+/** The plate rect lies inside cell (x, y). */
+function expectPlateInCell(rect: Element, x: number, y: number) {
+  const rx = Number(rect.getAttribute('x'));
+  const ry = Number(rect.getAttribute('y'));
+  expect(rx).toBeGreaterThanOrEqual(x * CELL);
+  expect(ry).toBeGreaterThanOrEqual(y * CELL);
+  expect(rx + Number(rect.getAttribute('width'))).toBeLessThanOrEqual((x + 1) * CELL);
+  expect(ry + Number(rect.getAttribute('height'))).toBeLessThanOrEqual((y + 1) * CELL);
+}
+
 describe('Grid — enemies and goal', () => {
-  it('marks each enemy cell with a plain diamond, no exclamation mark (D26)', () => {
+  it('marks each enemy cell with its character on a ringed plate, no diamond (D26)', () => {
     const svg = renderGrid();
     const enemies = screen.getByTestId('enemies').querySelectorAll(':scope > [data-cell]');
     expect(Array.from(enemies).map((e) => e.getAttribute('data-cell'))).toEqual([
@@ -164,9 +174,10 @@ describe('Grid — enemies and goal', () => {
       'B5',
     ]);
     enemies.forEach((e) => {
-      // Diamond = polygon with 4 points; no "!" (line + dot) on it any more.
-      const poly = e.querySelector('polygon');
-      expect(poly?.getAttribute('points')?.trim().split(/\s+/)).toHaveLength(4);
+      // Plate (rect) + character (image) only: no diamond, no "!" (line + dot).
+      expect(e.querySelector('rect')).not.toBeNull();
+      expect(e.querySelector('image')).not.toBeNull();
+      expect(e.querySelector('polygon')).toBeNull();
       expect(e.querySelector('line')).toBeNull();
       expect(e.querySelector('circle')).toBeNull();
       expect(e.querySelector('title')?.textContent).toMatch(/^Enemy: [A-I][1-9]$/);
@@ -174,7 +185,7 @@ describe('Grid — enemies and goal', () => {
     expect(svg).toBeInTheDocument();
   });
 
-  it('fills an enemy cell with its character and keeps a diamond badge in that cell (D15)', () => {
+  it('fills an enemy cell with its character and its plate, inside that cell (D15)', () => {
     const svg = renderGrid(board({ enemies: [{ x: 2, y: 2 }] }));
     const g = svg.querySelector('[data-testid="enemies"] [data-cell="C3"]')!;
     const img = g.querySelector('image')!;
@@ -183,37 +194,17 @@ describe('Grid — enemies and goal', () => {
     const iy = Number(img.getAttribute('y'));
     expect(ix + Number(img.getAttribute('width')) / 2).toBeCloseTo(2 * CELL + CELL / 2);
     expect(iy + Number(img.getAttribute('height')) / 2).toBeCloseTo(2 * CELL + CELL / 2);
-    const pts = g
-      .querySelector('polygon')!
-      .getAttribute('points')!
-      .split(' ')
-      .map((p) => p.split(',').map(Number));
-    expect(pts).toHaveLength(4);
-    for (const [x, y] of pts) {
-      expect(x).toBeGreaterThanOrEqual(2 * CELL);
-      expect(x).toBeLessThanOrEqual(3 * CELL);
-      expect(y).toBeGreaterThanOrEqual(2 * CELL);
-      expect(y).toBeLessThanOrEqual(3 * CELL);
-    }
+    expectPlateInCell(g.querySelector('rect')!, 2, 2);
   });
 
-  it('draws the goal as a 10-point star on its cell', () => {
+  it('draws the goal as the dragon on a ringed plate in its cell, no star (D26)', () => {
     const svg = renderGrid(board({ goal: { x: 6, y: 1 } }));
     const goal = screen.getByTestId('goal');
     expect(goal).toHaveAttribute('data-cell', 'G2');
     expect(goal.querySelector('title')?.textContent).toBe('Goal: G2');
-    const pts = goal
-      .querySelector('polygon')!
-      .getAttribute('points')!
-      .split(' ')
-      .map((p) => p.split(',').map(Number));
-    expect(pts).toHaveLength(10);
-    for (const [x, y] of pts) {
-      expect(x).toBeGreaterThan(6 * CELL);
-      expect(x).toBeLessThan(7 * CELL);
-      expect(y).toBeGreaterThan(1 * CELL);
-      expect(y).toBeLessThan(2 * CELL);
-    }
+    expect(goal.querySelector('image')?.getAttribute('href')).toBe('/art/char-dragon.webp');
+    expect(goal.querySelector('polygon')).toBeNull();
+    expectPlateInCell(goal.querySelector('rect')!, 6, 1);
     expect(svg.querySelectorAll('[data-testid="goal"]')).toHaveLength(1);
   });
 
@@ -377,11 +368,12 @@ describe('Legend', () => {
     icons.forEach((svg) => expect(svg).toHaveAttribute('aria-hidden', 'true'));
     const [wall, enemy, goal, start] = Array.from(icons);
     expect(wall.querySelector('path')).not.toBeNull();
-    expect(enemy.querySelector('polygon')?.getAttribute('points')?.split(' ')).toHaveLength(4);
-    // No exclamation mark (line + dot) on the enemy diamond (D26).
-    expect(enemy.querySelector('circle')).toBeNull();
-    expect(enemy.querySelector('line')).toBeNull();
-    expect(goal.querySelector('polygon')?.getAttribute('points')?.split(' ')).toHaveLength(10);
+    // Enemy and goal: character on a ringed plate, no diamond / star / "!" (D26).
+    for (const icon of [enemy, goal]) {
+      expect(icon.querySelector('rect')).not.toBeNull();
+      expect(icon.querySelector('image')).not.toBeNull();
+      expect(icon.querySelector('polygon, line, circle')).toBeNull();
+    }
     expect(start.querySelector('rect')).not.toBeNull();
   });
 

@@ -109,8 +109,8 @@ const MARKS_SCRIPT = String.raw`(() => {
     ['wall', 'stroke'],
     ['wallEnd', 'stroke'],
     ['wallBadge', 'stroke'],
-    ['enemyBody', 'fill'],
-    ['goal', 'fill'],
+    ['enemyBack', 'stroke'],
+    ['goalBack', 'stroke'],
     ['start', 'stroke'],
   ];
   const out = [];
@@ -167,7 +167,7 @@ async function checkScreen(page: Page, label: string, marks: string[] = []) {
 }
 
 // No wallBadge since D21: the walls show only their design on the board.
-const BOARD_MARKS = ['border', 'wall', 'wallEnd', 'enemyBody', 'goal', 'start'];
+const BOARD_MARKS = ['border', 'wall', 'wallEnd', 'enemyBack', 'goalBack', 'start'];
 
 /** Rewrites the saved game (screen + pending question) and reloads. */
 async function setPending(

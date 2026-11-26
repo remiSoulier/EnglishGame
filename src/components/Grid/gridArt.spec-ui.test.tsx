@@ -113,10 +113,9 @@ describe('Grid — board texture', () => {
     expect(rule('boardVeil')).toMatch(/fill:\s*var\(--color-board-veil\)/);
     const tokens = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'utf8');
     expect(tokens).toMatch(/--color-board-veil:\s*rgb\([^)]*\/\s*40%\)/);
-    for (const name of ['enemyBody', 'goal']) {
-      expect(rule(name), name).toMatch(/stroke:\s*var\(--color-board-bg\)/);
-      expect(rule(name), name).toMatch(/paint-order:\s*stroke/);
-    }
+    // D26: enemy and goal are their character on a plate ringed in their colour.
+    expect(rule('enemyBack')).toMatch(/stroke:\s*var\(--color-enemy\)/);
+    expect(rule('goalBack')).toMatch(/stroke:\s*var\(--color-goal\)/);
     expect(rule('wallHalo')).toMatch(/stroke:\s*var\(--color-board-bg\)/);
     expect(rule('startHalo')).toMatch(/stroke:\s*var\(--color-board-bg\)/);
     expect(rule('start')).toMatch(/stroke-dasharray/);

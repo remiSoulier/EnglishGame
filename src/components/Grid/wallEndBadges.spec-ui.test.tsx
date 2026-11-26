@@ -64,14 +64,16 @@ function onWall(x: number, y: number, sides: readonly string[]): boolean {
   });
 }
 
-function polygonBox(points: string): Box {
-  const xy = points
-    .trim()
-    .split(/\s+/)
-    .map((p) => p.split(',').map(Number));
-  const xs = xy.map((p) => p[0]);
-  const ys = xy.map((p) => p[1]);
-  return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+/** Bounding box of an svg rect (the enemy / goal plate, D26). */
+function rectBox(rect: Element): Box {
+  const x = Number(rect.getAttribute('x'));
+  const y = Number(rect.getAttribute('y'));
+  return {
+    x0: x,
+    y0: y,
+    x1: x + Number(rect.getAttribute('width')),
+    y1: y + Number(rect.getAttribute('height')),
+  };
 }
 
 function distToSegment(x: number, y: number, a: number[], b: number[]): number {
@@ -135,13 +137,10 @@ function inspect(board: Board, label: string): Report {
 
   // Earlier guarantees: symbols, start labels, other badges, board, distance to own wall.
   const symbols: [string, Box][] = [];
-  const goal = svg.querySelector('[data-testid="goal"] polygon')!;
-  symbols.push(['goal', polygonBox(goal.getAttribute('points')!)]);
+  const goal = svg.querySelector('[data-testid="goal"] rect')!;
+  symbols.push(['goal', rectBox(goal)]);
   svg.querySelectorAll('[data-testid="enemies"] > g').forEach((g) => {
-    symbols.push([
-      `enemy ${g.getAttribute('data-cell')}`,
-      polygonBox(g.querySelector('polygon')!.getAttribute('points')!),
-    ]);
+    symbols.push([`enemy ${g.getAttribute('data-cell')}`, rectBox(g.querySelector('rect')!)]);
   });
   svg.querySelectorAll('[data-testid="starts"] text').forEach((t) => {
     const x = Number(t.getAttribute('x'));

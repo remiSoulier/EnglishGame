@@ -10,17 +10,13 @@ interface ShapeProps {
 
 interface CharacterShapeProps extends ShapeProps {
   /**
-   * Character art URL (decorative). When set, the character fills the cell on a tinted plate
-   * and the shape (diamond / star) becomes a small badge in the bottom-right corner, so the
-   * element stays shape-coded, not colour-only.
+   * Character art URL (decorative). The character fills the cell on a tinted plate whose
+   * coloured ring tells the role: coral for an enemy, yellow for the goal (D26: no diamond or
+   * star badge any more).
    */
-  character?: string;
+  character: string;
 }
 
-/** Badge size when a character is shown: the shape shrinks to the cell's bottom-right corner. */
-const BADGE_SCALE = 0.42;
-/** Offset of that corner badge from the cell centre. */
-const BADGE_OFFSET = CELL * 0.3;
 /** Character art inset in its cell, and its tinted plate inset. */
 const ART_INSET = 2.5;
 const BACK_INSET = 1.5;
@@ -61,59 +57,20 @@ function CharacterArt({
   );
 }
 
-/** Plain red diamond (no exclamation mark, D26), of half-diagonal `r`, centred on (cx, cy). */
-function Diamond({ cx, cy, r }: ShapeProps & { r: number }) {
-  return (
-    <polygon
-      className={styles.enemyBody}
-      points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
-    />
-  );
-}
-
-/** Enemy: plain red diamond (a corner badge when a character is shown). */
+/** Enemy: its character on a plate ringed in coral. */
 export function EnemyShape({ cx, cy, character }: CharacterShapeProps) {
-  const r = CELL * 0.4;
-  if (!character) {
-    return (
-      <g>
-        <Diamond cx={cx} cy={cy} r={r} />
-      </g>
-    );
-  }
   return (
     <g>
       <CharacterArt cx={cx} cy={cy} src={character} back={styles.enemyBack} />
-      <Diamond cx={cx + BADGE_OFFSET} cy={cy + BADGE_OFFSET} r={r * BADGE_SCALE} />
     </g>
   );
 }
 
-/** Five-pointed star points with outer radius `outer`, centred on (cx, cy). */
-function starPoints(cx: number, cy: number, outer: number): string {
-  const inner = outer * 0.45;
-  const points: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const r = i % 2 === 0 ? outer : inner;
-    const angle = -Math.PI / 2 + (i * Math.PI) / 5;
-    points.push(
-      `${(cx + r * Math.cos(angle)).toFixed(2)},${(cy + r * Math.sin(angle)).toFixed(2)}`,
-    );
-  }
-  return points.join(' ');
-}
-
-/** Goal: five-pointed star (a corner badge when the goal character is shown). */
+/** Goal: its character on a plate ringed in yellow. */
 export function GoalShape({ cx, cy, character }: CharacterShapeProps) {
-  const outer = CELL * 0.42;
-  if (!character) return <polygon className={styles.goal} points={starPoints(cx, cy, outer)} />;
   return (
     <g>
       <CharacterArt cx={cx} cy={cy} src={character} back={styles.goalBack} />
-      <polygon
-        className={styles.goal}
-        points={starPoints(cx + BADGE_OFFSET, cy + BADGE_OFFSET, outer * BADGE_SCALE * 1.15)}
-      />
     </g>
   );
 }

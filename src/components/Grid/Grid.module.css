@@ -79,19 +79,10 @@
   dominant-baseline: central;
 }
 
-/* Board-coloured outline (paint-order: stroke under the fill), so the art never touches it. */
-.enemyBody {
-  fill: var(--color-enemy);
-  stroke: var(--color-board-bg);
-  stroke-width: 3;
-  stroke-linejoin: round;
-  paint-order: stroke;
-}
-
 /*
  * Tinted plates behind the enemy and goal characters: a board-coloured base with a coloured
- * ring, so each character stands out on the forest art and its role reads at a glance (the
- * corner diamond / star badge stays the shape cue). Ring vs board: enemy 6.01:1, goal 7.58:1.
+ * ring, so each character stands out on the forest art and its role reads at a glance (D26: the
+ * ring is the only cue, no diamond / star badge). Ring vs board: enemy 6.01:1, goal 7.58:1.
  */
 .enemyBack,
 .goalBack {
@@ -106,15 +97,6 @@
 
 .goalBack {
   stroke: var(--color-goal);
-}
-
-/* Rounded star with a board-coloured outline under its fill (see .enemyBody). */
-.goal {
-  fill: var(--color-goal);
-  stroke: var(--color-board-bg);
-  stroke-width: 3;
-  stroke-linejoin: round;
-  paint-order: stroke;
 }
 
 /* Solid board-coloured band under the dotted outline (and its gaps). */

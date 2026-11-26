@@ -54,15 +54,16 @@ function badges(svg: SVGSVGElement): Map<string, Box> {
   return map;
 }
 
-/** Bounding box of an svg polygon `points` attribute. */
-function polygonBox(points: string): Box {
-  const xy = points
-    .trim()
-    .split(/\s+/)
-    .map((p) => p.split(',').map(Number));
-  const xs = xy.map((p) => p[0]);
-  const ys = xy.map((p) => p[1]);
-  return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+/** Bounding box of an svg rect (the enemy / goal plate, D26). */
+function rectBox(rect: Element | null): Box {
+  const x = Number(rect?.getAttribute('x'));
+  const y = Number(rect?.getAttribute('y'));
+  return {
+    x0: x,
+    y0: y,
+    x1: x + Number(rect?.getAttribute('width')),
+    y1: y + Number(rect?.getAttribute('height')),
+  };
 }
 
 const intersects = (a: Box, b: Box): boolean =>
@@ -107,13 +108,12 @@ function checkBadges(board: Board, label: string): void {
   }
 
   const symbols: { name: string; box: Box }[] = [];
-  const goal = svg.querySelector('[data-testid="goal"] polygon');
-  symbols.push({ name: 'goal', box: polygonBox(goal?.getAttribute('points') ?? '') });
+  const goal = svg.querySelector('[data-testid="goal"] rect');
+  symbols.push({ name: 'goal', box: rectBox(goal) });
   svg.querySelectorAll('[data-testid="enemies"] > g').forEach((g) => {
-    const poly = g.querySelector('polygon');
     symbols.push({
       name: `enemy ${g.getAttribute('data-cell')}`,
-      box: polygonBox(poly?.getAttribute('points') ?? ''),
+      box: rectBox(g.querySelector('rect')),
     });
   });
   expect(symbols).toHaveLength(1 + board.enemies.length);
