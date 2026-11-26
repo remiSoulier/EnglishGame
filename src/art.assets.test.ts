@@ -22,8 +22,11 @@ const CHARACTERS = [
   'char-spider',
   'char-toad',
 ];
-/** Card backs (task #35): the question card (flip animation) and the instruction card. */
-const CARDS = ['card-instruction', 'card-question'];
+/**
+ * Cards: the question and instruction backs (task #35, flip animation) and the three instruction
+ * card designs of the How to play tutorial (D28: Move forward, Turn left, Repeat).
+ */
+const CARDS = ['card-forward', 'card-instruction', 'card-question', 'card-repeat', 'card-turn'];
 /** Animated Home scene (task #37, D20): the lake without its boat, and the boat layer. */
 const SCENE = ['bg-lake', 'scene-boat'];
 const ALL = [...BACKGROUNDS, 'board-texture', ...CHARACTERS, ...CARDS, ...SCENE];
