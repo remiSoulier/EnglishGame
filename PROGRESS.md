@@ -159,3 +159,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #41 Mélange du plateau à la fin du tour (D24)
 
 | 2026-11-26 | #41 | Done (D24). 1703 unit tests, 95 e2e, lint and typecheck green. |
+- [x] #42 Écran Lexicon : accès depuis l'accueil et le menu du plateau, cartes de concepts, « appris » enregistré à part (D25 ; textes des concepts et écran See all provisoires)
+
+| 2026-11-26 | #42 | Done (D25), contenu des concepts en attente. 1729 unit tests, 103 e2e, lint and typecheck green. Branch feat/lexicon, not pushed (user asked to wait). |
