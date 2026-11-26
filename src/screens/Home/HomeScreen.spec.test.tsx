@@ -7,8 +7,11 @@ import { HomeScreen } from './HomeScreen';
 function setup() {
   const onNewGame = vi.fn();
   const onLexicon = vi.fn();
-  const utils = render(<HomeScreen onNewGame={onNewGame} onLexicon={onLexicon} />);
-  return { ...utils, user: userEvent.setup(), onNewGame, onLexicon };
+  const onHowToPlay = vi.fn();
+  const utils = render(
+    <HomeScreen onNewGame={onNewGame} onLexicon={onLexicon} onHowToPlay={onHowToPlay} />,
+  );
+  return { ...utils, user: userEvent.setup(), onNewGame, onLexicon, onHowToPlay };
 }
 
 describe('HomeScreen (spec #11)', () => {
@@ -27,11 +30,7 @@ describe('HomeScreen (spec #11)', () => {
     setup();
     const menu = screen.getByRole('navigation', { name: 'Main menu' });
     const buttons = within(menu).getAllByRole('button');
-    expect(buttons.map((b) => b.textContent)).toEqual([
-      'New game',
-      'How to play (coming soon)',
-      'Lexicon',
-    ]);
+    expect(buttons.map((b) => b.textContent)).toEqual(['New game', 'How to play', 'Lexicon']);
     for (const b of buttons) {
       expect(b.tagName).toBe('BUTTON');
       expect(b).toHaveAttribute('type', 'button');
@@ -48,15 +47,14 @@ describe('HomeScreen (spec #11)', () => {
     expect(onNewGame).toHaveBeenCalledTimes(2);
   });
 
-  it('How to play is disabled and clicking it does nothing', async () => {
-    const { user, onNewGame, onLexicon } = setup();
-    const button = screen.getByRole('button', { name: /^How to play/ });
-    expect(button).toBeDisabled();
-    expect(button).toHaveTextContent('(coming soon)');
+  it('How to play is enabled and calls onHowToPlay (D28)', async () => {
+    const { user, onNewGame, onLexicon, onHowToPlay } = setup();
+    const button = screen.getByRole('button', { name: 'How to play' });
+    expect(button).toBeEnabled();
     await user.click(button);
+    expect(onHowToPlay).toHaveBeenCalledTimes(1);
     expect(onNewGame).not.toHaveBeenCalled();
     expect(onLexicon).not.toHaveBeenCalled();
-    expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
   });
 
   it('Lexicon is enabled and calls onLexicon (D25)', async () => {
@@ -68,12 +66,16 @@ describe('HomeScreen (spec #11)', () => {
     expect(onNewGame).not.toHaveBeenCalled();
   });
 
-  it('Tab skips How to play: New game, then Lexicon', async () => {
-    const { user, onNewGame, onLexicon } = setup();
+  it('Tab order: New game, How to play, Lexicon; each activates with Enter', async () => {
+    const { user, onNewGame, onLexicon, onHowToPlay } = setup();
     await user.tab();
     expect(screen.getByRole('button', { name: 'New game' })).toHaveFocus();
     await user.keyboard('{Enter}');
     expect(onNewGame).toHaveBeenCalledTimes(1);
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'How to play' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onHowToPlay).toHaveBeenCalledTimes(1);
     await user.tab();
     expect(screen.getByRole('button', { name: 'Lexicon' })).toHaveFocus();
     await user.keyboard('{Enter}');

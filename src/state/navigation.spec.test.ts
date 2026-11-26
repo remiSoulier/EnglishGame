@@ -4,6 +4,10 @@ import { generateBoard } from '../engine';
 import { gameReducer, type GameAction } from './gameReducer';
 import {
   canGoBack,
+  HOW_TO_PLAY,
+  HOW_TO_PLAY_EXITS,
+  HOW_TO_PLAY_OPENERS,
+  OPEN_HOW_TO_PLAY,
   LEXICON,
   LEXICON_EXITS,
   LEXICON_OPENERS,
@@ -104,7 +108,7 @@ describe('NAVIGATION map (#12)', () => {
   it('lists every screen, and only screens (or the Lexicon drawn over one, D25)', () => {
     expect(Object.keys(NAVIGATION).sort()).toEqual([...SCREENS].sort());
     for (const exits of Object.values(NAVIGATION)) {
-      for (const exit of exits) expect([...SCREENS, LEXICON]).toContain(exit.to);
+      for (const exit of exits) expect([...SCREENS, LEXICON, HOW_TO_PLAY]).toContain(exit.to);
     }
   });
 
@@ -141,7 +145,9 @@ describe('NAVIGATION map (#12)', () => {
       return seen;
     };
     const out = (s: Screen) =>
-      NAVIGATION[s].map((e) => e.to).filter((to): to is Screen => to !== LEXICON);
+      NAVIGATION[s]
+        .map((e) => e.to)
+        .filter((to): to is Screen => to !== LEXICON && to !== HOW_TO_PLAY);
     expect([...reach('home', out)].sort()).toEqual([...SCREENS].sort());
     const into = (s: Screen) => SCREENS.filter((from) => out(from).includes(s));
     expect([...reach('home', into)].sort()).toEqual([...SCREENS].sort());
@@ -217,6 +223,20 @@ describe('NAVIGATION map (#12)', () => {
     ]);
   });
 
+  it('How to play opens from Home only, as local UI state, and leads Home or to New game (D28)', () => {
+    expect(HOW_TO_PLAY_OPENERS).toEqual(['home']);
+    expect(NAVIGATION.home).toContainEqual({
+      via: 'How to play',
+      action: OPEN_HOW_TO_PLAY,
+      to: HOW_TO_PLAY,
+    });
+    expect([...new Set(HOW_TO_PLAY_EXITS.map((e) => e.to))].sort()).toEqual(['home', 'newGame']);
+    const home: GameState = { screen: 'home', game: null };
+    expect(gameReducer(home, { type: OPEN_HOW_TO_PLAY } as unknown as GameAction)).toBe(home);
+    // "Start a game" is the existing New game action.
+    expect(gameReducer(home, { type: 'GO_NEW_GAME' }).screen).toBe('newGame');
+  });
+
   it('opening the Lexicon is not a reducer action (the game is untouched, D25)', () => {
     for (const screen of LEXICON_OPENERS) {
       const state: GameState = { screen, game: makeGame() };
@@ -227,7 +247,7 @@ describe('NAVIGATION map (#12)', () => {
   // Reducer exits only (the Lexicon is local UI state, checked above).
   const allExits = SCREENS.flatMap((screen) =>
     NAVIGATION[screen]
-      .filter((exit) => exit.to !== LEXICON)
+      .filter((exit) => exit.to !== LEXICON && exit.to !== HOW_TO_PLAY)
       .map((exit) => [screen, exit.via, exit.to, exit] as const),
   );
 

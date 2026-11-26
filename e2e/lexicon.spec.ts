@@ -10,9 +10,8 @@ const OPEN_CARD_TRANSFORM =
   'getComputedStyle(document.querySelector(\'li:has(button[aria-expanded="true"])\')).transform';
 const stored = (page: Page, key: string) => page.evaluate((k) => localStorage.getItem(k), key);
 
-test('Home → Lexicon → ‹ back to Home; How to play stays coming soon', async ({ page }) => {
+test('Home → Lexicon → ‹ back to Home', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('button', { name: /^How to play/ })).toBeDisabled();
   await page.getByRole('button', { name: 'Lexicon', exact: true }).click();
   await expect(lexicon(page)).toBeVisible();
   await expect(page.getByText('Basic concepts')).toBeVisible();

@@ -6,8 +6,14 @@ import type { GameState, Screen } from './types';
  */
 export const LEXICON = 'lexicon';
 
-/** Where an exit leads: a reducer screen, or the Lexicon drawn over the current one. */
-export type NavigationTarget = Screen | typeof LEXICON;
+/**
+ * How to play (decision D28): the 6-step tutorial, local UI state of App.tsx too, drawn over
+ * Home only.
+ */
+export const HOW_TO_PLAY = 'howToPlay';
+
+/** Where an exit leads: a reducer screen, or the Lexicon / How to play drawn over it. */
+export type NavigationTarget = Screen | typeof LEXICON | typeof HOW_TO_PLAY;
 
 /** One way out of a screen: the control the players use, the action and where it leads. */
 export interface NavigationExit {
@@ -23,6 +29,9 @@ export interface NavigationExit {
 
 /** Local UI action opening the Lexicon over the current screen (no reducer action). */
 export const OPEN_LEXICON = 'UI:OPEN_LEXICON';
+
+/** Local UI action opening How to play at step 1 (no reducer action). */
+export const OPEN_HOW_TO_PLAY = 'UI:OPEN_HOW_TO_PLAY';
 
 /**
  * Navigation map (backlog #12, decision D8: the reducer owns `screen`, no router). For each
@@ -43,7 +52,7 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
     { via: 'Continue game', action: 'CONTINUE_GAME', to: 'result' },
     { via: 'New game', action: 'GO_NEW_GAME', to: 'newGame' },
     { via: 'Lexicon', action: OPEN_LEXICON, to: LEXICON },
-    // "How to play" is disabled (coming soon).
+    { via: 'How to play', action: OPEN_HOW_TO_PLAY, to: HOW_TO_PLAY },
   ],
   newGame: [
     // Replaces a saved game without confirmation (the screen warns about it).
@@ -86,6 +95,23 @@ export const LEXICON_EXITS: readonly { from: 'main' | 'all'; via: string; to: st
 /** Screens the Lexicon can be opened over (the exits of NAVIGATION that lead to it). */
 export const LEXICON_OPENERS: readonly Screen[] = (Object.keys(NAVIGATION) as Screen[]).filter(
   (screen) => NAVIGATION[screen].some((exit) => exit.to === LEXICON),
+);
+
+/**
+ * Exits of How to play (decision D28). ‹, Skip and the system back button close it, back to
+ * Home exactly as it was; Back / Next (and the ← / → keys) move between the 6 steps; "Start a
+ * game" on step 6 closes it and dispatches GO_NEW_GAME.
+ */
+export const HOW_TO_PLAY_EXITS: readonly NavigationExit[] = [
+  { via: 'Back (‹)', action: 'UI:CLOSE_HOW_TO_PLAY', to: 'home' },
+  { via: 'Skip', action: 'UI:CLOSE_HOW_TO_PLAY', to: 'home' },
+  { via: 'System back', action: 'UI:CLOSE_HOW_TO_PLAY', to: 'home' },
+  { via: 'Start a game (step 6)', action: 'GO_NEW_GAME', to: 'newGame' },
+];
+
+/** Screens How to play can be opened over (the exits of NAVIGATION that lead to it). */
+export const HOW_TO_PLAY_OPENERS: readonly Screen[] = (Object.keys(NAVIGATION) as Screen[]).filter(
+  (screen) => NAVIGATION[screen].some((exit) => exit.to === HOW_TO_PLAY),
 );
 
 /**

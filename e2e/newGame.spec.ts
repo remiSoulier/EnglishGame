@@ -111,16 +111,12 @@ test.describe('home screen', () => {
     await expect(page.getByText('Program your way to the goal', { exact: true })).toBeVisible();
     await expect(page.locator('main header img[src="/silva-logo.svg"]')).toBeVisible(); // the logo
     const menu = page.getByRole('navigation', { name: 'Main menu' }).getByRole('button');
-    await expect(menu).toHaveText(['New game', /^How to play/, /^Lexicon/]);
+    await expect(menu).toHaveText(['New game', 'How to play', 'Lexicon']);
     await expect(startCells(page)).toHaveCount(0);
   });
 
-  test('How to play is disabled and does nothing; Lexicon is enabled (D25)', async ({ page }) => {
-    const button = page.getByRole('button', { name: /^How to play/ });
-    await expect(button).toBeDisabled();
-    await expect(button).toContainText('(coming soon)');
-    await button.click({ force: true });
-    await expect(home(page)).toBeVisible();
+  test('How to play (D28) and Lexicon (D25) are enabled', async ({ page }) => {
+    await expect(page.getByRole('button', { name: 'How to play', exact: true })).toBeEnabled();
     await expect(page.getByRole('button', { name: 'Lexicon', exact: true })).toBeEnabled();
   });
 

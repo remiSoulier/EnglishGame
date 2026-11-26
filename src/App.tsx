@@ -6,7 +6,7 @@
  * decision D18); Board → End
  * turn (at any time, no turn order: decision D11) → New board → Board; Board menu → New board
  * (confirm) / End game (confirm, game deleted: decision D13) → Home / Quit to home (confirm, game
- * kept) → Home → Continue game. The Lexicon (decision D25) opens from Home and from the board
+ * kept) → Home → Continue game. How to play (D28) opens from Home; the Lexicon (D25) from Home and the board
  * menu as local UI state drawn over the current screen (left inert, never dispatched to), so
  * closing it returns exactly where the players were. The browser / Android back button maps to
  * the in-app Back where there is one (useSystemBack), and focus moves to the new screen's <h1>.
@@ -23,6 +23,7 @@ import {
 } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
+import { HowToPlayScreen } from './screens/HowToPlay';
 import { LexiconScreen, type LexiconView } from './screens/Lexicon';
 import { NewGameScreen } from './screens/NewGame';
 import { QuestionScreen } from './screens/Question';
@@ -50,13 +51,16 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
 /** Confirmation dialogs of the board menu (local UI state, not saved). */
 type BoardDialog = null | 'newBoard' | 'endGame' | 'quit';
 
+/** Full screens drawn over the current one: the Lexicon (D25) and How to play (D28). */
+type Overlay = LexiconView | 'howToPlay';
+
 /**
- * The Lexicon over Home or the board (decision D25): local UI state, so the reducer, the screen
- * and the saved game are never touched. Remembers the control that opened it and gives it focus
- * back on close.
+ * The Lexicon (over Home or the board, decision D25) and How to play (over Home, D28): local UI
+ * state, so the reducer, the screen and the saved game are never touched. Remembers the control
+ * that opened it and gives it focus back on close.
  */
-function useLexicon() {
-  const [view, setView] = useState<LexiconView | null>(null);
+function useOverlay() {
+  const [view, setView] = useState<Overlay | null>(null);
   const opener = useRef<HTMLElement | null>(null);
   const restoreFocus = useRef(false);
 
@@ -70,13 +74,18 @@ function useLexicon() {
 
   return {
     view,
-    open: () => {
+    open: (overlay: 'main' | 'howToPlay' = 'main') => {
       const active = document.activeElement;
       opener.current = active instanceof HTMLElement ? active : null;
-      setView('main');
+      setView(overlay);
+    },
+    /** Closes without giving focus back (the next screen focuses its own title). */
+    dismiss: () => {
+      opener.current = null;
+      setView(null);
     },
     seeAll: () => setView('all'),
-    /** ‹ / system back: "See all" → entry, entry → closed. */
+    /** ‹ / Skip / system back: "See all" → Lexicon entry; the entry or How to play → closed. */
     back: () => {
       if (view === 'all') {
         setView('main');
@@ -119,12 +128,24 @@ function Screens() {
   // over the board.
   const [boardDialog, setBoardDialog] = useState<BoardDialog>(null);
   const dialog = screen === 'board' ? boardDialog : null;
-  const lexicon = useLexicon();
-  // Only reachable from Home and the board (its menu).
-  const lexiconView = screen === 'home' || screen === 'board' ? lexicon.view : null;
-  const lexiconScreen = lexiconView && (
-    <LexiconScreen view={lexiconView} onBack={lexicon.back} onSeeAll={lexicon.seeAll} />
-  );
+  const lexicon = useOverlay();
+  // The Lexicon opens from Home and the board (its menu); How to play from Home only.
+  const lexiconView =
+    screen === 'home' || (screen === 'board' && lexicon.view !== 'howToPlay') ? lexicon.view : null;
+  const lexiconScreen =
+    lexiconView === 'howToPlay' ? (
+      <HowToPlayScreen
+        onClose={lexicon.back}
+        onStartGame={() => {
+          lexicon.dismiss();
+          dispatch({ type: 'GO_NEW_GAME' });
+        }}
+      />
+    ) : (
+      lexiconView && (
+        <LexiconScreen view={lexiconView} onBack={lexicon.back} onSeeAll={lexicon.seeAll} />
+      )
+    );
 
   // System back: leaves the Lexicon step by step, closes a confirmation, else the in-app Back
   // where there is one.
@@ -144,7 +165,8 @@ function Screens() {
             onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })}
             savedGame={game && { turn: game.turn, difficulty: DIFFICULTY_LABEL[game.difficulty] }}
             onContinue={() => dispatch({ type: 'CONTINUE_GAME' })}
-            onLexicon={lexicon.open}
+            onLexicon={() => lexicon.open('main')}
+            onHowToPlay={() => lexicon.open('howToPlay')}
           />
         </div>
         {lexiconScreen}
@@ -190,7 +212,7 @@ function Screens() {
             onNewBoard={() => setBoardDialog('newBoard')}
             onEndGame={() => setBoardDialog('endGame')}
             onQuit={() => setBoardDialog('quit')}
-            onLexicon={lexicon.open}
+            onLexicon={() => lexicon.open('main')}
           />
         </div>
         {lexiconScreen}

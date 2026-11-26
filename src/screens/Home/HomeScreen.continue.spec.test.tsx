@@ -22,7 +22,7 @@ describe('HomeScreen with a saved game (#12, D10)', () => {
     expect(buttons.map((b) => b.textContent)).toEqual([
       'Continue gameTurn 3 · Medium',
       'New game',
-      'How to play (coming soon)',
+      'How to play',
       'Lexicon',
     ]);
     expect(buttons[0]).toHaveAccessibleName(/^Continue game/);

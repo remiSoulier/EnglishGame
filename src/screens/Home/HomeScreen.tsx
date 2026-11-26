@@ -16,6 +16,8 @@ export interface HomeScreenProps {
   onContinue?: () => void;
   /** Opens the Lexicon (decision D25). */
   onLexicon?: () => void;
+  /** Opens the How to play tutorial (decision D28). */
+  onHowToPlay?: () => void;
 }
 
 /**
@@ -46,7 +48,13 @@ const GLINTS: readonly { x: number; y: number; w: number; delay: number; duratio
  * still with prefers-reduced-motion and the title is the SILVA logo (public/silva-logo.svg), as in the Figma mockup. The
  * <h1> keeps the text "SILVA" for screen readers; the logo image itself is decorative.
  */
-export function HomeScreen({ onNewGame, savedGame, onContinue, onLexicon }: HomeScreenProps) {
+export function HomeScreen({
+  onNewGame,
+  savedGame,
+  onContinue,
+  onLexicon,
+  onHowToPlay,
+}: HomeScreenProps) {
   const canContinue = savedGame != null && onContinue !== undefined;
   return (
     <main className={styles.screen}>
@@ -126,8 +134,8 @@ export function HomeScreen({ onNewGame, savedGame, onContinue, onLexicon }: Home
           <Button variant={canContinue ? 'onDark' : 'accent'} fullWidth onClick={onNewGame}>
             New game
           </Button>
-          <Button variant="onDark" fullWidth disabled>
-            How to play <span className={styles.soon}>(coming soon)</span>
+          <Button variant="onDark" fullWidth onClick={onHowToPlay}>
+            How to play
           </Button>
           <Button variant="onDark" fullWidth onClick={onLexicon}>
             Lexicon

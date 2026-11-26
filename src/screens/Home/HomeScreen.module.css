@@ -235,11 +235,6 @@
   outline-color: var(--color-focus-on-dark);
 }
 
-.soon {
-  font-size: 15px;
-  font-weight: 400;
-}
-
 .continue {
   flex-direction: column;
   gap: 2px;
