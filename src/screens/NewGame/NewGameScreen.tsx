@@ -37,6 +37,8 @@ interface SegmentProps<T extends string | number> {
   /** Accessible name when the visible text is split over several lines. */
   ariaLabel?: string;
   onSelect: (value: T) => void;
+  /** Called when the already checked option is clicked again (to deselect it). */
+  onDeselect?: () => void;
   children: ReactNode;
 }
 
@@ -47,6 +49,7 @@ function Segment<T extends string | number>({
   checked,
   ariaLabel,
   onSelect,
+  onDeselect,
   children,
 }: SegmentProps<T>) {
   return (
@@ -59,6 +62,8 @@ function Segment<T extends string | number>({
         checked={checked}
         aria-label={ariaLabel}
         onChange={() => onSelect(value)}
+        // A checked radio fires no change when clicked again: the click deselects it instead.
+        onClick={checked && onDeselect ? onDeselect : undefined}
       />
       <span className={styles.segmentText}>{children}</span>
     </label>
@@ -68,18 +73,22 @@ function Segment<T extends string | number>({
 /** New game screen: players, their characters and difficulty; the board is always random (D22). */
 export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGameScreenProps) {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(2);
-  // One character per possible player (4); the first `playerCount` are used.
-  const [characters, setCharacters] = useState<number[]>(() => defaultCharacters(4));
+  // One character per possible player (4); the first `playerCount` are used. `null` = deselected.
+  const [characters, setCharacters] = useState<(number | null)[]>(() => defaultCharacters(4));
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const id = useId();
 
+  const chosen = characters.slice(0, playerCount);
+  const allChosen = chosen.every((c) => c !== null);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onStart({ playerCount, difficulty, code: newCode(), characters: chosen() });
+    if (!allChosen) return;
+    onStart({ playerCount, difficulty, code: newCode(), characters: chosen as number[] });
   }
 
-  function chosen(): number[] {
-    return characters.slice(0, playerCount);
+  function deselect(player: number) {
+    setCharacters((list) => list.map((c, i) => (i === player ? null : c)));
   }
 
   return (
@@ -135,6 +144,7 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
                       onSelect={(value) =>
                         setCharacters((list) => pickCharacter(list, player, value))
                       }
+                      onDeselect={() => deselect(player)}
                     >
                       <img
                         className={styles.characterArt}
@@ -175,7 +185,18 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
         </fieldset>
 
         <div className={styles.actions}>
-          <Button type="submit" variant="accent" fullWidth>
+          {!allChosen && (
+            <p id={`${id}-characters-hint`} className={styles.notice}>
+              Choose a character for each player.
+            </p>
+          )}
+          <Button
+            type="submit"
+            variant="accent"
+            fullWidth
+            disabled={!allChosen}
+            aria-describedby={allChosen ? undefined : `${id}-characters-hint`}
+          >
             Start game
           </Button>
         </div>

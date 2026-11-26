@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { isValidCode } from '../../engine';
@@ -24,6 +24,32 @@ describe('NewGameScreen', () => {
     const settings = onStart.mock.calls[0][0];
     expect(settings).toMatchObject({ playerCount: 2, difficulty: 'medium' });
     expect(isValidCode(settings.code)).toBe(true);
+  });
+
+  it('tapping a chosen character again deselects it; Start waits for every player', async () => {
+    const { user, onStart } = setup();
+    const p1 = within(screen.getByRole('group', { name: 'Player 1' }));
+    const kitkat = p1.getByRole('radio', { name: 'Kitkat' });
+    expect(kitkat).toBeChecked();
+
+    await user.click(kitkat);
+    expect(kitkat).not.toBeChecked();
+    expect(p1.queryAllByRole('radio', { checked: true })).toHaveLength(0);
+    const start = screen.getByRole('button', { name: 'Start game' });
+    expect(start).toBeDisabled();
+    expect(start).toHaveAccessibleDescription('Choose a character for each player.');
+    await user.click(start);
+    expect(onStart).not.toHaveBeenCalled();
+
+    // Picking a character again (here P2's Batman) moves it over and frees P2.
+    await user.click(p1.getByRole('radio', { name: 'Batman' }));
+    expect(p1.getByRole('radio', { name: 'Batman' })).toBeChecked();
+    const p2 = within(screen.getByRole('group', { name: 'Player 2' }));
+    expect(p2.queryAllByRole('radio', { checked: true })).toHaveLength(0);
+    await user.click(p2.getByRole('radio', { name: 'Gus' }));
+    expect(start).toBeEnabled();
+    await user.click(start);
+    expect(onStart.mock.calls[0][0].characters).toEqual([1, 3]);
   });
 
   it('goes back', async () => {

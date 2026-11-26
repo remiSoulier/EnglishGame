@@ -73,13 +73,14 @@ export function enemyCharacter(index: number): PlayerCharacter {
 
 /**
  * Gives `character` to player `player`; if another player had it, the two swap, so every player
- * keeps a different character (decision D19).
+ * keeps a different character (decision D19). `null` = no character chosen yet (on New game, a
+ * player taps their character again to deselect it).
  */
 export function pickCharacter(
-  characters: readonly number[],
+  characters: readonly (number | null)[],
   player: number,
   character: number,
-): number[] {
+): (number | null)[] {
   const next = [...characters];
   const other = next.indexOf(character);
   if (other !== -1 && other !== player) next[other] = next[player];
