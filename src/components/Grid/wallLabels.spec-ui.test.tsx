@@ -19,17 +19,8 @@ import { CELL } from './geometry';
 import { Grid } from './Grid';
 
 const IDS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
-/** Physical size of each piece (decision D12), written independently from the engine. */
-const MM: Readonly<Record<string, string>> = {
-  W1: '88 mm',
-  W2: '88 mm',
-  W3: '132 mm',
-  W4: '176 mm',
-  W5: '44 + 44 mm',
-  W6: '88 + 44 mm',
-  W7: '88 + 88 mm',
-  W8: '132 + 88 mm',
-};
+/** Cells a wall runs along, without the side letters (D26: no mm, no E / S). */
+const cellsOf = (sides: readonly string[]) => [...new Set(sides.map((s) => s.split('-')[0]))];
 
 interface Box {
   x0: number;
@@ -199,15 +190,16 @@ describe('Grid — wall piece badges', () => {
 });
 
 describe('Grid — wall titles', () => {
-  it('names each wall with its piece and size', () => {
+  it('names each wall with its piece and cells, no size nor sides (D26)', () => {
     const svg = renderSvg(FIXTURE_BOARD);
     const titles = Array.from(svg.querySelectorAll('[data-wall] > title')).map(
       (t) => t.textContent,
     );
     expect(titles).toEqual(
-      FIXTURE_BOARD.walls.map((w) => `Wall ${w.id} (${MM[w.id]}): ${w.sides.join(', ')}`),
+      FIXTURE_BOARD.walls.map((w) => `Wall ${w.id}: ${cellsOf(w.sides).join(', ')}`),
     );
-    expect(titles[5]).toBe('Wall W6 (88 + 44 mm): B6-S, C6-S, C7-E');
+    expect(titles[5]).toBe('Wall W6: B6, C6, C7');
+    for (const title of titles) expect(title).not.toMatch(/mm|-[NESW]\b/);
   });
 
   it('titles generated walls the same way', () => {
@@ -215,7 +207,7 @@ describe('Grid — wall titles', () => {
     const svg = renderSvg(board);
     for (const wall of board.walls) {
       const g = svg.querySelector(`[data-wall="${wall.sides.join(' ')}"] > title`);
-      expect(g?.textContent).toBe(`Wall ${wall.id} (${MM[wall.id]}): ${wall.sides.join(', ')}`);
+      expect(g?.textContent).toBe(`Wall ${wall.id}: ${cellsOf(wall.sides).join(', ')}`);
     }
   });
 });

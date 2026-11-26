@@ -1,11 +1,15 @@
 import { BOARD_SIZE, sideEndpoints, wallPiece, type Cell, type Wall } from '../../engine';
 import { CELL } from './geometry';
 
-/** Accessible title of a wall group, e.g. `Wall W6 (88 + 44 mm): C2-E, C3-E, C3-S`. */
+/**
+ * Accessible title (and hover tooltip) of a wall group, e.g. `Wall W6: C2, C3`: the cells it runs
+ * along, with no size in mm and no E / S side letters (user request, D26).
+ */
 export function wallTitle(wall: Wall): string {
   const piece = wallPiece(wall.id);
-  const name = piece ? `Wall ${piece.id} (${piece.sizeMm})` : 'Wall';
-  return `${name}: ${wall.sides.join(', ')}`;
+  const name = piece ? `Wall ${piece.id}` : 'Wall';
+  const cells = [...new Set(wall.sides.map((side) => side.split('-')[0]))];
+  return `${name}: ${cells.join(', ')}`;
 }
 
 /** Centre of a wall name badge, in SVG user units. */

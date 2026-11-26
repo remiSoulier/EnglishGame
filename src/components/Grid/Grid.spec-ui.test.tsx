@@ -12,17 +12,8 @@ import { Grid } from './Grid';
 
 const COLS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
 const ROWS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
-/** Physical size of each piece (decision D12), written independently from the engine. */
-const MM: Readonly<Record<string, string>> = {
-  W1: '88 mm',
-  W2: '88 mm',
-  W3: '132 mm',
-  W4: '176 mm',
-  W5: '44 + 44 mm',
-  W6: '88 + 44 mm',
-  W7: '88 + 88 mm',
-  W8: '132 + 88 mm',
-};
+/** Cells a wall runs along, without the side letters (D26: no mm, no E / S). */
+const cellsOf = (sides: readonly string[]) => [...new Set(sides.map((s) => s.split('-')[0]))];
 
 function board(overrides: Partial<Board> = {}): Board {
   return {
@@ -139,7 +130,7 @@ describe('Grid — walls', () => {
       expect(g, wall.sides.join(' ')).not.toBeNull();
       expect(g?.querySelector('path')?.getAttribute('d')).toBe(expectedD(wall.sides));
       expect(g?.querySelector('title')?.textContent).toBe(
-        `Wall ${wall.id} (${MM[wall.id]}): ${wall.sides.join(', ')}`,
+        `Wall ${wall.id}: ${cellsOf(wall.sides).join(', ')}`,
       );
     }
   });
