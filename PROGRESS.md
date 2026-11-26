@@ -162,3 +162,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #42 Écran Lexicon : accès depuis l'accueil et le menu du plateau, 10 concepts en deux sections, « appris » enregistré à part (D25)
 
 | 2026-11-26 | #42 | Done (D25). 1730 unit tests, 99 e2e, lint and typecheck green. Branch feat/lexicon, not pushed (user asked to wait). |
+- [x] #43 How to play : tutoriel des règles en 6 étapes, README sans code de plateau (D27, D28)
+
+| 2026-11-26 | #43 | Done (D27, D28). 1753 unit tests, 104 e2e, lint and typecheck green. Branch feat/how-to-play (from feat/lexicon), not pushed yet (waiting for the user's OK). |
