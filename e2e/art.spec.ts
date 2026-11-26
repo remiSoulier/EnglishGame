@@ -29,7 +29,7 @@ const ART = [
   'char-spider',
   'char-toad',
 ];
-const HOME_ART = ['/art/bg-batman.webp'];
+const HOME_ART = ['/art/bg-lake.webp', '/art/scene-boat.webp'];
 /** Distinct art on a 4-player board (D15): texture, 4 players, the dragon goal, 3 enemies. */
 const BOARD_ART = [
   '/art/board-texture.webp',
@@ -92,9 +92,9 @@ async function expectDecoded(page: Page, urls: string[], label: string) {
 
 /** naturalWidth of the Home background image, as resolved from the <main> computed style. */
 const HOME_BG_SCRIPT = String.raw`(async () => {
-  const main = document.querySelector('main');
-  const urls = [...getComputedStyle(main).backgroundImage.matchAll(/url\("?([^")]+)"?\)/g)];
-  const src = urls.map((m) => m[1]).find((u) => u.endsWith('/art/bg-batman.webp'));
+  const scene = document.querySelector('[data-testid="home-scene"]');
+  const urls = [...getComputedStyle(scene).backgroundImage.matchAll(/url\("?([^")]+)"?\)/g)];
+  const src = urls.map((m) => m[1]).find((u) => u.endsWith('/art/bg-lake.webp'));
   if (!src) return -1;
   const img = new Image();
   img.src = src;

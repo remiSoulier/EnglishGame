@@ -144,3 +144,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #36 Choix du personnage par joueur sur New game (D19), dragon flottant sur l'accueil
 
 | 2026-11-26 | #36 | Done (D19). 1709 unit tests, 101 e2e, lint and typecheck green. Same branch feat/silva-da-maquette, not pushed. |
+- [x] #37 Accueil animé : lune-barque qui tangue, ronds dans l'eau, reflets sur le lac (D20)
+
+| 2026-11-26 | #37 | Done (D20). 1714 unit tests, 101 e2e, lint and typecheck green. Same branch, not pushed. |

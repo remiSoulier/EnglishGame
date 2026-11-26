@@ -97,3 +97,7 @@ Maquette : https://www.figma.com/design/HNw6XYnhOeh7hKIpMSd4j1 (frames « 1 · H
 - Les personnages portent les noms des illustrations : Kitkat, Batman, Mushi, Gus (joueurs), Dragon (objectif), Croco, Kevin, Vecna (ennemis).
 - Accueil : le dragon flotte au-dessus du lac, décoratif (sans animation avec `prefers-reduced-motion`).
 - Pas de personnage sur la carte de résultat : l'appli ne sait pas qui répond (D11), l'utilisateur a choisi de ne pas l'ajouter.
+
+## D20 — Accueil animé : la lune-barque tangue, reflets sur le lac (2026-11-26, demande utilisateur)
+- La barque a été découpée de l'illustration du lac (`docs/design/art-src/scene-boat.png`) et le lac sans barque a été reconstitué (`docs/design/art-src/bg-lake.png`, l'original `bg-batman.png` est gardé). Sur l'accueil, la barque est un calque qui tangue doucement (rotation ±2°, léger mouvement vertical), deux ronds dans l'eau partent de sa base, et des reflets clairs scintillent rapidement sur le lac.
+- La scène reproduit le cadrage d'avant (`cover`, ancrée à 72 % en largeur) grâce aux container queries ; tout est décoratif (`aria-hidden`), ne prend aucun clic, et reste immobile avec `prefers-reduced-motion` (reflets et ronds masqués).

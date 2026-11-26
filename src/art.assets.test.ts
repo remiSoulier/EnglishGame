@@ -24,7 +24,9 @@ const CHARACTERS = [
 ];
 /** Card backs (task #35): the question card (flip animation) and the instruction card. */
 const CARDS = ['card-instruction', 'card-question'];
-const ALL = [...BACKGROUNDS, 'board-texture', ...CHARACTERS, ...CARDS];
+/** Animated Home scene (task #37, D20): the lake without its boat, and the boat layer. */
+const SCENE = ['bg-lake', 'scene-boat'];
+const ALL = [...BACKGROUNDS, 'board-texture', ...CHARACTERS, ...CARDS, ...SCENE];
 
 interface WebpInfo {
   /** First chunk: 'VP8 ' (lossy), 'VP8L' (lossless) or 'VP8X' (extended). */
@@ -75,7 +77,7 @@ function webp(file: string): WebpInfo {
 }
 
 describe('public/art (optimised Figma art)', () => {
-  it('holds exactly the 16 expected WebP files', () => {
+  it('holds exactly the 18 expected WebP files', () => {
     const files = readdirSync(ART).filter((f) => !f.startsWith('.'));
     expect(files.sort()).toEqual(ALL.map((n) => `${n}.webp`).sort());
   });

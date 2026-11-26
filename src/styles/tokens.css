@@ -66,6 +66,8 @@
    */
   --color-home-veil: rgb(6 20 40 / 45%);
   --color-home-veil-strong: rgb(5 25 24 / 72%);
+  /* Glints and ripples on the Home lake (decorative). */
+  --color-home-glint: #8fd3d6;
   /* Title card behind the logo, title and tagline (over clouds and white strokes). */
   --color-home-card: rgb(6 20 40 / 75%);
 

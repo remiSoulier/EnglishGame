@@ -1,31 +1,143 @@
 /*
- * Full-bleed night lake illustration with the moon boat (SILVA art, precached for offline use),
- * as in the Figma mockup "1 · Home". The plain dark colour shows while it loads. A dark veil at
- * the bottom keeps the menu readable over the water.
+ * Animated night lake scene (decision D20), as in the Figma mockup "1 · Home". The plain dark
+ * colour shows while the art loads.
  */
 .screen {
   position: relative;
   min-height: 100dvh;
   overflow: hidden;
   background-color: var(--color-home-bg);
-  background-image:
-    linear-gradient(
-      to bottom,
-      var(--color-home-veil) 0%,
-      transparent 30%,
-      transparent 58%,
-      var(--color-home-veil-strong) 80%,
-      var(--color-home-veil-strong) 100%
-    ),
-    url('/art/bg-batman.webp');
-  background-position:
-    center,
-    72% top;
-  background-size:
-    100% 100%,
-    cover;
-  background-repeat: no-repeat;
   color: var(--color-home-text);
+}
+
+/* The scene covers the screen like `background-size: cover; background-position: 72% top`. */
+.sceneBox {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  container-type: size;
+  pointer-events: none;
+}
+
+.scene {
+  position: absolute;
+  top: 0;
+  left: 72%;
+  width: max(100cqw, calc(100cqh * 1002 / 1442));
+  aspect-ratio: 1002 / 1442;
+  background-image: url('/art/bg-lake.webp');
+  background-size: 100% 100%;
+  translate: -72% 0;
+}
+
+.water {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Quick light glints on the water. */
+.glint {
+  stroke: var(--color-home-glint);
+  stroke-width: 5;
+  stroke-linecap: round;
+  opacity: 0;
+  animation: glint 2.6s ease-in-out infinite;
+}
+
+@keyframes glint {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+
+  45% {
+    opacity: 0.85;
+  }
+
+  70% {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+}
+
+/* The moon boat (its own layer, cut out of the art), rocking gently on the water. */
+.boat {
+  position: absolute;
+  top: 39.88%;
+  left: 58.08%;
+  width: 33.23%;
+  height: auto;
+  transform-origin: 50% 88%;
+  animation: rock 5s ease-in-out infinite;
+}
+
+@keyframes rock {
+  0%,
+  100% {
+    transform: rotate(-2.5deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(2deg) translateY(1.5%);
+  }
+}
+
+/* Ripples spreading from the boat. */
+.ripple {
+  fill: none;
+  stroke: var(--color-home-glint);
+  stroke-width: 3;
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ripple 3.6s ease-out infinite;
+}
+
+.rippleLate {
+  animation-delay: 1.8s;
+}
+
+@keyframes ripple {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.75);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* A dark veil at the top and bottom keeps the logo and the menu readable over the art. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--color-home-veil) 0%,
+    transparent 30%,
+    transparent 58%,
+    var(--color-home-veil-strong) 80%,
+    var(--color-home-veil-strong) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boat,
+  .ripple,
+  .glint {
+    animation: none;
+  }
+
+  .ripple,
+  .glint {
+    display: none;
+  }
 }
 
 /* The dragon floating over the lake, left of the moon boat (decorative, gently bobbing). */

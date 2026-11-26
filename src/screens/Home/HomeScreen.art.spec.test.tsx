@@ -22,12 +22,11 @@ function rule(name: string): string {
 }
 
 describe('HomeScreen — lake art background and SILVA logo', () => {
-  it('uses /art/bg-batman.webp as the screen background, over a plain fallback colour', () => {
-    const screenRule = rule('screen');
-    expect(screenRule).toMatch(/background-image:[^;]*url\(['"]?\/art\/bg-batman\.webp['"]?\)/);
-    expect(screenRule).toMatch(/background-color:\s*var\(--color-home-bg\)/);
+  it('draws the lake scene (D20) over a plain fallback colour', () => {
+    expect(rule('screen')).toMatch(/background-color:\s*var\(--color-home-bg\)/);
+    expect(rule('scene')).toMatch(/background-image:\s*url\(['"]?\/art\/bg-lake\.webp['"]?\)/);
     // The only art referenced by the Home styles.
-    expect(CSS.match(/url\([^)]*\)/g)).toEqual(["url('/art/bg-batman.webp')"]);
+    expect(CSS.match(/url\([^)]*\)/g)).toEqual(["url('/art/bg-lake.webp')"]);
   });
 
   it('draws the art on the <main> screen element', () => {
@@ -39,7 +38,9 @@ describe('HomeScreen — lake art background and SILVA logo', () => {
 
   it('no longer draws the decorative crescent and dots, nor the old grid logo', () => {
     const { container } = render(<HomeScreen onNewGame={() => {}} />);
-    expect(container.querySelectorAll('svg')).toHaveLength(0);
+    // The only SVGs are the water effects of the lake scene (D20).
+    const svgs = [...container.querySelectorAll('svg')];
+    expect(svgs.every((svg) => svg.closest('[data-testid="home-scene"]'))).toBe(true);
     expect(container.querySelector('[class*="decor"]')).toBeNull();
     expect(CSS).not.toMatch(/\.decor\b/);
     const tokens = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'utf8');
@@ -65,5 +66,21 @@ describe('HomeScreen — lake art background and SILVA logo', () => {
     expect(dragon).toHaveAttribute('aria-hidden', 'true');
     expect(rule('dragon')).toMatch(/pointer-events:\s*none/);
     expect(CSS).toMatch(/prefers-reduced-motion[\s\S]*\.dragon\s*\{\s*animation:\s*none/);
+  });
+
+  it('rocks the moon boat on its own layer, with glints and ripples, all decorative (D20)', () => {
+    const { container } = render(<HomeScreen onNewGame={() => {}} />);
+    const scene = screen.getByTestId('home-scene');
+    expect(scene.closest('[aria-hidden="true"]')).not.toBeNull();
+    const boat = scene.querySelector('img')!;
+    expect(boat.getAttribute('src')).toBe('/art/scene-boat.webp');
+    expect(boat).toHaveAttribute('alt', '');
+    expect(rule('boat')).toMatch(/animation:\s*rock/);
+    expect(scene.querySelectorAll('line').length).toBeGreaterThanOrEqual(8);
+    expect(scene.querySelectorAll('ellipse')).toHaveLength(2);
+    expect(rule('sceneBox')).toMatch(/pointer-events:\s*none/);
+    expect(container.querySelectorAll('svg[aria-hidden]').length).toBe(0);
+    const reduced = CSS.slice(CSS.indexOf('prefers-reduced-motion'));
+    expect(reduced).toMatch(/\.boat,\s*\.ripple,\s*\.glint\s*\{\s*animation:\s*none/);
   });
 });
