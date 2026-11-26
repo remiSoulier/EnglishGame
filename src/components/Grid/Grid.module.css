@@ -111,7 +111,7 @@
   stroke: var(--color-start);
   stroke-width: 2.5;
   stroke-linecap: round;
-  /* Dotted ring, as in the Figma mockup (round caps turn the short dashes into dots). */
+  /* Dotted square (D26; round caps turn the short dashes into dots). */
   stroke-dasharray: 0.1 4.4;
 }
 

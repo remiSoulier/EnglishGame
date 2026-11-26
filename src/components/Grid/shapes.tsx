@@ -92,6 +92,8 @@ interface StartShapeProps {
 
 /** Inset of the dashed start outline in the cell. */
 const START_INSET = 4;
+/** Corner radius of the dotted start square (D26: a square, not a ring). */
+const START_RADIUS = 2;
 /**
  * Label plate: size, and distance of its centre from its (border) edge. It spans 1 … 14 units
  * from that edge and x 9 … 31 in the cell, so it stays clear of a wall on any other edge (lime
@@ -106,8 +108,9 @@ const ART_WITH_LABEL = 24;
 const GLOW_RADIUS = 13;
 
 /**
- * Start cell: dotted round outline, as in the Figma mockup (on a dark halo, so it reads on the board art), the
- * player's character and a small player label on a board-coloured plate (text 6.63:1).
+ * Start cell: dotted lavender square (D26, was a ring in the Figma mockup) on a dark halo, so it
+ * reads on the board art, the player's character and a small player label on a board-coloured
+ * plate (text 6.63:1).
  */
 export function StartShape({ x, y, label, labelEdge = 'bottom', character }: StartShapeProps) {
   const side = CELL - START_INSET * 2;
@@ -131,7 +134,7 @@ export function StartShape({ x, y, label, labelEdge = 'bottom', character }: Sta
         y={y + START_INSET}
         width={side}
         height={side}
-        rx={side / 2}
+        rx={START_RADIUS}
       />
       <rect
         className={styles.start}
@@ -139,7 +142,7 @@ export function StartShape({ x, y, label, labelEdge = 'bottom', character }: Sta
         y={y + START_INSET}
         width={side}
         height={side}
-        rx={side / 2}
+        rx={START_RADIUS}
       />
       {character && (
         <>

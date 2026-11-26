@@ -157,6 +157,8 @@ describe('Grid — player characters on start cells', () => {
       );
       expect(outline, `${name}: dashed outline`).toBeDefined();
       expect(inside(rectBox(outline!), box)).toBe(true);
+      // D26: a square (small corner radius), not a ring.
+      expect(Number(outline!.getAttribute('rx'))).toBeLessThanOrEqual(4);
       // Outline drawn under the character, character under the label.
       const label = within(g as HTMLElement).getByText(`P${i + 1}`);
       expect(label.tagName.toLowerCase()).toBe('text');
