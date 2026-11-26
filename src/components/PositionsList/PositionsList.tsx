@@ -26,10 +26,14 @@ function pieceRank(wall: Wall): number {
   return rank === -1 ? WALL_PIECES.length : rank;
 }
 
-/** Name of a wall line, e.g. `W6 (88 + 44 mm)`. */
+/** Name of a wall line, e.g. `W6` (no size in mm: the board shows the pieces). */
 function wallName(wall: Wall): string {
-  const piece = wallPiece(wall.id);
-  return piece ? `${piece.id} (${piece.sizeMm})` : 'Wall';
+  return wallPiece(wall.id)?.id ?? 'Wall';
+}
+
+/** Cells a wall runs along, without the side letter: `C2-E, C3-E, C3-S` → `C2, C3`. */
+function wallCells(wall: Wall): string[] {
+  return [...new Set(wall.sides.map((side) => side.split('-')[0]))];
 }
 
 /** Collapsible written list of the board positions (goal, enemies, walls, starts). */
@@ -78,7 +82,7 @@ export function PositionsList({ board, playerCount, defaultOpen = false }: Posit
                   {walls.map((wall, index) => (
                     <li key={index} className={styles.wall}>
                       <span className={styles.wallLabel}>{wallName(wall)}:</span>{' '}
-                      {wall.sides.join(', ')}
+                      {wallCells(wall).join(', ')}
                     </li>
                   ))}
                 </ul>
@@ -90,7 +94,6 @@ export function PositionsList({ board, playerCount, defaultOpen = false }: Posit
             <dd className={styles.value}>{starts.join(', ')}</dd>
           </div>
         </dl>
-        <p className={styles.hint}>E = east side, S = south side of the cell.</p>
       </div>
     </section>
   );

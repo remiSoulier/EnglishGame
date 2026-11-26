@@ -15,21 +15,9 @@ import { BoardScreen } from '../../screens/Board/BoardScreen';
 import { NewBoardScreen } from '../../screens/NewBoard/NewBoardScreen';
 import { PositionsList, type PositionsListProps } from './PositionsList';
 
-const HINT = 'E = east side, S = south side of the cell.';
 const CODES = ['K7QP2MX', 'ABCDEFG', 'HJKMNPQ', '2345678', 'ZZ9Y8XW'];
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
 const IDS: WallId[] = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8'];
-/** Physical size of each piece (decision D12), written independently from the engine. */
-const MM: Readonly<Record<string, string>> = {
-  W1: '88 mm',
-  W2: '88 mm',
-  W3: '132 mm',
-  W4: '176 mm',
-  W5: '44 + 44 mm',
-  W6: '88 + 44 mm',
-  W7: '88 + 88 mm',
-  W8: '132 + 88 mm',
-};
 
 function setup(overrides: Partial<PositionsListProps> = {}) {
   const props: PositionsListProps = {
@@ -87,14 +75,16 @@ function expectMatchesBoard(board: Board, playerCount: 2 | 3 | 4, root: HTMLElem
   const ids = IDS.filter((id) => byId.has(id));
   walls.forEach((li, i) => {
     const wall = byId.get(ids[i])!;
-    expect(li.textContent).toBe(`${wall.id} (${MM[wall.id]}): ${wall.sides.join(', ')}`);
+    const cells = [...new Set(wall.sides.map((s) => s.split('-')[0]))];
+    expect(li.textContent).toBe(`${wall.id}: ${cells.join(', ')}`);
   });
 
   const starts = START_CELLS.slice(0, playerCount)
     .map((c, i) => `P${i + 1} ${cellName(c)}`)
     .join(', ');
   expect(map.get('Start:')!.textContent).toBe(starts);
-  expect(within(root).getByText(HINT)).toBeInTheDocument();
+  // No sizes in mm and no compass letters (east / south) in the list.
+  expect(root.textContent).not.toMatch(/mm|east|south|-[NESW]\b/);
 }
 
 describe('PositionsList: toggle', () => {
@@ -210,7 +200,7 @@ describe('PositionsList: content matches the board', () => {
     expect(screen.queryByText(/^Enem(y|ies):$/)).toBeNull();
   });
 
-  it('writes walls as "Wn (size): <sides>" in W1 … W8 order, whatever the stored order', () => {
+  it('writes walls as "Wn: <cells>" in W1 … W8 order, whatever the stored order', () => {
     const base = generateBoard('K7QP2MX', 1, 'medium');
     const board: Board = {
       ...base,
@@ -222,8 +212,8 @@ describe('PositionsList: content matches the board', () => {
     setup({ board, defaultOpen: true });
     const items = within(entries().get('Walls:')!).getAllByRole('listitem');
     expect(items.map((li) => li.textContent)).toEqual([
-      'W1 (88 mm): B5-S, C5-S',
-      'W6 (88 + 44 mm): C2-E, C3-E, C3-S',
+      'W1: B5, C5',
+      'W6: C2, C3',
     ]);
   });
 
@@ -232,9 +222,9 @@ describe('PositionsList: content matches the board', () => {
       const board = generateBoard(code, 2, 'hard');
       const { unmount } = setup({ board, defaultOpen: true });
       const items = within(entries().get('Walls:')!).getAllByRole('listitem');
-      expect(items.map((li) => /^(W\d) \(/.exec(li.textContent ?? '')?.[1])).toEqual(IDS);
-      expect(items[0].textContent).toMatch(/^W1 \(88 mm\): [A-I][1-9]-[ES](, [A-I][1-9]-[ES])*$/);
-      expect(items[7].textContent).toMatch(/^W8 \(132 \+ 88 mm\): /);
+      expect(items.map((li) => /^(W\d):/.exec(li.textContent ?? '')?.[1])).toEqual(IDS);
+      expect(items[0].textContent).toMatch(/^W1: [A-I][1-9](, [A-I][1-9])*$/);
+      expect(items[7].textContent).toMatch(/^W8: /);
       unmount();
     }
   });
