@@ -2,17 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import { startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
-/** Expected start of each positions-list wall line (decision D12). */
-const PREFIXES = [
-  'W1 (88 mm): ',
-  'W2 (88 mm): ',
-  'W3 (132 mm): ',
-  'W4 (176 mm): ',
-  'W5 (44 + 44 mm): ',
-  'W6 (88 + 44 mm): ',
-  'W7 (88 + 88 mm): ',
-  'W8 (132 + 88 mm): ',
-];
+/** Expected start of each positions-list wall line: the name only, no size (user request). */
+const PREFIXES = ['W1: ', 'W2: ', 'W3: ', 'W4: ', 'W5: ', 'W6: ', 'W7: ', 'W8: '];
 
 function grid(page: Page) {
   return page.getByRole('img', { name: /^Board, turn 1\./ });
@@ -41,13 +32,13 @@ async function checkLabels(page: Page) {
   expect(lines).toHaveLength(8);
   lines.forEach((line, i) => {
     expect(line.startsWith(PREFIXES[i]), `${line} starts with ${PREFIXES[i]}`).toBe(true);
-    expect(line.slice(PREFIXES[i].length)).toMatch(/^[A-I][1-9]-[ES](, [A-I][1-9]-[ES])+$/);
+    expect(line.slice(PREFIXES[i].length)).toMatch(/^[A-I][1-9](, [A-I][1-9])*$/);
   });
   const after = await page.evaluate<number>('document.documentElement.scrollWidth');
   expect(after).toBeLessThanOrEqual(VIEWPORT.width);
 }
 
-test('typed code: walls without badges, no horizontal scroll, sized wall lines', async ({
+test('typed code: walls without badges, no horizontal scroll, wall lines without sizes', async ({
   page,
 }) => {
   await startGame(page, { players: 4, difficulty: 'Hard', code: 'K7F29QX' });

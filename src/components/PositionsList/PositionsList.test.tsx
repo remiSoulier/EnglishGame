@@ -211,10 +211,7 @@ describe('PositionsList: content matches the board', () => {
     };
     setup({ board, defaultOpen: true });
     const items = within(entries().get('Walls:')!).getAllByRole('listitem');
-    expect(items.map((li) => li.textContent)).toEqual([
-      'W1: B5, C5',
-      'W6: C2, C3',
-    ]);
+    expect(items.map((li) => li.textContent)).toEqual(['W1: B5, C5', 'W6: C2, C3']);
   });
 
   it('lists the eight pieces W1 … W8 once each on generated boards', () => {
