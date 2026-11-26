@@ -26,6 +26,15 @@ export function HomeScreen({ onNewGame, savedGame, onContinue }: HomeScreenProps
   const canContinue = savedGame != null && onContinue !== undefined;
   return (
     <main className={styles.screen}>
+      {/* The dragon (the goal) floats over the lake (decision D19), decorative. */}
+      <img
+        className={styles.dragon}
+        src="/art/char-dragon.webp"
+        alt=""
+        aria-hidden="true"
+        width={96}
+        height={128}
+      />
       <div className={styles.inner}>
         <header className={styles.header}>
           <h1 className={styles.title}>

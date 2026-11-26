@@ -121,6 +121,7 @@ function Screens() {
           <BoardScreen
             board={game.board}
             playerCount={game.playerCount}
+            characters={game.characters}
             onQuestion={() => dispatch(openQuestionAction(game.askedQuestionIds))}
             onEndTurn={() => dispatch({ type: 'END_TURN' })}
             onNewBoard={() => setBoardDialog('newBoard')}
@@ -187,6 +188,7 @@ function Screens() {
       <NewBoardScreen
         board={game.board}
         playerCount={game.playerCount}
+        characters={game.characters}
         onStartTurn={() => dispatch({ type: 'START_TURN' })}
       />
     );

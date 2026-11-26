@@ -89,6 +89,7 @@ describe('START_GAME', () => {
         board: generateBoard(CODE, 1, d),
         askedQuestionIds: [],
         pendingQuestion: null,
+        characters: Array.from({ length: n }, (_, i) => i),
       },
     });
     expect(next.game).not.toHaveProperty('winner');
@@ -275,6 +276,7 @@ describe('NEW_BOARD', () => {
         difficulty: 'hard',
         turn: 4,
         askedQuestionIds: [1, 2],
+        characters: [3, 0, 2],
       }),
     );
     const next = reduce(prev, { type: 'NEW_BOARD', code: OTHER_CODE });
@@ -288,6 +290,7 @@ describe('NEW_BOARD', () => {
         board: generateBoard(OTHER_CODE, 1, 'hard'),
         askedQuestionIds: [],
         pendingQuestion: null,
+        characters: [3, 0, 2],
       },
     });
     expect(next.game).not.toHaveProperty('winner');

@@ -6,6 +6,8 @@ import styles from './Legend.module.css';
 
 export interface LegendProps {
   className?: string;
+  /** Character shown for "Start": player 1's (index in PLAYER_CHARACTERS, decision D19). */
+  character?: number;
 }
 
 const PAD = 4;
@@ -26,7 +28,7 @@ function Icon({ children }: { children: ReactNode }) {
 const C = CELL / 2;
 
 /** Legend of the board symbols, using the same shapes as `Grid`. */
-export function Legend({ className }: LegendProps) {
+export function Legend({ className, character }: LegendProps) {
   return (
     <ul className={className ? `${styles.legend} ${className}` : styles.legend} aria-label="Legend">
       <li className={styles.item}>
@@ -51,7 +53,11 @@ export function Legend({ className }: LegendProps) {
       </li>
       <li className={styles.item}>
         <Icon>
-          <StartShape x={0} y={0} character={playerCharacter(0).src} />
+          <StartShape
+            x={0}
+            y={0}
+            character={playerCharacter(0, character === undefined ? undefined : [character]).src}
+          />
         </Icon>
         Start
       </li>

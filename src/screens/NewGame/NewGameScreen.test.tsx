@@ -41,7 +41,12 @@ describe('NewGameScreen', () => {
     await user.type(input, '29qx');
     expect(screen.getByRole('alert')).toBeEmptyDOMElement();
     await user.click(screen.getByRole('button', { name: 'Start game' }));
-    expect(onStart).toHaveBeenCalledWith({ playerCount: 4, difficulty: 'hard', code: 'K7F2-9QX' });
+    expect(onStart).toHaveBeenCalledWith({
+      playerCount: 4,
+      difficulty: 'hard',
+      code: 'K7F2-9QX',
+      characters: [0, 1, 2, 3],
+    });
   });
 
   it('validates the code on blur', async () => {

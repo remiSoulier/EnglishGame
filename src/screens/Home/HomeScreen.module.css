@@ -28,6 +28,35 @@
   color: var(--color-home-text);
 }
 
+/* The dragon floating over the lake, left of the moon boat (decorative, gently bobbing). */
+.dragon {
+  position: absolute;
+  top: 41%;
+  left: 9%;
+  width: min(96px, 24vw);
+  height: auto;
+  filter: drop-shadow(0 0 14px rgb(190 240 255 / 45%));
+  pointer-events: none;
+  animation: float 4.5s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+
+  50% {
+    transform: translateY(-10px) rotate(3deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dragon {
+    animation: none;
+  }
+}
+
 .inner {
   position: relative;
   display: flex;

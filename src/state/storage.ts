@@ -1,3 +1,4 @@
+import { isValidCharacters } from './players';
 import { ENEMY_COUNT, isValidCode } from '../engine';
 import { resumeScreen } from './gameReducer';
 import type { Game, GameState, Screen } from './types';
@@ -83,6 +84,7 @@ function isValidGame(v: unknown): boolean {
     Array.isArray(v.askedQuestionIds) &&
     v.askedQuestionIds.every((id) => isInt(id, 0)) &&
     isValidPending(v.pendingQuestion) &&
+    (v.characters === undefined || isValidCharacters(v.characters, playerCount as number)) &&
     (v.lastScreen === undefined ||
       (SCREENS.includes(v.lastScreen as Screen) &&
         !NO_GAME_SCREENS.includes(v.lastScreen as Screen)))

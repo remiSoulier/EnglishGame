@@ -91,3 +91,9 @@ Maquette : https://www.figma.com/design/HNw6XYnhOeh7hKIpMSd4j1 (frames « 1 · H
 - **Question** : la question et le résultat s'affichent par-dessus le plateau (resté `inert` derrière), dans une carte blanche à bord bleu marine. La carte s'ouvre sur le dos de la carte question (« question ? algorithms », `card-question`) qui se retourne ; sans animation avec `prefers-reduced-motion`, et le dos ne bloque jamais les clics. Le résultat montre la carte instruction (`card-instruction`) à côté de « Draw X cards ».
 - **Plateau** : les cases de départ ont un rond en pointillés (au lieu d'un carré en tirets) ; les personnages et étiquettes P1–P4 restent (D15).
 - Pas repris, car contraires aux décisions D11–D13 : la barre P1…P4 « now », « We have a winner », l'écran « Walls and enemies have moved ».
+
+## D19 — Chaque joueur choisit son personnage ; le dragon sur l'accueil (2026-11-26, demande utilisateur)
+- Écran New game : une section « Characters » avec une ligne par joueur (P1 … P4) et les 4 personnages joueurs (Kitkat, Batman, Mushi, Gus). Deux joueurs ne peuvent pas avoir le même : choisir un personnage déjà pris échange les deux. Le choix est enregistré dans la partie (`game.characters`, index dans `PLAYER_CHARACTERS`), conservé par « New board », et affiché sur les cases de départ et dans la légende. Les parties sauvegardées avant D19 se chargent toujours (joueur i = personnage i).
+- Les personnages portent les noms des illustrations : Kitkat, Batman, Mushi, Gus (joueurs), Dragon (objectif), Croco, Kevin, Vecna (ennemis).
+- Accueil : le dragon flotte au-dessus du lac, décoratif (sans animation avec `prefers-reduced-motion`).
+- Pas de personnage sur la carte de résultat : l'appli ne sait pas qui répond (D11), l'utilisateur a choisi de ne pas l'ajouter.

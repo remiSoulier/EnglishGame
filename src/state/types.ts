@@ -38,6 +38,12 @@ export interface Game {
   askedQuestionIds: number[];
   pendingQuestion: null | PendingQuestion;
   /**
+   * Character of each player (decision D19): `characters[i]` is the index, in
+   * `PLAYER_CHARACTERS`, of player i+1's character; one per player, all different. Absent in
+   * games saved before D19: then player i plays character i.
+   */
+  characters?: number[];
+  /**
    * Screen the game was on when the players quit to home (`QUIT_TO_HOME`), so that "Continue
    * game" (`CONTINUE_GAME`) returns to it. Absent while the game is being played.
    */

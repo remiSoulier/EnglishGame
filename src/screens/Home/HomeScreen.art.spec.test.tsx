@@ -56,4 +56,14 @@ describe('HomeScreen — lake art background and SILVA logo', () => {
     const tagline = screen.getByText(APP_TAGLINE);
     expect(tagline.parentElement).toBe(title.parentElement);
   });
+
+  it('shows the dragon floating over the lake, decorative, still with reduced motion (D19)', () => {
+    const { container } = render(<HomeScreen onNewGame={() => {}} />);
+    const dragon = container.querySelector('img[src="/art/char-dragon.webp"]')!;
+    expect(dragon).not.toBeNull();
+    expect(dragon).toHaveAttribute('alt', '');
+    expect(dragon).toHaveAttribute('aria-hidden', 'true');
+    expect(rule('dragon')).toMatch(/pointer-events:\s*none/);
+    expect(CSS).toMatch(/prefers-reduced-motion[\s\S]*\.dragon\s*\{\s*animation:\s*none/);
+  });
 });

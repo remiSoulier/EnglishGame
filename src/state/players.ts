@@ -15,8 +15,8 @@ export interface PlayerCharacter {
 /** Default character of each player, in player order (P1, P2, P3, P4). */
 export const PLAYER_CHARACTERS: readonly PlayerCharacter[] = [
   { name: 'Kitkat', src: '/art/char-kitkat.webp' },
-  { name: 'Bat', src: '/art/char-batman.webp' },
-  { name: 'Toad', src: '/art/char-toad.webp' },
+  { name: 'Batman', src: '/art/char-batman.webp' },
+  { name: 'Mushi', src: '/art/char-toad.webp' },
   { name: 'Gus', src: '/art/char-gus.webp' },
 ];
 
@@ -26,16 +26,63 @@ export const GOAL_CHARACTER: PlayerCharacter = { name: 'Dragon', src: '/art/char
 /** Enemy characters, used in turn for the board's enemies (enemy 1, enemy 2, …). */
 export const ENEMY_CHARACTERS: readonly PlayerCharacter[] = [
   { name: 'Croco', src: '/art/char-croco.webp' },
-  { name: 'Ghost', src: '/art/char-croque-mort.webp' },
-  { name: 'Spider', src: '/art/char-spider.webp' },
+  { name: 'Kevin', src: '/art/char-croque-mort.webp' },
+  { name: 'Vecna', src: '/art/char-spider.webp' },
 ];
 
-/** Character of player `index` (0-based), cycling if there are more players than characters. */
-export function playerCharacter(index: number): PlayerCharacter {
-  return PLAYER_CHARACTERS[index % PLAYER_CHARACTERS.length];
+/**
+ * Character of player `index` (0-based). `characters` is the game's choice (decision D19:
+ * `characters[i]` is an index in `PLAYER_CHARACTERS`); without it, player i plays character i.
+ * Cycles if there are more players than characters.
+ */
+export function playerCharacter(index: number, characters?: readonly number[]): PlayerCharacter {
+  const chosen = characters?.[index];
+  const i = chosen !== undefined && isCharacterIndex(chosen) ? chosen : index;
+  return PLAYER_CHARACTERS[i % PLAYER_CHARACTERS.length];
+}
+
+/** True for an index of `PLAYER_CHARACTERS`. */
+export function isCharacterIndex(value: unknown): value is number {
+  return (
+    typeof value === 'number' &&
+    Number.isInteger(value) &&
+    value >= 0 &&
+    value < PLAYER_CHARACTERS.length
+  );
+}
+
+/** True when `characters` gives one character to each of `playerCount` players, all different. */
+export function isValidCharacters(characters: unknown, playerCount: number): boolean {
+  return (
+    Array.isArray(characters) &&
+    characters.length === playerCount &&
+    characters.every(isCharacterIndex) &&
+    new Set(characters).size === characters.length
+  );
+}
+
+/** Default characters: player i plays character i. */
+export function defaultCharacters(playerCount: number): number[] {
+  return Array.from({ length: playerCount }, (_, i) => i);
 }
 
 /** Character of the board's enemy number `index` (0-based), alternating the enemy characters. */
 export function enemyCharacter(index: number): PlayerCharacter {
   return ENEMY_CHARACTERS[index % ENEMY_CHARACTERS.length];
+}
+
+/**
+ * Gives `character` to player `player`; if another player had it, the two swap, so every player
+ * keeps a different character (decision D19).
+ */
+export function pickCharacter(
+  characters: readonly number[],
+  player: number,
+  character: number,
+): number[] {
+  const next = [...characters];
+  const other = next.indexOf(character);
+  if (other !== -1 && other !== player) next[other] = next[player];
+  next[player] = character;
+  return next;
 }

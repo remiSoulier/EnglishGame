@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ENEMY_COUNT, newCode, parseCode, type Difficulty } from '../../engine';
 import { Button } from '../../components/Button';
+import { defaultCharacters, pickCharacter, PLAYER_CHARACTERS } from '../../state/players';
 import type { PlayerCount } from '../../state/types';
 import styles from './NewGameScreen.module.css';
 
@@ -10,6 +11,8 @@ export interface NewGameSettings {
   difficulty: Difficulty;
   /** Canonical board code (`XXXX-XXX`). */
   code: string;
+  /** Character of each player, as indexes in PLAYER_CHARACTERS (decision D19), all different. */
+  characters: number[];
 }
 
 export interface NewGameScreenProps {
@@ -64,9 +67,11 @@ function Segment<T extends string | number>({
   );
 }
 
-/** New game screen: players, difficulty and board (random or entered code). */
+/** New game screen: players, their characters, difficulty and board (random or entered code). */
 export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGameScreenProps) {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(2);
+  // One character per possible player (4); the first `playerCount` are used.
+  const [characters, setCharacters] = useState<number[]>(() => defaultCharacters(4));
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const [board, setBoard] = useState<BoardChoice>('random');
   const [codeInput, setCodeInput] = useState('');
@@ -89,7 +94,7 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (board === 'random') {
-      onStart({ playerCount, difficulty, code: newCode() });
+      onStart({ playerCount, difficulty, code: newCode(), characters: chosen() });
       return;
     }
     const code = validate();
@@ -97,7 +102,11 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
       codeRef.current?.focus();
       return;
     }
-    onStart({ playerCount, difficulty, code });
+    onStart({ playerCount, difficulty, code, characters: chosen() });
+  }
+
+  function chosen(): number[] {
+    return characters.slice(0, playerCount);
   }
 
   return (
@@ -129,6 +138,46 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
               >
                 {count}
               </Segment>
+            ))}
+          </div>
+        </fieldset>
+
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>Characters</legend>
+          <div className={styles.characterRows}>
+            {characters.slice(0, playerCount).map((current, player) => (
+              <fieldset key={player} className={styles.characterRow}>
+                <legend className={styles.characterPlayer}>
+                  <span aria-hidden="true">P{player + 1}</span>
+                  <span className="sr-only">Player {player + 1}</span>
+                </legend>
+                <div className={styles.characterOptions}>
+                  {PLAYER_CHARACTERS.map((character, index) => (
+                    <Segment
+                      key={character.name}
+                      name={`${id}-character-${player}`}
+                      value={index}
+                      checked={current === index}
+                      ariaLabel={character.name}
+                      onSelect={(value) =>
+                        setCharacters((list) => pickCharacter(list, player, value))
+                      }
+                    >
+                      <img
+                        className={styles.characterArt}
+                        src={character.src}
+                        alt=""
+                        aria-hidden="true"
+                        width={40}
+                        height={40}
+                      />
+                      <span className={styles.characterName} aria-hidden="true">
+                        {character.name}
+                      </span>
+                    </Segment>
+                  ))}
+                </div>
+              </fieldset>
             ))}
           </div>
         </fieldset>

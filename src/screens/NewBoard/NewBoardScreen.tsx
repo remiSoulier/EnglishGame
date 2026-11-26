@@ -9,11 +9,18 @@ export interface NewBoardScreenProps {
   /** The new board (already redrawn for the next turn). */
   board: Board;
   playerCount: 2 | 3 | 4;
+  /** Character chosen by each player (decision D19). */
+  characters?: readonly number[];
   onStartTurn: () => void;
 }
 
 /** New board screen (end of turn): the redrawn walls and enemies to copy onto the real board. */
-export function NewBoardScreen({ board, playerCount, onStartTurn }: NewBoardScreenProps) {
+export function NewBoardScreen({
+  board,
+  playerCount,
+  characters,
+  onStartTurn,
+}: NewBoardScreenProps) {
   return (
     <main className={styles.screen}>
       <header className={styles.header}>
@@ -23,8 +30,8 @@ export function NewBoardScreen({ board, playerCount, onStartTurn }: NewBoardScre
       </header>
 
       <div className={styles.board}>
-        <Grid board={board} playerCount={playerCount} />
-        <Legend />
+        <Grid board={board} playerCount={playerCount} characters={characters} />
+        <Legend character={characters?.[0]} />
         <p className={styles.reminder}>The goal stays on {cellName(board.goal)}</p>
         <PositionsList board={board} playerCount={playerCount} />
       </div>

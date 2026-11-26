@@ -141,3 +141,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #35 DA de la maquette Figma : accueil (fond lac, logo), question et résultat en popup sur le plateau avec carte qui se retourne, départs en ronds pointillés
 
 | 2026-11-26 | #35 | Done (D18). 1696 unit tests, 101 e2e, lint, typecheck and build green. Branch feat/silva-da-maquette, not pushed yet (to review with the group). |
+- [x] #36 Choix du personnage par joueur sur New game (D19), dragon flottant sur l'accueil
+
+| 2026-11-26 | #36 | Done (D19). 1709 unit tests, 101 e2e, lint and typecheck green. Same branch feat/silva-da-maquette, not pushed. |

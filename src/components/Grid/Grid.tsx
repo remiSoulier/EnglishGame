@@ -27,6 +27,8 @@ export interface GridProps {
   board: Board;
   /** Number of players: only the first `playerCount` start cells are outlined. Defaults to 4. */
   playerCount?: 2 | 3 | 4;
+  /** Character chosen by each player (decision D19); defaults to player i → character i. */
+  characters?: readonly number[];
   className?: string;
 }
 
@@ -50,7 +52,7 @@ const TEXTURE_VIEW = '-2.19 -1.49 645.17 644.94';
 const lines = Array.from({ length: BOARD_SIZE - 1 }, (_, i) => (i + 1) * CELL);
 
 /** SVG rendering of a 9×9 board: walls, enemies, goal and start cells (never pawns). */
-export function Grid({ board, playerCount = 4, className }: GridProps) {
+export function Grid({ board, playerCount = 4, characters, className }: GridProps) {
   const summary = describeBoard(board);
   const starts = START_CELLS.slice(0, playerCount);
   const ends = board.walls.map(wallEnds);
@@ -125,7 +127,7 @@ export function Grid({ board, playerCount = 4, className }: GridProps) {
               y={cell.y * CELL}
               label={`P${i + 1}`}
               labelEdge={cell.y === 0 ? 'top' : 'bottom'}
-              character={playerCharacter(i).src}
+              character={playerCharacter(i, characters).src}
             />
           </g>
         ))}

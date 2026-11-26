@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { isValidCode } from '../../engine';
@@ -87,6 +87,7 @@ describe('NewGameScreen (spec #11)', () => {
         playerCount: 2,
         difficulty: 'medium',
         code: 'K7F2-9QX',
+        characters: [0, 1],
       });
     },
   );
@@ -148,6 +149,7 @@ describe('NewGameScreen (spec #11)', () => {
       playerCount: 2,
       difficulty: 'medium',
       code: 'K7F2-9QX',
+      characters: [0, 1],
     });
   });
 
@@ -161,6 +163,12 @@ describe('NewGameScreen (spec #11)', () => {
     expect(radio('3')).toBeChecked();
     await user.keyboard('{ArrowRight}');
     expect(radio('4')).toBeChecked();
+    // One tab stop per player's character group (D19), on the checked character.
+    for (const [player, name] of ['Kitkat', 'Batman', 'Mushi', 'Gus'].entries()) {
+      await user.tab();
+      const group = screen.getByRole('group', { name: `Player ${player + 1}` });
+      expect(within(group).getByRole('radio', { name })).toHaveFocus();
+    }
     await user.tab();
     expect(radio('Medium — 4 enemies')).toHaveFocus();
     await user.keyboard('{ArrowRight}');
@@ -175,7 +183,12 @@ describe('NewGameScreen (spec #11)', () => {
     await user.tab();
     expect(start()).toHaveFocus();
     await user.keyboard('{Enter}');
-    expect(onStart).toHaveBeenCalledWith({ playerCount: 4, difficulty: 'hard', code: 'K7F2-9QX' });
+    expect(onStart).toHaveBeenCalledWith({
+      playerCount: 4,
+      difficulty: 'hard',
+      code: 'K7F2-9QX',
+      characters: [0, 1, 2, 3],
+    });
   });
 
   it('Back calls onBack and does not start', async () => {

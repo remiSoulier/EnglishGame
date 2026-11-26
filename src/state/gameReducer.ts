@@ -1,3 +1,4 @@
+import { defaultCharacters, isValidCharacters } from './players';
 import { ALL_QUESTIONS } from '../data/questions';
 import { checkAnswer, ENEMY_COUNT, generateBoard, getQuestion, type Difficulty } from '../engine';
 import type {
@@ -18,7 +19,14 @@ import type {
  */
 export type GameAction =
   /** Any screen → 'board': new game, turn 1. Invalid code / settings → no-op. */
-  | { type: 'START_GAME'; playerCount: PlayerCount; difficulty: Difficulty; code: string }
+  | {
+      type: 'START_GAME';
+      playerCount: PlayerCount;
+      difficulty: Difficulty;
+      code: string;
+      /** Character of each player (D19); ignored unless one per player, all different. */
+      characters?: number[];
+    }
   /**
    * 'board' → next turn's board (same goal), 'newBoard'. The app does not track whose
    * turn it is (decision D11): End turn can be tapped at any time.
@@ -26,7 +34,10 @@ export type GameAction =
   | { type: 'END_TURN' }
   /** 'newBoard' → 'board'. */
   | { type: 'START_TURN' }
-  /** 'board' (menu "New board") → new game with this code, same players and difficulty, turn 1. */
+  /**
+   * 'board' (menu "New board") → new game with this code, same players, characters and
+   * difficulty, turn 1.
+   */
   | { type: 'NEW_BOARD'; code: string }
   /**
    * 'board', no pending question, known id, 1–3 cards → pending question set, 'questionPopup'.
@@ -80,7 +91,12 @@ function allAsked(asked: readonly number[]): boolean {
 }
 
 /** Builds a fresh game at turn 1, or `null` if the settings or the code are invalid. */
-function newGame(playerCount: PlayerCount, difficulty: Difficulty, code: string): Game | null {
+function newGame(
+  playerCount: PlayerCount,
+  difficulty: Difficulty,
+  code: string,
+  characters?: number[],
+): Game | null {
   if (!PLAYER_COUNTS.includes(playerCount)) return null;
   if (!Object.prototype.hasOwnProperty.call(ENEMY_COUNT, difficulty)) return null;
   let board;
@@ -97,6 +113,9 @@ function newGame(playerCount: PlayerCount, difficulty: Difficulty, code: string)
     board,
     askedQuestionIds: [],
     pendingQuestion: null,
+    characters: isValidCharacters(characters, playerCount)
+      ? [...characters!]
+      : defaultCharacters(playerCount),
   };
 }
 
@@ -117,8 +136,9 @@ function startGame(
   playerCount: PlayerCount,
   difficulty: Difficulty,
   code: string,
+  characters?: number[],
 ): GameState {
-  const game = newGame(playerCount, difficulty, code);
+  const game = newGame(playerCount, difficulty, code, characters);
   return game ? { screen: 'board', game } : state;
 }
 
@@ -128,7 +148,13 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
   switch (action.type) {
     case 'START_GAME':
-      return startGame(state, action.playerCount, action.difficulty, action.code);
+      return startGame(
+        state,
+        action.playerCount,
+        action.difficulty,
+        action.code,
+        action.characters,
+      );
 
     case 'QUIT_TO_HOME':
       if (!game || screen === 'home' || screen === 'newGame') return state;
@@ -177,7 +203,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'NEW_BOARD':
       return screen === 'board'
-        ? startGame(state, game.playerCount, game.difficulty, action.code)
+        ? startGame(state, game.playerCount, game.difficulty, action.code, game.characters)
         : state;
 
     case 'OPEN_QUESTION': {

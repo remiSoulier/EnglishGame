@@ -9,6 +9,8 @@ import styles from './BoardScreen.module.css';
 export interface BoardScreenProps {
   board: Board;
   playerCount: 2 | 3 | 4;
+  /** Character chosen by each player (decision D19). */
+  characters?: readonly number[];
   onQuestion: () => void;
   /** Draws the next board; always available (decision D11: no turn order). */
   onEndTurn: () => void;
@@ -29,6 +31,7 @@ const DIFFICULTY_LABEL: Readonly<Record<Difficulty, string>> = {
 export function BoardScreen({
   board,
   playerCount,
+  characters,
   onQuestion,
   onEndTurn,
   onNewBoard,
@@ -54,8 +57,8 @@ export function BoardScreen({
       </header>
 
       <div className={styles.board}>
-        <Grid board={board} playerCount={playerCount} />
-        <Legend />
+        <Grid board={board} playerCount={playerCount} characters={characters} />
+        <Legend character={characters?.[0]} />
         <PositionsList board={board} playerCount={playerCount} />
       </div>
 
