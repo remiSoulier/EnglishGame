@@ -6,7 +6,9 @@
  * decision D18); Board → End
  * turn (at any time, no turn order: decision D11) → New board → Board; Board menu → New board
  * (confirm) / End game (confirm, game deleted: decision D13) → Home / Quit to home (confirm, game
- * kept) → Home → Continue game. The browser / Android back button maps to
+ * kept) → Home → Continue game. The Lexicon (decision D25) opens from Home and from the board
+ * menu as local UI state drawn over the current screen (left inert, never dispatched to), so
+ * closing it returns exactly where the players were. The browser / Android back button maps to
  * the in-app Back where there is one (useSystemBack), and focus moves to the new screen's <h1>.
  */
 import { useEffect, useRef, useState } from 'react';
@@ -21,6 +23,7 @@ import {
 } from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
+import { LexiconScreen, type LexiconView } from './screens/Lexicon';
 import { NewGameScreen } from './screens/NewGame';
 import { QuestionScreen } from './screens/Question';
 import { QuestionPopupScreen } from './screens/QuestionPopup';
@@ -46,6 +49,44 @@ const PLACEHOLDER_TITLE: Readonly<Record<Screen, string>> = {
 
 /** Confirmation dialogs of the board menu (local UI state, not saved). */
 type BoardDialog = null | 'newBoard' | 'endGame' | 'quit';
+
+/**
+ * The Lexicon over Home or the board (decision D25): local UI state, so the reducer, the screen
+ * and the saved game are never touched. Remembers the control that opened it and gives it focus
+ * back on close.
+ */
+function useLexicon() {
+  const [view, setView] = useState<LexiconView | null>(null);
+  const opener = useRef<HTMLElement | null>(null);
+  const restoreFocus = useRef(false);
+
+  useEffect(() => {
+    if (view !== null || !restoreFocus.current) return;
+    restoreFocus.current = false;
+    const el = opener.current;
+    opener.current = null;
+    if (el?.isConnected) el.focus();
+  }, [view]);
+
+  return {
+    view,
+    open: () => {
+      const active = document.activeElement;
+      opener.current = active instanceof HTMLElement ? active : null;
+      setView('main');
+    },
+    seeAll: () => setView('all'),
+    /** ‹ / system back: "See all" → entry, entry → closed. */
+    back: () => {
+      if (view === 'all') {
+        setView('main');
+      } else {
+        restoreFocus.current = true;
+        setView(null);
+      }
+    },
+  };
+}
 
 /**
  * Moves focus to the new screen's <h1> when the screen changes, unless something on the new
@@ -78,21 +119,36 @@ function Screens() {
   // over the board.
   const [boardDialog, setBoardDialog] = useState<BoardDialog>(null);
   const dialog = screen === 'board' ? boardDialog : null;
+  const lexicon = useLexicon();
+  // Only reachable from Home and the board (its menu).
+  const lexiconView = screen === 'home' || screen === 'board' ? lexicon.view : null;
+  const lexiconScreen = lexiconView && (
+    <LexiconScreen view={lexiconView} onBack={lexicon.back} onSeeAll={lexicon.seeAll} />
+  );
 
-  // System back: closes a confirmation, else the in-app Back where there is one.
-  useSystemBack(dialog !== null || canGoBack(state), () => {
-    if (dialog !== null) setBoardDialog(null);
+  // System back: leaves the Lexicon step by step, closes a confirmation, else the in-app Back
+  // where there is one.
+  useSystemBack(lexiconView !== null || dialog !== null || canGoBack(state), () => {
+    if (lexiconView !== null) lexicon.back();
+    else if (dialog !== null) setBoardDialog(null);
     else dispatch({ type: 'BACK' });
   });
   useHeadingFocus(screen);
 
   if (screen === 'home') {
+    const covered = lexiconView !== null;
     return (
-      <HomeScreen
-        onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })}
-        savedGame={game && { turn: game.turn, difficulty: DIFFICULTY_LABEL[game.difficulty] }}
-        onContinue={() => dispatch({ type: 'CONTINUE_GAME' })}
-      />
+      <>
+        <div inert={covered} aria-hidden={covered || undefined}>
+          <HomeScreen
+            onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })}
+            savedGame={game && { turn: game.turn, difficulty: DIFFICULTY_LABEL[game.difficulty] }}
+            onContinue={() => dispatch({ type: 'CONTINUE_GAME' })}
+            onLexicon={lexicon.open}
+          />
+        </div>
+        {lexiconScreen}
+      </>
     );
   }
 
@@ -118,7 +174,8 @@ function Screens() {
     const popup = screen === 'questionPopup' ? pending : null;
     const showQuestion = screen === 'question' && pending !== null && question !== undefined;
     const showResult = screen === 'result' && pending?.answer != null && question !== undefined;
-    const covered = popup !== null || showQuestion || showResult || dialog !== null;
+    const covered =
+      popup !== null || showQuestion || showResult || dialog !== null || lexiconView !== null;
     // Same tree for every screen drawn over the board, so the board is not remounted under the
     // popup / question card / result and focus can return to the Question button on Cancel.
     return (
@@ -133,8 +190,10 @@ function Screens() {
             onNewBoard={() => setBoardDialog('newBoard')}
             onEndGame={() => setBoardDialog('endGame')}
             onQuit={() => setBoardDialog('quit')}
+            onLexicon={lexicon.open}
           />
         </div>
+        {lexiconScreen}
         {popup && (
           <QuestionPopupScreen
             cards={popup.cards}

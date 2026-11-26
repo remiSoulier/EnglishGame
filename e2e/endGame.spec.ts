@@ -112,11 +112,14 @@ async function midGame(page: Page) {
   return boardSnapshot(page);
 }
 
-test('the board menu lists exactly New board, End game, Quit to home (D13)', async ({ page }) => {
+test('the board menu lists exactly New board, Lexicon, End game, Quit to home (D13, D25)', async ({
+  page,
+}) => {
   await startGame(page);
   await page.getByRole('button', { name: 'Menu' }).click();
   await expect(page.getByRole('menu').getByRole('menuitem')).toHaveText([
     'New board',
+    'Lexicon',
     'End game',
     'Quit to home',
   ]);

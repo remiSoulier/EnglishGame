@@ -20,6 +20,8 @@ export interface BoardScreenProps {
   onEndGame: () => void;
   /** Menu "Quit to home" (shown when provided). */
   onQuit?: () => void;
+  /** Menu "Lexicon" (shown when provided): opens the Lexicon, no confirmation (decision D25). */
+  onLexicon?: () => void;
 }
 
 /** Board screen: turn header, grid, legend, positions and the actions (Question, End turn). */
@@ -32,6 +34,7 @@ export function BoardScreen({
   onNewBoard,
   onEndGame,
   onQuit,
+  onLexicon,
 }: BoardScreenProps) {
   return (
     <main className={styles.screen}>
@@ -43,6 +46,7 @@ export function BoardScreen({
         <Menu
           items={[
             { label: 'New board', onSelect: onNewBoard },
+            ...(onLexicon ? [{ label: 'Lexicon', onSelect: onLexicon }] : []),
             { label: 'End game', onSelect: onEndGame },
             ...(onQuit ? [{ label: 'Quit to home', onSelect: onQuit }] : []),
           ]}

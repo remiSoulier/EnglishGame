@@ -14,7 +14,7 @@ describe('HomeScreen', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'SILVA' })).toBeInTheDocument();
     expect(screen.getByText('Program your way to the goal')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /How to play \(coming soon\)/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /Lexicon \(coming soon\)/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Lexicon' })).toBeEnabled();
     await user.click(screen.getByRole('button', { name: 'New game' }));
     expect(onNewGame).toHaveBeenCalledTimes(1);
   });

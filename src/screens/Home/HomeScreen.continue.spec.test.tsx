@@ -23,7 +23,7 @@ describe('HomeScreen with a saved game (#12, D10)', () => {
       'Continue gameTurn 3 · Medium',
       'New game',
       'How to play (coming soon)',
-      'Lexicon (coming soon)',
+      'Lexicon',
     ]);
     expect(buttons[0]).toHaveAccessibleName(/^Continue game/);
     expect(buttons[0]).toHaveTextContent('Turn 3 · Medium');

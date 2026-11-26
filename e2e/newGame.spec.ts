@@ -115,14 +115,13 @@ test.describe('home screen', () => {
     await expect(startCells(page)).toHaveCount(0);
   });
 
-  test('How to play and Lexicon are disabled and do nothing', async ({ page }) => {
-    for (const name of [/^How to play/, /^Lexicon/]) {
-      const button = page.getByRole('button', { name });
-      await expect(button).toBeDisabled();
-      await expect(button).toContainText('(coming soon)');
-      await button.click({ force: true });
-      await expect(home(page)).toBeVisible();
-    }
+  test('How to play is disabled and does nothing; Lexicon is enabled (D25)', async ({ page }) => {
+    const button = page.getByRole('button', { name: /^How to play/ });
+    await expect(button).toBeDisabled();
+    await expect(button).toContainText('(coming soon)');
+    await button.click({ force: true });
+    await expect(home(page)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Lexicon', exact: true })).toBeEnabled();
   });
 
   test('New game opens the new game screen, Back returns Home', async ({ page }) => {

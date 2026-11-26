@@ -2,7 +2,15 @@ import { describe, expect, it } from 'vitest';
 import questions from '../data/questions.json';
 import { generateBoard } from '../engine';
 import { gameReducer, type GameAction } from './gameReducer';
-import { canGoBack, NAVIGATION, type NavigationExit } from './navigation';
+import {
+  canGoBack,
+  LEXICON,
+  LEXICON_EXITS,
+  LEXICON_OPENERS,
+  NAVIGATION,
+  OPEN_LEXICON,
+  type NavigationExit,
+} from './navigation';
 import type { Game, GameState, Screen } from './types';
 
 /** Spec #12 / decision D10: the navigation map matches the reducer, with no dead end. */
@@ -93,10 +101,10 @@ function fixture(screen: Screen, exit: NavigationExit): [GameState, GameAction] 
 }
 
 describe('NAVIGATION map (#12)', () => {
-  it('lists every screen, and only screens', () => {
+  it('lists every screen, and only screens (or the Lexicon drawn over one, D25)', () => {
     expect(Object.keys(NAVIGATION).sort()).toEqual([...SCREENS].sort());
     for (const exits of Object.values(NAVIGATION)) {
-      for (const exit of exits) expect(SCREENS).toContain(exit.to);
+      for (const exit of exits) expect([...SCREENS, LEXICON]).toContain(exit.to);
     }
   });
 
@@ -132,7 +140,8 @@ describe('NAVIGATION map (#12)', () => {
       }
       return seen;
     };
-    const out = (s: Screen) => NAVIGATION[s].map((e) => e.to);
+    const out = (s: Screen) =>
+      NAVIGATION[s].map((e) => e.to).filter((to): to is Screen => to !== LEXICON);
     expect([...reach('home', out)].sort()).toEqual([...SCREENS].sort());
     const into = (s: Screen) => SCREENS.filter((from) => out(from).includes(s));
     expect([...reach('home', into)].sort()).toEqual([...SCREENS].sort());
@@ -146,10 +155,11 @@ describe('NAVIGATION map (#12)', () => {
     });
   });
 
-  it('board menu offers exactly New board, End game, Quit to home, each confirmed (D13)', () => {
+  it('board menu offers New board, Lexicon (no confirmation, D25), End game, Quit to home', () => {
     const menu = NAVIGATION.board.filter((e) => e.via.startsWith('Menu › '));
     expect(menu).toEqual([
       { via: 'Menu › New board › New board', action: 'NEW_BOARD', to: 'board' },
+      { via: 'Menu › Lexicon', action: OPEN_LEXICON, to: LEXICON },
       { via: 'Menu › End game › End game', action: 'END_GAME', to: 'home' },
       { via: 'Menu › Quit to home › Quit', action: 'QUIT_TO_HOME', to: 'home' },
     ]);
@@ -193,8 +203,32 @@ describe('NAVIGATION map (#12)', () => {
     );
   });
 
+  it('the Lexicon opens from Home and the board only, as local UI state (D25)', () => {
+    expect([...LEXICON_OPENERS].sort()).toEqual(['board', 'home']);
+    const toLexicon = Object.values(NAVIGATION)
+      .flat()
+      .filter((e) => e.to === LEXICON);
+    expect(toLexicon.map((e) => e.via)).toEqual(['Lexicon', 'Menu › Lexicon']);
+    for (const e of toLexicon) expect(e.action).toBe(OPEN_LEXICON);
+    // Back always leads out: See all → entry → the screen it was opened over.
+    expect(LEXICON_EXITS.filter((e) => e.via === 'Back').map((e) => [e.from, e.to])).toEqual([
+      ['all', 'main'],
+      ['main', 'the screen it was opened over (home or board)'],
+    ]);
+  });
+
+  it('opening the Lexicon is not a reducer action (the game is untouched, D25)', () => {
+    for (const screen of LEXICON_OPENERS) {
+      const state: GameState = { screen, game: makeGame() };
+      expect(gameReducer(state, { type: OPEN_LEXICON } as unknown as GameAction)).toBe(state);
+    }
+  });
+
+  // Reducer exits only (the Lexicon is local UI state, checked above).
   const allExits = SCREENS.flatMap((screen) =>
-    NAVIGATION[screen].map((exit) => [screen, exit.via, exit.to, exit] as const),
+    NAVIGATION[screen]
+      .filter((exit) => exit.to !== LEXICON)
+      .map((exit) => [screen, exit.via, exit.to, exit] as const),
   );
 
   it.each(allExits)('%s › %s leads to %s in the reducer', (screen, _via, to, exit) => {

@@ -1,13 +1,28 @@
 import type { GameState, Screen } from './types';
 
+/**
+ * The Lexicon (decision D25): not a reducer screen but local UI state of App.tsx, drawn over
+ * Home or the board (left inert behind it). Opening or closing it never dispatches.
+ */
+export const LEXICON = 'lexicon';
+
+/** Where an exit leads: a reducer screen, or the Lexicon drawn over the current one. */
+export type NavigationTarget = Screen | typeof LEXICON;
+
 /** One way out of a screen: the control the players use, the action and where it leads. */
 export interface NavigationExit {
   /** Visible control (button / menu item label), or the system back button. */
   via: string;
-  /** Reducer action dispatched (local UI state for the confirmations). */
+  /**
+   * Reducer action dispatched, or `UI:…` for local UI state of App.tsx (the Lexicon; the
+   * confirmations are written as the action their confirm button dispatches).
+   */
   action: string;
-  to: Screen;
+  to: NavigationTarget;
 }
+
+/** Local UI action opening the Lexicon over the current screen (no reducer action). */
+export const OPEN_LEXICON = 'UI:OPEN_LEXICON';
 
 /**
  * Navigation map (backlog #12, decision D8: the reducer owns `screen`, no router). For each
@@ -27,7 +42,8 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
     { via: 'Continue game', action: 'CONTINUE_GAME', to: 'question' },
     { via: 'Continue game', action: 'CONTINUE_GAME', to: 'result' },
     { via: 'New game', action: 'GO_NEW_GAME', to: 'newGame' },
-    // "How to play" and "Lexicon" are disabled (coming soon).
+    { via: 'Lexicon', action: OPEN_LEXICON, to: LEXICON },
+    // "How to play" is disabled (coming soon).
   ],
   newGame: [
     // Replaces a saved game without confirmation (the screen warns about it).
@@ -38,8 +54,9 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
     { via: 'Question', action: 'OPEN_QUESTION', to: 'questionPopup' },
     // Always shown (decision D11: no turn order).
     { via: 'End turn', action: 'END_TURN', to: 'newBoard' },
-    // Menu. Every item asks for a confirmation first (Cancel stays on the board).
+    // Menu. Every item but Lexicon asks for a confirmation first (Cancel stays on the board).
     { via: 'Menu › New board › New board', action: 'NEW_BOARD', to: 'board' },
+    { via: 'Menu › Lexicon', action: OPEN_LEXICON, to: LEXICON },
     // Decision D13: the game is deleted, Home offers no "Continue game".
     { via: 'Menu › End game › End game', action: 'END_GAME', to: 'home' },
     { via: 'Menu › Quit to home › Quit', action: 'QUIT_TO_HOME', to: 'home' },
@@ -54,6 +71,22 @@ export const NAVIGATION: Readonly<Record<Screen, readonly NavigationExit[]>> = {
   result: [{ via: 'Continue', action: 'CONTINUE', to: 'board' }],
   newBoard: [{ via: 'Start turn N+1', action: 'START_TURN', to: 'board' }],
 };
+
+/**
+ * Exits of the Lexicon (decision D25). "Back" (‹ or the system back button) goes from "See all"
+ * to the Lexicon entry, and from the entry back to the screen it was opened over, exactly as it
+ * was: Home, or the board with the same board and turn (nothing is dispatched or saved).
+ */
+export const LEXICON_EXITS: readonly { from: 'main' | 'all'; via: string; to: string }[] = [
+  { from: 'main', via: 'See all', to: 'all' },
+  { from: 'all', via: 'Back', to: 'main' },
+  { from: 'main', via: 'Back', to: 'the screen it was opened over (home or board)' },
+];
+
+/** Screens the Lexicon can be opened over (the exits of NAVIGATION that lead to it). */
+export const LEXICON_OPENERS: readonly Screen[] = (Object.keys(NAVIGATION) as Screen[]).filter(
+  (screen) => NAVIGATION[screen].some((exit) => exit.to === LEXICON),
+);
 
 /**
  * True when `BACK` leads somewhere from this state: 'newGame' and 'questionPopup'. Mirrors the

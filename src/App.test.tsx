@@ -424,11 +424,16 @@ describe('App', () => {
 
     const continueGame = () => screen.queryByRole('button', { name: /^Continue game/ });
 
-    it('the board menu lists exactly New board, End game, Quit to home', async () => {
+    it('the board menu lists exactly New board, Lexicon, End game, Quit to home', async () => {
       const { user } = await renderGame();
       await user.click(screen.getByRole('button', { name: 'Menu' }));
       const items = within(screen.getByRole('menu')).getAllByRole('menuitem');
-      expect(items.map((m) => m.textContent)).toEqual(['New board', 'End game', 'Quit to home']);
+      expect(items.map((m) => m.textContent)).toEqual([
+        'New board',
+        'Lexicon',
+        'End game',
+        'Quit to home',
+      ]);
       expect(screen.queryByText(/winner/i)).toBeNull();
     });
 
@@ -789,11 +794,12 @@ describe('Navigation (#12, D10)', () => {
       return { user, ...rest, before: snapshot() };
     }
 
-    it('the board menu lists New board, End game, Quit to home', async () => {
+    it('the board menu lists New board, Lexicon, End game, Quit to home', async () => {
       const { user } = await renderGame();
       await user.click(screen.getByRole('button', { name: 'Menu' }));
       expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual([
         'New board',
+        'Lexicon',
         'End game',
         'Quit to home',
       ]);

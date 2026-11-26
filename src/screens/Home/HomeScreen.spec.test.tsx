@@ -6,8 +6,9 @@ import { HomeScreen } from './HomeScreen';
 
 function setup() {
   const onNewGame = vi.fn();
-  const utils = render(<HomeScreen onNewGame={onNewGame} />);
-  return { ...utils, user: userEvent.setup(), onNewGame };
+  const onLexicon = vi.fn();
+  const utils = render(<HomeScreen onNewGame={onNewGame} onLexicon={onLexicon} />);
+  return { ...utils, user: userEvent.setup(), onNewGame, onLexicon };
 }
 
 describe('HomeScreen (spec #11)', () => {
@@ -29,7 +30,7 @@ describe('HomeScreen (spec #11)', () => {
     expect(buttons.map((b) => b.textContent)).toEqual([
       'New game',
       'How to play (coming soon)',
-      'Lexicon (coming soon)',
+      'Lexicon',
     ]);
     for (const b of buttons) {
       expect(b.tagName).toBe('BUTTON');
@@ -47,25 +48,35 @@ describe('HomeScreen (spec #11)', () => {
     expect(onNewGame).toHaveBeenCalledTimes(2);
   });
 
-  it('How to play and Lexicon are disabled and clicking them does nothing', async () => {
-    const { user, onNewGame } = setup();
-    for (const name of [/^How to play/, /^Lexicon/]) {
-      const button = screen.getByRole('button', { name });
-      expect(button).toBeDisabled();
-      expect(button).toHaveTextContent('(coming soon)');
-      await user.click(button);
-    }
+  it('How to play is disabled and clicking it does nothing', async () => {
+    const { user, onNewGame, onLexicon } = setup();
+    const button = screen.getByRole('button', { name: /^How to play/ });
+    expect(button).toBeDisabled();
+    expect(button).toHaveTextContent('(coming soon)');
+    await user.click(button);
     expect(onNewGame).not.toHaveBeenCalled();
+    expect(onLexicon).not.toHaveBeenCalled();
     expect(screen.getByRole('heading', { level: 1, name: APP_NAME })).toBeInTheDocument();
   });
 
-  it('disabled buttons are skipped by Tab; New game is reachable and activates with Enter', async () => {
-    const { user, onNewGame } = setup();
+  it('Lexicon is enabled and calls onLexicon (D25)', async () => {
+    const { user, onLexicon, onNewGame } = setup();
+    const button = screen.getByRole('button', { name: 'Lexicon' });
+    expect(button).toBeEnabled();
+    await user.click(button);
+    expect(onLexicon).toHaveBeenCalledTimes(1);
+    expect(onNewGame).not.toHaveBeenCalled();
+  });
+
+  it('Tab skips How to play: New game, then Lexicon', async () => {
+    const { user, onNewGame, onLexicon } = setup();
     await user.tab();
     expect(screen.getByRole('button', { name: 'New game' })).toHaveFocus();
     await user.keyboard('{Enter}');
     expect(onNewGame).toHaveBeenCalledTimes(1);
     await user.tab();
-    expect(document.body).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'Lexicon' })).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onLexicon).toHaveBeenCalledTimes(1);
   });
 });
