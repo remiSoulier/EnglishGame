@@ -156,3 +156,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #40 Contours fins de 0,5 px (D23)
 
 | 2026-11-26 | #40 | Done (D23). 1700 unit tests, 95 e2e, lint and typecheck green. |
+- [x] #41 Mélange du plateau à la fin du tour (D24)
+
+| 2026-11-26 | #41 | Done (D24). 1703 unit tests, 95 e2e, lint and typecheck green. |

@@ -281,7 +281,15 @@ describe('Grid — no pawns', () => {
     const ids = Array.from(svg.querySelectorAll('[data-testid]')).map((e) =>
       e.getAttribute('data-testid'),
     );
-    expect(ids.sort()).toEqual(['enemies', 'goal', 'grid-lines', 'starts', 'wall-ends', 'walls']);
+    expect(ids.sort()).toEqual([
+      'enemies',
+      'goal',
+      'grid-lines',
+      'starts',
+      'wall-ends',
+      'wall-halos',
+      'walls',
+    ]);
   });
 
   it('only draws circles as enemy "!" marks or wall end marks (2 per wall)', () => {

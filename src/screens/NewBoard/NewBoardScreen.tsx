@@ -14,7 +14,12 @@ export interface NewBoardScreenProps {
   onStartTurn: () => void;
 }
 
-/** New board screen (end of turn): the redrawn walls and enemies to copy onto the real board. */
+/**
+ * New board screen (end of turn): the redrawn walls and enemies to copy onto the real board.
+ * It opens with a quick shuffle (decision D24): the board is shuffled like a deck of cards, then
+ * the walls and enemies are dealt onto it one after the other, so players see the board changed.
+ * Decorative only, and still with prefers-reduced-motion.
+ */
 export function NewBoardScreen({
   board,
   playerCount,
@@ -30,7 +35,9 @@ export function NewBoardScreen({
       </header>
 
       <div className={styles.board}>
-        <Grid board={board} playerCount={playerCount} characters={characters} />
+        <div className={styles.shuffle} data-testid="board-shuffle">
+          <Grid board={board} playerCount={playerCount} characters={characters} />
+        </div>
         <Legend character={characters?.[0]} />
         <p className={styles.reminder}>The goal stays on {cellName(board.goal)}</p>
         <PositionsList board={board} playerCount={playerCount} />

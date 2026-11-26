@@ -167,7 +167,7 @@ export function Grid({
       </g>
 
       {/* Dark halos under all walls first, so no halo ever covers another piece's lime. */}
-      <g aria-hidden="true">
+      <g data-testid="wall-halos" aria-hidden="true">
         {board.walls.map((wall, i) => (
           <WallHalo key={wall.sides.join(' ')} segments={segments[i]} />
         ))}
