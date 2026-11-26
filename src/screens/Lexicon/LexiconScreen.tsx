@@ -40,6 +40,8 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
   }, [view]);
 
   const toggleLearned = (id: string) => {
+    // Ticking a concept closes its card (unticking leaves the cards as they are).
+    if (!learned.includes(id)) setOpenId((open) => (open === id ? null : open));
     setLearned((list) => {
       const next = list.includes(id) ? list.filter((x) => x !== id) : [...list, id];
       saveLearned(next);

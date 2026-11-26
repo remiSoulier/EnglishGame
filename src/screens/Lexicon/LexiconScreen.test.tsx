@@ -82,10 +82,22 @@ describe('LexiconScreen (D25)', () => {
       version: 1,
       learned: ['algorithm'],
     });
-    // Ticking does not open or close the card.
+    // Ticking another concept leaves the open card alone.
     expect(openCards()[0]).toHaveTextContent('Loop');
     await user.click(tick);
     expect(stat('Learned')).toBe('0 / 10');
+  });
+
+  it('ticking the open concept closes its card, unticking does not reopen it', async () => {
+    const { user } = setup();
+    expect(openCards()[0]).toHaveTextContent('Loop');
+    const tick = screen.getByRole('button', { name: 'Loop learned' });
+    await user.click(tick);
+    expect(tick).toHaveAttribute('aria-pressed', 'true');
+    expect(openCards()).toEqual([]);
+    await user.click(tick);
+    expect(tick).toHaveAttribute('aria-pressed', 'false');
+    expect(openCards()).toEqual([]);
   });
 
   it('loads saved progress', () => {
