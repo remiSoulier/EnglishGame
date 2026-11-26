@@ -13,9 +13,13 @@ Ce que fait l'application :
 - redessine les murs et les ennemis à chaque fin de tour ;
 - pose des questions à choix multiples (« Question for 1–3 cards ») et indique combien de cartes
   piocher en cas de bonne réponse ;
-- déclare le vainqueur ;
-- sauvegarde la partie en cours dans le navigateur (`localStorage`, clé `bgc.game.v1`) et fonctionne
+- explique les règles en 6 étapes (_How to play_) et les notions de programmation (_Lexicon_) ;
+- termine la partie depuis le menu (_End game_) quand un pion atteint le dragon ;
+- sauvegarde la partie en cours dans le navigateur (`localStorage`, clé `bgc.game.v2`) et fonctionne
   hors ligne (PWA installable).
+
+Un seul téléphone sert de maître du jeu pour toute la table : chaque partie tire un plateau au
+hasard, et il n'y a pas de code de plateau à partager ni de synchronisation entre téléphones.
 
 Ce qu'elle ne fait pas : pas de pions (les joueurs déplacent les leurs sur le plateau physique), pas
 de comptes, pas de back-end, pas de synchronisation réseau entre appareils.
@@ -120,7 +124,9 @@ même plateau, ce qui permet de recharger une partie et de tester un plateau con
   générées par `npm run icons` (`scripts/generate-icons.mjs`, nécessite Chromium de Playwright).
   Pour de vraies icônes, remplacez les fichiers en gardant les mêmes noms et tailles.
 - **Illustrations** : `public/art/*.webp` (fonds `bg-*`, texture du plateau `board-texture`,
-  personnages `char-*`, dos de cartes `card-*`, scène animée de l'accueil `bg-lake` + `scene-boat`), précachées pour le hors ligne. Les originaux PNG exportés de Figma sont
+  personnages `char-*`, scène animée de l'accueil `bg-lake` + `scene-boat`, et cartes `card-*` :
+  dos `card-question` et `card-instruction`, cartes `card-forward`, `card-turn` et `card-repeat`
+  du tutoriel _How to play_), précachées pour le hors ligne. Les originaux PNG exportés de Figma sont
   dans `docs/design/art-src/`. Pour les régénérer : `npm run art` (`scripts/optimize-art.mjs`,
   nécessite `cwebp` et `dwebp` de libwebp, `brew install webp`) — fonds à 780 px de large, texture
   à sa taille, personnages détourés et ramenés à 256 px de côté maximum, dos de cartes à 720 px.
