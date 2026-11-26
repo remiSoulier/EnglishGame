@@ -109,3 +109,53 @@ describe('Lexicon in the app (D25)', () => {
     expect(h1s()[0]).toHaveTextContent(APP_NAME);
   });
 });
+
+describe('How to play in the app (D28)', () => {
+  beforeEach(() => localStorage.clear());
+
+  const tutorial = () => screen.queryByRole('heading', { level: 1, name: 'How to play' }) !== null;
+
+  it('opens on step 1 over an inert Home; Skip returns Home with focus on How to play', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'How to play' }));
+    expect(tutorial()).toBe(true);
+    expect(h1s().map((h) => h.textContent)).toEqual(['How to play']);
+    expect(screen.getByText('Step 1 of 6')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Skip' }));
+    expect(tutorial()).toBe(false);
+    expect(screen.getByRole('button', { name: 'How to play' })).toHaveFocus();
+  });
+
+  it('reopens on step 1; system back returns Home', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'How to play' }));
+    await user.click(screen.getByRole('button', { name: 'Next' }));
+    await user.click(screen.getByRole('button', { name: 'Back to home' }));
+    await user.click(screen.getByRole('button', { name: 'How to play' }));
+    expect(screen.getByText('Step 1 of 6')).toBeInTheDocument();
+    await systemBack();
+    await waitFor(() => expect(tutorial()).toBe(false));
+    expect(h1s()[0]).toHaveTextContent(APP_NAME);
+  });
+
+  it('Start a game opens New game; a saved game is not touched', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await startGame(user);
+    await user.click(screen.getByRole('button', { name: 'Menu' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Quit to home' }));
+    await user.click(screen.getByRole('button', { name: 'Quit' }));
+    const saved = localStorage.getItem(STORAGE_KEY);
+    await user.click(screen.getByRole('button', { name: 'How to play' }));
+    for (let i = 0; i < 5; i++) await user.click(screen.getByRole('button', { name: 'Next' }));
+    expect(localStorage.getItem(STORAGE_KEY)).toBe(saved);
+    await user.click(screen.getByRole('button', { name: 'Start a game' }));
+    expect(tutorial()).toBe(false);
+    expect(screen.getByRole('heading', { level: 1, name: 'New game' })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state.game).toEqual(
+      JSON.parse(saved!).state.game,
+    );
+  });
+});
