@@ -160,7 +160,7 @@ test.describe('service worker and offline', () => {
     await page.getByRole('radio', { name: 'Hard — 6 enemies' }).check();
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
-    await expect(page.getByText(/^Code \S+ · Hard$/)).toBeVisible();
+    await expect(page.getByText('Hard', { exact: true })).toBeVisible();
     await expect(page.getByRole('img', { name: /^Board, turn 1\./ })).toBeVisible();
 
     // Question (questions come from the precached bundle).

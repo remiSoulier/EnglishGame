@@ -235,56 +235,6 @@
   line-height: 1.1;
 }
 
-.codeField {
-  margin-top: 12px;
-}
-
-.codeLabel {
-  display: block;
-  margin-bottom: 6px;
-  color: var(--color-text-muted);
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.codeInput {
-  width: 100%;
-  min-height: var(--tap-target);
-  padding: 0 14px;
-  border: 2px solid var(--color-border);
-  border-radius: var(--radius);
-  background: var(--color-bg);
-  color: var(--color-text);
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 20px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.codeInput::placeholder {
-  color: var(--color-text-muted);
-  opacity: 1;
-}
-
-.codeInput:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
-}
-
-.codeInput[aria-invalid='true'] {
-  border-color: var(--color-error);
-}
-
-.error {
-  min-height: 1.4em;
-  margin: 6px 0 0;
-  color: var(--color-error);
-  font-size: 15px;
-  font-weight: 700;
-}
-
 .actions {
   position: sticky;
   bottom: 0;

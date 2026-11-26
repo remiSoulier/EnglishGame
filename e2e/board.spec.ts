@@ -14,9 +14,12 @@ test.beforeEach(async ({ page }) => {
   await startGame(page, { players: 4, difficulty: 'Medium' });
 });
 
-test('shows turn, code, difficulty, grid, legend, Question and End turn', async ({ page }) => {
+test('shows turn, difficulty (no code, D22), grid, legend, Question and End turn', async ({
+  page,
+}) => {
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
-  await expect(page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/)).toBeVisible();
+  await expect(page.getByText('Medium', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Code/)).toHaveCount(0);
   await expect(page.getByRole('img', { name: /^Board, turn 1\./ })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Legend' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Question' })).toBeVisible();

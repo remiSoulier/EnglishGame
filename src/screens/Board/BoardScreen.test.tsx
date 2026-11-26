@@ -19,10 +19,11 @@ function setup(overrides: Partial<BoardScreenProps> = {}) {
 }
 
 describe('BoardScreen', () => {
-  it('shows the turn, code, difficulty, Question and End turn (no Next player)', () => {
+  it('shows the turn, difficulty (no code, D22), Question and End turn (no Next player)', () => {
     setup();
     expect(screen.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeInTheDocument();
-    expect(screen.getByText('Code DEMO · Medium')).toBeInTheDocument();
+    expect(screen.getByText('Medium', { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText(/DEMO|Code/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Question' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'End turn' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Next player' })).not.toBeInTheDocument();

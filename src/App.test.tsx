@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import { ALL_QUESTIONS } from './data/questions';
 import { cellName, choiceKeys, generateBoard, parseCell, type Question } from './engine';
@@ -8,6 +8,23 @@ import { APP_NAME } from './state/appInfo';
 import { gameReducer, initialState, type GameAction } from './state/gameReducer';
 import { STORAGE_KEY, saveState } from './state/storage';
 import type { GameState } from './state/types';
+
+/**
+ * Decision D22: the board code is neither shown nor typed any more; every new game draws a random
+ * code. Tests that need a known board set `nextCode.value`, which the next `newCode()` returns.
+ */
+const nextCode = vi.hoisted(() => ({ value: undefined as string | undefined }));
+vi.mock('./engine', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./engine')>();
+  return {
+    ...actual,
+    newCode: (...args: Parameters<typeof actual.newCode>) => {
+      const code = nextCode.value;
+      nextCode.value = undefined;
+      return code ?? actual.newCode(...args);
+    },
+  };
+});
 
 /** Start cells of the positions list: one per player (D11: the only per-player info shown). */
 const startCells = () =>
@@ -23,19 +40,18 @@ function expectNoTurnOrder() {
 const gridLabel = () =>
   screen.getByRole('img', { name: /^Board, turn \d+\./ }).getAttribute('aria-label');
 
+/** Code of the current game: no longer on screen (D22), read from the save. */
 function readCode(): string {
-  const text = screen.getByText(/^Code \S+ · Medium$/).textContent ?? '';
-  return /^Code (\S+) ·/.exec(text)![1];
+  expect(screen.queryByText(/Code/)).not.toBeInTheDocument();
+  return savedGame()!.code as string;
 }
 
 /** Everything visible that identifies the game on the board screen. */
 function snapshot() {
-  const text = screen.getByText(/^Code \S+ · (Easy|Medium|Hard)$/).textContent ?? '';
-  const [, code, difficulty] = /^Code (\S+) · (\w+)$/.exec(text)!;
   return {
     heading: screen.getByRole('heading', { level: 1 }).textContent,
-    code,
-    difficulty,
+    code: readCode(),
+    difficulty: screen.getByText(/^(Easy|Medium|Hard)$/).textContent,
     starts: startCells(),
     grid: gridLabel(),
   };
@@ -74,10 +90,7 @@ async function startGame(
   await user.click(screen.getByRole('button', { name: 'New game' }));
   await user.click(screen.getByRole('radio', { name: String(count) }));
   await user.click(screen.getByRole('radio', { name: DIFFICULTY_RADIO[difficulty] }));
-  if (code !== undefined) {
-    await user.click(screen.getByRole('radio', { name: 'Enter a board code' }));
-    await user.type(screen.getByRole('textbox', { name: 'Board code' }), code);
-  }
+  nextCode.value = code;
   await user.click(screen.getByRole('button', { name: 'Start game' }));
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
 }
@@ -122,7 +135,8 @@ describe('App', () => {
       await startGame(user, { players: count, difficulty });
       expect(startCells()).toHaveLength(count);
       expectNoTurnOrder();
-      expect(screen.getByText(new RegExp(`^Code \\S+ · ${difficulty}$`))).toBeInTheDocument();
+      expect(screen.getByText(difficulty, { exact: true })).toBeInTheDocument();
+      expect(screen.queryByText(/Code/)).not.toBeInTheDocument();
       const list = /Enem(?:y|ies) on ([^.]+)\./.exec(gridLabel() ?? '')![1].split(', ');
       expect(list).toHaveLength(enemies);
     },
@@ -811,14 +825,14 @@ describe('Navigation (#12, D10)', () => {
       },
     );
 
-    it('Quit → Home with "Continue game · Turn N · code"; the game is saved', async () => {
+    it('Quit → Home with "Continue game · Turn N · difficulty" (no code, D22); the game is saved', async () => {
       const { user, before } = await onTurn2();
       const game = savedGame();
       await openMenuItem(user, 'Quit to home');
       await user.click(screen.getByRole('button', { name: 'Quit' }));
       expect(h1()).toHaveTextContent(APP_NAME);
       expect(h1()).toHaveFocus();
-      expect(continueButton()).toHaveTextContent(`Turn 2 · ${before.code}`);
+      expect(continueButton()).toHaveTextContent(`Turn 2 · ${before.difficulty}`);
       expect(savedGame()).toEqual({ ...game, lastScreen: 'board' });
       expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state.screen).toBe('home');
     });
@@ -830,7 +844,7 @@ describe('Navigation (#12, D10)', () => {
       unmount();
       render(<App />);
       expect(h1()).toHaveTextContent(APP_NAME);
-      expect(continueButton()).toHaveTextContent(`Turn 2 · ${before.code}`);
+      expect(continueButton()).toHaveTextContent(`Turn 2 · ${before.difficulty}`);
       await user.click(continueButton()!);
       expect(snapshot()).toEqual(before);
       expect(h1()).toHaveFocus();
@@ -913,7 +927,7 @@ describe('Navigation (#12, D10)', () => {
       const user = userEvent.setup();
       render(<App />);
       expect(h1()).toHaveTextContent(APP_NAME);
-      expect(continueButton()).toHaveTextContent(`Turn ${playing.game!.turn} · K7F2-9QX`);
+      expect(continueButton()).toHaveTextContent(`Turn ${playing.game!.turn} · Medium`);
       await user.click(continueButton()!);
       expect(JSON.parse(localStorage.getItem(STORAGE_KEY)!).state).toEqual(playing);
       if (screenName === 'questionPopup') {
@@ -1106,8 +1120,7 @@ describe('Navigation (#12, D10)', () => {
 
 /** Code of the board screen, whatever the difficulty. */
 function readCodeAny(): string {
-  const text = screen.getByText(/^Code \S+ · (Easy|Medium|Hard)$/).textContent ?? '';
-  return /^Code (\S+) ·/.exec(text)![1];
+  return readCode();
 }
 
 function escape(text: string): string {

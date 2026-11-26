@@ -1,7 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { APP_NAME, startGame } from './helpers';
+import { APP_NAME, gameLine, startGame } from './helpers';
 
-const codeLine = (page: Page) => page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/);
 /** Start cells of the positions list: one per player (D11: no player bar any more). */
 const startCells = (page: Page) =>
   page.locator('dt', { hasText: /^Start:$/ }).locator('xpath=following-sibling::dd[1]');
@@ -75,11 +74,11 @@ async function checkContrast(page: Page) {
   }
 }
 
-/** Board state shown on screen (heading, code line, start cells, grid label). */
+/** Board state (heading, saved code and difficulty line, start cells, grid label). */
 async function boardSnapshot(page: Page) {
   return {
     heading: await h1(page).textContent(),
-    code: await codeLine(page).textContent(),
+    code: await gameLine(page),
     starts: await startCells(page).textContent(),
     grid: await page.getByRole('img', { name: /^Board, turn \d+\./ }).getAttribute('aria-label'),
   };
@@ -216,7 +215,7 @@ test('a legacy save on the removed winner screen reopens on its board', async ({
   }, STORAGE_KEY);
   await page.reload();
   await expect(h1(page)).toHaveText('Turn 1');
-  await expect(codeLine(page)).toHaveText('Code K7F2-9QX · Easy');
+  expect(await gameLine(page)).toBe('K7F2-9QX · Easy');
   await expect(page.getByText(/wins!|play again/i)).toHaveCount(0);
   await openMenuItem(page, 'End game');
   await page.getByRole('dialog').getByRole('button', { name: 'End game' }).click();
@@ -263,7 +262,7 @@ test('New board: Cancel and Escape keep the game, confirm starts a new board', a
   await dialog.getByRole('button', { name: 'New board' }).click();
   await expect(dialog).toHaveCount(0);
   await expect(h1(page)).toHaveText('Turn 1');
-  const code = await codeLine(page).textContent();
+  const code = await gameLine(page);
   expect(code).toMatch(/· Easy$/);
   expect(code).not.toBe(before.code);
   await expect(startCells(page)).toHaveText(startsRe(2));

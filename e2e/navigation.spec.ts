@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { APP_NAME, openNewGame, startGame } from './helpers';
+import { APP_NAME, gameLine, openNewGame, savedCode, startGame } from './helpers';
 
 /** Backlog #12 / decision D10: quit to home, continue game, system back, focus. */
 
@@ -9,7 +9,6 @@ const STORAGE_KEY = 'bgc.game.v2';
 const h1 = (page: Page) => page.getByRole('heading', { level: 1 });
 const home = (page: Page) => page.getByRole('heading', { level: 1, name: APP_NAME });
 const continueButton = (page: Page) => page.getByRole('button', { name: /^Continue game/ });
-const codeLine = (page: Page) => page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/);
 /** Start cells of the positions list (one per player; D11: no player bar). */
 const starts = async (page: Page) =>
   (
@@ -25,15 +24,16 @@ async function openMenuItem(page: Page, name: 'New board' | 'End game' | 'Quit t
   await page.getByRole('menuitem', { name }).click();
 }
 
+/** Code of the saved game (decision D22: not shown on screen). */
 async function codeOf(page: Page): Promise<string> {
-  return /^Code (\S+) ·/.exec((await codeLine(page).textContent()) ?? '')![1];
+  return savedCode(page);
 }
 
 /** What identifies the game on the board screen. */
 async function boardSnapshot(page: Page) {
   return {
     heading: await h1(page).textContent(),
-    code: await codeLine(page).textContent(),
+    code: await gameLine(page),
     grid: await grid(page).getAttribute('aria-label'),
     starts: await starts(page),
   };
@@ -164,11 +164,13 @@ test.describe('quit to home and continue', () => {
 
     await quitToHome(page);
     await expectH1Focused(page);
-    await expect(continueButton(page)).toContainText(`Turn 2 · ${code}`);
+    await expect(continueButton(page)).toContainText('Turn 2 · Medium');
+    await expect(continueButton(page)).not.toContainText(code);
 
     await page.reload();
     await expect(home(page)).toBeVisible();
-    await expect(continueButton(page)).toContainText(`Turn 2 · ${code}`);
+    await expect(continueButton(page)).toContainText('Turn 2 · Medium');
+    await expect(continueButton(page)).not.toContainText(code);
 
     await continueButton(page).click();
     await expect(h1(page)).toHaveText('Turn 2');
@@ -192,11 +194,11 @@ test.describe('quit to home and continue', () => {
 
     await quitToHome(page);
     await startGame(page, { players: 2, difficulty: 'Easy', code: 'HJKM-NPQ', goto: false });
-    await expect(codeLine(page)).toHaveText('Code HJKM-NPQ · Easy');
+    expect(await gameLine(page)).toBe('HJKM-NPQ · Easy');
     expect(code).not.toBe('HJKM-NPQ');
     expect(await starts(page)).toHaveLength(2);
     await quitToHome(page);
-    await expect(continueButton(page)).toContainText('Turn 1 · HJKM-NPQ');
+    await expect(continueButton(page)).toContainText('Turn 1 · Easy');
   });
 
   test('End game → Home clears the game (no Continue, even after a reload)', async ({ page }) => {

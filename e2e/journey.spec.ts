@@ -1,10 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
-import { APP_NAME, startGame } from './helpers';
+import { APP_NAME, gameLine, startGame } from './helpers';
 
 /**
  * Demo script: New game → Question (right, then wrong answer) → End turn → End game (D13).
- * Played on one phone (390 × 844), with a second device checking the board is the same.
+ * Played on one phone (390 × 844). The board code is internal (decision D22): a known code is
+ * loaded through the save so the script always plays the same board.
  * The app does not track turn order (decision D11): no player bar, no Next player.
  */
 
@@ -57,31 +58,19 @@ async function askQuestion(page: Page) {
   return { cards, question: matches[0] };
 }
 
-async function playToTurn2(page: Page) {
-  await page.getByRole('button', { name: 'End turn' }).click();
-  await expect(h1(page)).toHaveText('Walls and enemies have moved');
-  await noHorizontalScroll(page);
-  await page.getByRole('button', { name: 'Start turn 2' }).click();
-  await expect(h1(page)).toHaveText('Turn 2');
-}
-
-test('demo journey: new game → right and wrong answers → end turn → end game', async ({
-  page,
-  browser,
-  baseURL,
-}) => {
+test('demo journey: new game → right and wrong answers → end turn → end game', async ({ page }) => {
   let goal = '';
   let turn1Label = '';
   let turn2Label = '';
   let firstQuestion = '';
 
-  await test.step('Home → New game: 3 players, Medium, board code K7F2-9QX', async () => {
+  await test.step('Home → New game: 3 players, Medium (board of code K7F2-9QX)', async () => {
     await page.goto('/');
     await expect(h1(page)).toHaveText(APP_NAME);
     await noHorizontalScroll(page);
     await startGame(page, { ...GAME, goto: false });
     await expect(h1(page)).toHaveText('Turn 1');
-    await expect(page.getByText(`Code ${CODE} · Medium`, { exact: true })).toBeVisible();
+    expect(await gameLine(page)).toBe(`${CODE} · Medium`);
     await expectBoardActions(page);
     await expect(page.getByText('Start:', { exact: true })).toBeAttached();
     turn1Label = await gridLabel(page);
@@ -134,25 +123,11 @@ test('demo journey: new game → right and wrong answers → end turn → end ga
     await page.getByRole('button', { name: 'Start turn 2' }).click();
     await expect(h1(page)).toHaveText('Turn 2');
     await expectBoardActions(page);
-    await expect(page.getByText(`Code ${CODE} · Medium`, { exact: true })).toBeVisible();
+    expect(await gameLine(page)).toBe(`${CODE} · Medium`);
     turn2Label = await gridLabel(page);
     expect(goalOf(turn2Label)).toBe(goal);
     expect(enemiesOf(turn2Label)).not.toBe(enemiesOf(turn1Label));
     await noHorizontalScroll(page);
-  });
-
-  await test.step('A second device with the same code shows the same turn-2 board', async () => {
-    const context = await browser.newContext({
-      baseURL,
-      viewport: { width: 390, height: 844 },
-      hasTouch: true,
-      serviceWorkers: 'block',
-    });
-    const other = await context.newPage();
-    await startGame(other, GAME);
-    await playToTurn2(other);
-    expect(await gridLabel(other)).toBe(turn2Label);
-    await context.close();
   });
 
   await test.step('Menu → End game → confirm → Home without Continue game', async () => {

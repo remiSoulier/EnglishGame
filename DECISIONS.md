@@ -104,3 +104,10 @@ Maquette : https://www.figma.com/design/HNw6XYnhOeh7hKIpMSd4j1 (frames « 1 · H
 
 ## D21 — Les murs sans leur nom sur le plateau (2026-11-26, demande utilisateur)
 « Ne mets pas leurs noms, juste leurs designs » : le plateau n'affiche plus les étiquettes W1 … W8 sur les murs, seulement les traits et leurs extrémités. Le code des étiquettes est gardé en option (`<Grid wallLabels />`, avec ses tests). La liste des positions garde le nom et la taille de chaque pièce physique (ex. « W6 (88 + 44 mm) »), utile pour monter le vrai plateau, et les `<title>` des murs restent pour les lecteurs d'écran.
+
+## D22 — Plus de code de plateau à l'écran (2026-11-26, demande utilisateur)
+« Enlever le truc pour rejoindre avec le code et le code, parce que ça sert à rien » :
+- New game n'a plus de section « Board » (*Random board* / *Enter a board code*) ni de champ de saisie : chaque partie tire un plateau au hasard.
+- Le plateau n'affiche plus « Code XXXX-XXX · Medium », seulement la difficulté (« Medium ») sous « Turn N ». *Continue game* sur l'accueil affiche « Turn N · Medium ».
+- Le code reste en interne, comme graine du plateau, dans la sauvegarde (`game.code`) : *End turn* et *New board* marchent comme avant, et les sauvegardes existantes se chargent toujours. Les tests qui ont besoin d'un plateau connu le chargent par la sauvegarde (e2e) ou fixent le prochain code tiré (tests unitaires).
+- On ne peut donc plus afficher le même plateau sur deux téléphones avec un code ; remplace la partie « code partagé » du cahier des charges.

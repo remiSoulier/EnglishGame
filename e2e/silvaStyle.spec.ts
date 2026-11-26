@@ -217,10 +217,6 @@ test('New game, with its "‹" Back icon button', async ({ page }) => {
   await expect(back).toHaveText('‹Back');
   await expect(back.locator('.sr-only')).toHaveText('Back');
   await checkScreen(page, 'New game');
-  await page.getByRole('radio', { name: 'Enter a board code' }).check();
-  await page.getByRole('textbox', { name: 'Board code' }).fill('ZZZZ');
-  await page.getByRole('button', { name: 'Start game' }).click();
-  await checkScreen(page, 'New game with error');
 });
 
 test('Board: labels, legend, badges and marks; menu open; dialogs', async ({ page }) => {

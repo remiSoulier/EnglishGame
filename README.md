@@ -14,8 +14,6 @@ Ce que fait l'application :
 - pose des questions à choix multiples (« Question for 1–3 cards ») et indique combien de cartes
   piocher en cas de bonne réponse ;
 - déclare le vainqueur ;
-- partage un **code de plateau** (ex. `K7F2-9QX`) pour afficher le même plateau sur plusieurs
-  téléphones ;
 - sauvegarde la partie en cours dans le navigateur (`localStorage`, clé `bgc.game.v1`) et fonctionne
   hors ligne (PWA installable).
 
@@ -63,9 +61,9 @@ Le service worker n'est actif qu'avec le build de production (`build` puis `prev
 | `npm run format:check` | Vérifie le formatage Prettier (`npm run format` corrige)    |
 
 Les tests unitaires sont à côté du code (`src/**/*.test.ts(x)`). Les tests e2e sont dans `e2e/` ;
-`e2e/journey.spec.ts` est le scénario de démo : nouvelle partie à 3 joueurs en Medium avec le code
-`K7F2-9QX` → bonne réponse et pioche de cartes → mauvaise réponse → fin de tour (l'objectif reste,
-les ennemis bougent) → un second appareil avec le même code voit le même plateau → victoire.
+`e2e/journey.spec.ts` est le scénario de démo : nouvelle partie à 3 joueurs en Medium (plateau du
+code interne `K7F2-9QX`, chargé par la sauvegarde) → bonne réponse et pioche de cartes → mauvaise
+réponse → fin de tour (l'objectif reste, les ennemis bougent) → fin de partie.
 `e2e/pwa.spec.ts` vérifie le manifeste, le service worker et une partie complète hors ligne.
 
 Playwright build l'application puis lance `vite preview` sur le port **4173**. En local, il
@@ -102,15 +100,13 @@ l'index de la question fautive. Une question n'est pas reposée avant que toutes
 
 ## Code de plateau
 
-Un code compte 7 caractères affichés `XXXX-XXX` (ex. `K7F2-9QX`), tirés d'un alphabet sans
-caractères ambigus (ni `0`/`O`, ni `1`/`I`/`L`). La saisie ignore la casse, les espaces et les
-tirets (`k7f2 9qx` est accepté).
+Depuis la décision D22, le code n'est plus affiché ni saisi : chaque nouvelle partie tire un code au
+hasard, gardé dans la sauvegarde comme graine du plateau. Un code compte 7 caractères `XXXX-XXX`
+(ex. `K7F2-9QX`), tirés d'un alphabet sans caractères ambigus (ni `0`/`O`, ni `1`/`I`/`L`).
 
 Le plateau est **déterministe** : le code et le numéro de tour donnent une graine (hash FNV-1a) qui
-alimente un générateur pseudo-aléatoire `mulberry32`. Même code + même tour = même plateau sur tous
-les appareils, sans réseau. Les joueurs doivent aussi choisir la même difficulté (elle fixe le
-nombre d'ennemis). Sans code saisi, l'application en génère un au hasard et l'affiche sur le
-plateau.
+alimente un générateur pseudo-aléatoire `mulberry32`. Même code + même tour + même difficulté =
+même plateau, ce qui permet de recharger une partie et de tester un plateau connu.
 
 ## PWA / hors ligne
 

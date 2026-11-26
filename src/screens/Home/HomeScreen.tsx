@@ -5,7 +5,8 @@ import styles from './HomeScreen.module.css';
 /** The saved game Home offers to continue. */
 export interface SavedGameSummary {
   turn: number;
-  code: string;
+  /** Difficulty label shown next to the turn (Easy, Medium or Hard); no board code (D22). */
+  difficulty: string;
 }
 
 export interface HomeScreenProps {
@@ -36,7 +37,7 @@ const GLINTS: readonly { x: number; y: number; w: number; delay: number; duratio
 
 /**
  * Home screen: logo, app name and the main menu. With a saved game, the primary action is
- * "Continue game" (Turn N · code) and New game becomes secondary (it replaces the saved game).
+ * "Continue game" (Turn N · difficulty) and New game becomes secondary (it replaces the saved game).
  * The background is an animated night lake scene (decision D20): the lake without its boat
  * (public/art/bg-lake.webp), quick glints on the water, ripples and the moon boat
  * (public/art/scene-boat.webp) gently rocking on its own layer — all precached, decorative, and
@@ -116,7 +117,7 @@ export function HomeScreen({ onNewGame, savedGame, onContinue }: HomeScreenProps
             <Button variant="accent" fullWidth className={styles.continue} onClick={onContinue}>
               <span className={styles.continueLabel}>Continue game</span>
               <span className={styles.continueMeta}>
-                Turn {savedGame.turn} · {savedGame.code}
+                Turn {savedGame.turn} · {savedGame.difficulty}
               </span>
             </Button>
           )}

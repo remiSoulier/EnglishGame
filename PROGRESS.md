@@ -150,3 +150,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #38 Murs sans étiquettes W1 … W8 sur le plateau (D21)
 
 | 2026-11-26 | #38 | Done (D21). 1715 unit tests, 101 e2e, lint and typecheck green. |
+- [x] #39 Plus de code de plateau sur New game, le plateau et l'accueil (D22)
+
+| 2026-11-26 | #39 | Done (D22). 1700 unit tests, 95 e2e, lint and typecheck green. |

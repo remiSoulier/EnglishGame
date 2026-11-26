@@ -12,7 +12,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { ALL_QUESTIONS } from './data/questions';
 import { getQuestion, newCode } from './engine';
-import { BoardScreen, EndGameConfirm, NewBoardConfirm, QuitConfirm } from './screens/Board';
+import {
+  BoardScreen,
+  DIFFICULTY_LABEL,
+  EndGameConfirm,
+  NewBoardConfirm,
+  QuitConfirm,
+} from './screens/Board';
 import { NewBoardScreen } from './screens/NewBoard';
 import { HomeScreen } from './screens/Home';
 import { NewGameScreen } from './screens/NewGame';
@@ -84,7 +90,7 @@ function Screens() {
     return (
       <HomeScreen
         onNewGame={() => dispatch({ type: 'GO_NEW_GAME' })}
-        savedGame={game && { turn: game.turn, code: game.code }}
+        savedGame={game && { turn: game.turn, difficulty: DIFFICULTY_LABEL[game.difficulty] }}
         onContinue={() => dispatch({ type: 'CONTINUE_GAME' })}
       />
     );

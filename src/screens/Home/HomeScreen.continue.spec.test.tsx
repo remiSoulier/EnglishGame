@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { HomeScreen } from './HomeScreen';
 
-function setup(savedGame: { turn: number; code: string } | null = { turn: 3, code: 'K7F2-9QX' }) {
+function setup(
+  savedGame: { turn: number; difficulty: string } | null = { turn: 3, difficulty: 'Medium' },
+) {
   const onNewGame = vi.fn();
   const onContinue = vi.fn();
   render(<HomeScreen onNewGame={onNewGame} savedGame={savedGame} onContinue={onContinue} />);
@@ -14,17 +16,17 @@ const menuButtons = () =>
   within(screen.getByRole('navigation', { name: 'Main menu' })).getAllByRole('button');
 
 describe('HomeScreen with a saved game (#12, D10)', () => {
-  it('shows "Continue game" with Turn N · code first, then New game', () => {
+  it('shows "Continue game" with Turn N · difficulty first (no code, D22), then New game', () => {
     setup();
     const buttons = menuButtons();
     expect(buttons.map((b) => b.textContent)).toEqual([
-      'Continue gameTurn 3 · K7F2-9QX',
+      'Continue gameTurn 3 · Medium',
       'New game',
       'How to play (coming soon)',
       'Lexicon (coming soon)',
     ]);
     expect(buttons[0]).toHaveAccessibleName(/^Continue game/);
-    expect(buttons[0]).toHaveTextContent('Turn 3 · K7F2-9QX');
+    expect(buttons[0]).toHaveTextContent('Turn 3 · Medium');
     for (const b of buttons) {
       expect(b.tagName).toBe('BUTTON');
       expect(b).toHaveAttribute('type', 'button');
@@ -60,7 +62,7 @@ describe('HomeScreen with a saved game (#12, D10)', () => {
   });
 
   it('without onContinue there is no Continue game', () => {
-    render(<HomeScreen onNewGame={vi.fn()} savedGame={{ turn: 1, code: 'K7F2-9QX' }} />);
+    render(<HomeScreen onNewGame={vi.fn()} savedGame={{ turn: 1, difficulty: 'Medium' }} />);
     expect(screen.queryByRole('button', { name: /continue/i })).toBeNull();
   });
 });

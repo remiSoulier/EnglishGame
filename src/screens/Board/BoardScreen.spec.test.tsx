@@ -31,10 +31,14 @@ describe('BoardScreen (spec screen 3)', () => {
     ['easy', 'Easy'],
     ['medium', 'Medium'],
     ['hard', 'Hard'],
-  ] as const)('shows the code and difficulty %s', (difficulty: Difficulty, label) => {
-    setup({ board: { ...FIXTURE_BOARD, code: 'K7Q2', difficulty } });
-    expect(screen.getByText(`Code K7Q2 · ${label}`)).toBeInTheDocument();
-  });
+  ] as const)(
+    'shows the difficulty %s but no board code (D22)',
+    (difficulty: Difficulty, label) => {
+      setup({ board: { ...FIXTURE_BOARD, code: 'K7Q2', difficulty } });
+      expect(screen.getByText(label, { exact: true })).toBeInTheDocument();
+      expect(screen.queryByText(/K7Q2|Code/)).not.toBeInTheDocument();
+    },
+  );
 
   it.each([2, 3, 4] as const)('has no player bar with %i players (D11)', (playerCount) => {
     setup({ playerCount });

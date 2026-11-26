@@ -1,7 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
-import { APP_NAME, startGame } from './helpers';
+import { APP_NAME, gameLine, startGame } from './helpers';
 
-const codeLine = (page: Page) => page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/);
 const grid = (page: Page, turn: number) =>
   page.getByRole('img', { name: new RegExp(`^Board, turn ${turn}\\.`) });
 const KEY = 'bgc.game.v2';
@@ -19,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('turn 2 survives a reload: same code, turn and grid', async ({ page }) => {
-  const code = await codeLine(page).textContent();
+  const code = await gameLine(page);
   await page.getByRole('button', { name: 'End turn' }).click();
   await page.getByRole('button', { name: 'Start turn 2' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 2' })).toBeVisible();
@@ -28,7 +27,7 @@ test('turn 2 survives a reload: same code, turn and grid', async ({ page }) => {
   await page.reload();
 
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 2' })).toBeVisible();
-  await expect(codeLine(page)).toHaveText(code!);
+  expect(await gameLine(page)).toBe(code);
   await expect(grid(page, 2)).toHaveAttribute('aria-label', label!);
   await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
   await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
@@ -88,7 +87,7 @@ test('corrupted storage falls back to the home screen', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
 });
 
-test('a saved board-code game resumes after a reload', async ({ page }) => {
+test('a saved game resumes after a reload', async ({ page }) => {
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Question' })).toBeVisible();

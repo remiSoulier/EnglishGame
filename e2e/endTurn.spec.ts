@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { startGame } from './helpers';
+import { gameLine, startGame } from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
 
@@ -22,8 +22,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('two full turns: goal and code stay, enemies move', async ({ page }) => {
-  const codeLine = page.getByText(/^Code \S+ · Medium$/);
-  const code = await codeLine.textContent();
+  const code = await gameLine(page);
+  expect(code).toMatch(/ · Medium$/);
   const label1 = (await grid(page, 1).getAttribute('aria-label'))!;
   const goal = goalOf(label1);
 
@@ -37,7 +37,7 @@ test('two full turns: goal and code stay, enemies move', async ({ page }) => {
 
     await page.getByRole('button', { name: `Start turn ${turn}` }).click();
     await expect(page.getByRole('heading', { level: 1, name: `Turn ${turn}` })).toBeVisible();
-    await expect(codeLine).toHaveText(code!);
+    expect(await gameLine(page)).toBe(code);
     await expect(grid(page, turn)).toHaveAttribute('aria-label', label);
     await expect(page.getByRole('button', { name: 'End turn' })).toBeVisible();
     await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);

@@ -1,5 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { APP_NAME, DIFFICULTY_RADIO, openNewGame, startGame } from './helpers';
+import {
+  APP_NAME,
+  DIFFICULTY_LINE,
+  DIFFICULTY_RADIO,
+  openNewGame,
+  savedCode,
+  startGame,
+} from './helpers';
 
 const VIEWPORT = { width: 390, height: 844 };
 const CODE_RE = /^[A-HJKMNP-Z2-9]{4}-[A-HJKMNP-Z2-9]{3}$/;
@@ -17,12 +24,11 @@ async function expectStarts(page: Page, count: number) {
   await expect(page.getByRole('list', { name: 'Players' })).toHaveCount(0);
 }
 const grid = (page: Page) => page.getByRole('img', { name: /^Board, turn 1\./ });
-const codeBox = (page: Page) => page.getByRole('textbox', { name: 'Board code' });
-const alert = (page: Page) => page.getByRole('alert');
 
+/** The game code is not shown any more (D22): read it from the save, and check it is hidden. */
 async function codeOf(page: Page): Promise<string> {
-  const text = await page.getByText(/^Code \S+ · (Easy|Medium|Hard)$/).textContent();
-  return /^Code (\S+) ·/.exec(text ?? '')![1];
+  await expect(page.getByText(/Code/)).toHaveCount(0);
+  return savedCode(page);
 }
 
 async function enemyCount(page: Page): Promise<number> {
@@ -144,73 +150,31 @@ test.describe('new game screen', () => {
     await openNewGame(page);
   });
 
-  test('defaults: 2 players, Medium, random board', async ({ page }) => {
+  test('defaults: 2 players, Medium, always a random board (no board code, D22)', async ({
+    page,
+  }) => {
     await expect(page.getByRole('radio', { name: '2', exact: true })).toBeChecked();
     await expect(page.getByRole('radio', { name: DIFFICULTY_RADIO.Medium })).toBeChecked();
-    await expect(page.getByRole('radio', { name: 'Random board' })).toBeChecked();
-    await expect(codeBox(page)).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: /board/i })).toHaveCount(0);
+    await expect(page.getByRole('textbox')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
     await expectStarts(page, 2);
-    await expect(page.getByText(/^Code \S+ · Medium$/)).toBeVisible();
+    await expect(page.getByText('Medium', { exact: true })).toBeVisible();
     expect(await codeOf(page)).toMatch(CODE_RE);
     expect(await enemyCount(page)).toBe(4);
   });
 
-  test('entering "k7f2 9qx" starts K7F2-9QX', async ({ page }) => {
-    await startGame(page, { goto: false, players: 3, difficulty: 'Easy', code: 'k7f2 9qx' });
-    expect(await codeOf(page)).toBe('K7F2-9QX');
-    await expect(page.getByText('Code K7F2-9QX · Easy')).toBeVisible();
+  test('390x844: no horizontal scroll, 44 px targets, contrast', async ({ page }) => {
+    await expectNoHorizontalScroll(page);
+    await expectTargets(page);
+    await expectContrast(page, 'button, h1, legend, label');
   });
 
-  for (const [input, message] of [
-    ['ABC', 'Code must have 7 characters'],
-    ['K7F2-0QX', 'Code contains invalid characters'],
-    ['', 'Code must have 7 characters'],
-  ] as const) {
-    test(`invalid code ${JSON.stringify(input)} shows "${message}", keeps focus, no start`, async ({
-      page,
-    }) => {
-      await page.getByRole('radio', { name: 'Enter a board code' }).check();
-      await codeBox(page).fill(input);
-      await page.getByRole('button', { name: 'Start game' }).click();
-      await expect(alert(page)).toHaveText(message);
-      await expect(codeBox(page)).toHaveAttribute('aria-invalid', 'true');
-      await expect(codeBox(page)).toBeFocused();
-      await expect(newGameHeading(page)).toBeVisible();
-      await expect(startCells(page)).toHaveCount(0);
-      expect(
-        await page.evaluate(() => JSON.parse(localStorage.getItem('bgc.game.v2') ?? 'null')),
-      ).toMatchObject({ state: { game: null } });
-    });
-  }
-
-  test('the code is validated on blur', async ({ page }) => {
-    await page.getByRole('radio', { name: 'Enter a board code' }).check();
-    await codeBox(page).fill('K7F2-0QX');
-    await codeBox(page).blur();
-    await expect(alert(page)).toHaveText('Code contains invalid characters');
-  });
-
-  test('390x844 with the error shown: no horizontal scroll, 44 px targets, contrast', async ({
+  test('keyboard: Tab reaches the radios, arrows change them, Enter on Start game submits', async ({
     page,
   }) => {
-    await expectNoHorizontalScroll(page);
-    await expectTargets(page);
-    await page.getByRole('radio', { name: 'Enter a board code' }).check();
-    await codeBox(page).fill('K7F2-0QX');
-    await page.getByRole('button', { name: 'Start game' }).click();
-    await expect(alert(page)).toHaveText('Code contains invalid characters');
-    await expectNoHorizontalScroll(page);
-    await expectTargets(page);
-    const input = (await codeBox(page).boundingBox())!;
-    expect(input.height).toBeGreaterThanOrEqual(44);
-    expect(input.x + input.width).toBeLessThanOrEqual(VIEWPORT.width);
-    await expectContrast(page, 'button, h1, legend, label, [role="alert"]');
-  });
-
-  test('keyboard: Tab reaches the radios, arrows change them, Enter submits', async ({ page }) => {
     // Focus starts on the screen's h1 (#12); Shift+Tab reaches Back, which sits before it.
     await expect(newGameHeading(page)).toBeFocused();
     await page.keyboard.press('Shift+Tab');
@@ -237,17 +201,12 @@ test.describe('new game screen', () => {
     await page.keyboard.press('ArrowLeft');
     await expect(page.getByRole('radio', { name: DIFFICULTY_RADIO.Easy })).toBeChecked();
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('radio', { name: 'Random board' })).toBeFocused();
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('radio', { name: 'Enter a board code' })).toBeChecked();
-    await page.keyboard.press('Tab');
-    await expect(codeBox(page)).toBeFocused();
-    await page.keyboard.type('k7f2-9qx');
+    await expect(page.getByRole('button', { name: 'Start game' })).toBeFocused();
     await page.keyboard.press('Enter');
 
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
     await expectStarts(page, 4);
-    await expect(page.getByText('Code K7F2-9QX · Easy')).toBeVisible();
+    await expect(page.getByText('Easy', { exact: true })).toBeVisible();
   });
 });
 
@@ -259,32 +218,16 @@ test.describe('started game', () => {
     [3, 'Easy', 2],
     [2, 'Hard', 6],
   ] as const) {
-    test(`${count} players + ${difficulty}: ${count} start cells, code line, ${enemies} enemies`, async ({
+    test(`${count} players + ${difficulty}: ${count} start cells, difficulty line, ${enemies} enemies`, async ({
       page,
     }) => {
       await startGame(page, { players: count, difficulty });
       await expectStarts(page, count);
-      await expect(page.getByText(new RegExp(`^Code \\S+ · ${difficulty}$`))).toBeVisible();
+      await expect(page.getByText(DIFFICULTY_LINE)).toHaveText(difficulty);
       expect(await codeOf(page)).toMatch(CODE_RE);
       expect(await enemyCount(page)).toBe(enemies);
     });
   }
-
-  test('the same code typed in two separate runs gives the same turn-1 board', async ({
-    browser,
-  }) => {
-    const labels: string[] = [];
-    for (const code of ['K7F2-9QX', 'k7f2 9qx']) {
-      const context = await browser.newContext({ viewport: VIEWPORT });
-      const page = await context.newPage();
-      await startGame(page, { players: 4, difficulty: 'Medium', code });
-      expect(await codeOf(page)).toBe('K7F2-9QX');
-      labels.push((await grid(page).getAttribute('aria-label'))!);
-      await context.close();
-    }
-    expect(labels[0]).toMatch(/^Board, turn 1\./);
-    expect(labels[1]).toBe(labels[0]);
-  });
 
   test('two random boards get different codes', async ({ page }) => {
     await startGame(page);
@@ -300,7 +243,8 @@ test.describe('started game', () => {
     await page.reload();
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
     await expectStarts(page, 3);
-    await expect(page.getByText('Code K7F2-9QX · Hard')).toBeVisible();
+    await expect(page.getByText(DIFFICULTY_LINE)).toHaveText('Hard');
+    expect(await codeOf(page)).toBe('K7F2-9QX');
     await expect(grid(page)).toHaveAttribute('aria-label', label!);
   });
 

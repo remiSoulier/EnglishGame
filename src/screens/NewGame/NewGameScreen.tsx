@@ -1,5 +1,5 @@
-import { useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ENEMY_COUNT, newCode, parseCode, type Difficulty } from '../../engine';
+import { useId, useState, type FormEvent, type ReactNode } from 'react';
+import { ENEMY_COUNT, newCode, type Difficulty } from '../../engine';
 import { Button } from '../../components/Button';
 import { defaultCharacters, pickCharacter, PLAYER_CHARACTERS } from '../../state/players';
 import type { PlayerCount } from '../../state/types';
@@ -9,7 +9,7 @@ import styles from './NewGameScreen.module.css';
 export interface NewGameSettings {
   playerCount: PlayerCount;
   difficulty: Difficulty;
-  /** Canonical board code (`XXXX-XXX`). */
+  /** Canonical board code (`XXXX-XXX`), always random (decision D22: no code shown or typed). */
   code: string;
   /** Character of each player, as indexes in PLAYER_CHARACTERS (decision D19), all different. */
   characters: number[];
@@ -21,8 +21,6 @@ export interface NewGameScreenProps {
   /** A game is saved: warn that starting replaces it (no confirmation). */
   replacesGame?: boolean;
 }
-
-type BoardChoice = 'random' | 'code';
 
 const PLAYER_OPTIONS: readonly PlayerCount[] = [2, 3, 4];
 
@@ -67,42 +65,17 @@ function Segment<T extends string | number>({
   );
 }
 
-/** New game screen: players, their characters, difficulty and board (random or entered code). */
+/** New game screen: players, their characters and difficulty; the board is always random (D22). */
 export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGameScreenProps) {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(2);
   // One character per possible player (4); the first `playerCount` are used.
   const [characters, setCharacters] = useState<number[]>(() => defaultCharacters(4));
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
-  const [board, setBoard] = useState<BoardChoice>('random');
-  const [codeInput, setCodeInput] = useState('');
-  const [codeError, setCodeError] = useState<string | null>(null);
-  const codeRef = useRef<HTMLInputElement>(null);
   const id = useId();
-  const codeId = `${id}-code`;
-  const errorId = `${id}-code-error`;
-
-  function validate(): string | null {
-    const result = parseCode(codeInput);
-    if (result.ok) {
-      setCodeError(null);
-      return result.code;
-    }
-    setCodeError(result.error);
-    return null;
-  }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (board === 'random') {
-      onStart({ playerCount, difficulty, code: newCode(), characters: chosen() });
-      return;
-    }
-    const code = validate();
-    if (code === null) {
-      codeRef.current?.focus();
-      return;
-    }
-    onStart({ playerCount, difficulty, code, characters: chosen() });
+    onStart({ playerCount, difficulty, code: newCode(), characters: chosen() });
   }
 
   function chosen(): number[] {
@@ -199,61 +172,6 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
               </Segment>
             ))}
           </div>
-        </fieldset>
-
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>Board</legend>
-          <div className={`${styles.segments} ${styles.stacked}`}>
-            <Segment
-              name={`${id}-board`}
-              value="random"
-              checked={board === 'random'}
-              onSelect={setBoard}
-            >
-              Random board
-            </Segment>
-            <Segment
-              name={`${id}-board`}
-              value="code"
-              checked={board === 'code'}
-              onSelect={setBoard}
-            >
-              Enter a board code
-            </Segment>
-          </div>
-
-          {board === 'code' && (
-            <div className={styles.codeField}>
-              <label className={styles.codeLabel} htmlFor={codeId}>
-                Board code
-              </label>
-              <input
-                ref={codeRef}
-                id={codeId}
-                className={styles.codeInput}
-                type="text"
-                value={codeInput}
-                placeholder="K7F2-9QX"
-                autoCapitalize="characters"
-                autoComplete="off"
-                autoCorrect="off"
-                spellCheck={false}
-                inputMode="text"
-                aria-invalid={codeError !== null}
-                aria-describedby={codeError !== null ? errorId : undefined}
-                onChange={(event) => {
-                  setCodeInput(event.target.value);
-                  if (codeError !== null) setCodeError(null);
-                }}
-                onBlur={() => {
-                  if (codeInput.trim() !== '') validate();
-                }}
-              />
-              <p id={errorId} className={styles.error} role="alert">
-                {codeError}
-              </p>
-            </div>
-          )}
         </fieldset>
 
         <div className={styles.actions}>
