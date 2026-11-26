@@ -67,7 +67,7 @@ function Question() {
     <Decor>
       <img className={styles.questionCard} src="/art/card-question.webp" alt="" />
       <span className={styles.pills}>
-        <span className={`${styles.pill} ${styles.pillNavy}`}>Question for 2 cards</span>
+        <span className={`${styles.pill} ${styles.pillLime}`}>Question for 2 cards</span>
         <span className={`${styles.pill} ${styles.pillMint}`}>Right: draw 2 cards</span>
         <span className={`${styles.pill} ${styles.pillLilac}`}>Wrong: turn over</span>
       </span>
@@ -114,17 +114,11 @@ function EndTurn() {
   );
 }
 
-/** Step 6: the dragon, who wins, and how to end the game. */
+/** Step 6: just the dragon, centred. */
 function Win() {
   return (
     <Decor>
-      <div className={styles.winBox}>
-        <img src={GOAL_CHARACTER.src} alt="" />
-        <span className={styles.winText}>
-          <span className={styles.winTitle}>First one wins!</span>
-          <span className={styles.winMenu}>Menu ≡ › End game</span>
-        </span>
-      </div>
+      <img className={styles.winDragon} src={GOAL_CHARACTER.src} alt="" />
     </Decor>
   );
 }

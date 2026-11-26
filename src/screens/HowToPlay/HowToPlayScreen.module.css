@@ -247,15 +247,15 @@
   cursor: not-allowed;
 }
 
-/* Lime with a dark border, as New game. */
+/* Light green of the brand chart with a thin dark border (user request). */
 .next {
-  border: 1.5px solid var(--color-accent-border);
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  border: var(--border-thin) solid var(--color-accent-border);
+  background: var(--color-chart-lime);
+  color: var(--color-text);
 }
 
 .next:hover {
-  background: var(--color-accent-hover);
+  filter: brightness(0.95);
 }
 
 .prev:focus-visible,
@@ -407,9 +407,8 @@
   font-weight: 800;
 }
 
-.pillNavy {
-  background: var(--color-chart-navy);
-  color: #fff;
+.pillLime {
+  background: var(--color-chart-lime);
 }
 
 .pillMint {
@@ -509,36 +508,9 @@
   font-weight: 800;
 }
 
-/* 6 · Navy box with the dragon. White 17.2:1, mint 13.5:1. */
-.winBox {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 20px 14px 14px;
-  border-radius: 22px;
-  background: var(--color-chart-navy);
-}
-
-.winBox img {
-  width: 72px;
-  height: 72px;
+/* 6 · Just the dragon, centred (no box, no text: user request). */
+.winDragon {
+  width: 104px;
+  height: 104px;
   object-fit: contain;
-}
-
-.winText {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.winTitle {
-  color: #fff;
-  font-size: 20px;
-  font-weight: 800;
-}
-
-.winMenu {
-  color: var(--color-chart-mint);
-  font-size: 15px;
-  font-weight: 800;
 }
