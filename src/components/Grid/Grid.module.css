@@ -88,16 +88,6 @@
   paint-order: stroke;
 }
 
-.enemyMark {
-  stroke: var(--color-enemy-mark);
-  stroke-width: 3.2;
-  stroke-linecap: round;
-}
-
-.enemyDot {
-  fill: var(--color-enemy-mark);
-}
-
 /*
  * Tinted plates behind the enemy and goal characters: a board-coloured base with a coloured
  * ring, so each character stands out on the forest art and its role reads at a glance (the

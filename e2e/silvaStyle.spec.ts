@@ -122,14 +122,6 @@ const MARKS_SCRIPT = String.raw`(() => {
       out.push({ mark: name, ratio: c ? ratio(over(c, bg), bg) : 0 });
     }
   }
-  // The "!" on an enemy is drawn on the enemy fill.
-  for (const el of document.querySelectorAll('svg [class*="_enemyMark_"], svg [class*="_enemyDot_"]')) {
-    const body = el.parentElement.querySelector('[class*="_enemyBody_"]');
-    const fill = parse(getComputedStyle(body).fill);
-    const prop = el.matches('[class*="_enemyDot_"]') ? 'fill' : 'stroke';
-    const c = parse(getComputedStyle(el)[prop]);
-    out.push({ mark: 'enemy mark', ratio: c && fill ? ratio(c, fill) : 0 });
-  }
   return out;
 })()`;
 

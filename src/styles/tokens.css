@@ -33,7 +33,6 @@
 
   --color-wall: #d9f26b; /* 9.64:1 — also the badge text and ring (badge fill = board) */
   --color-enemy: #ff9e8a; /* 6.01:1 (diamond) */
-  --color-enemy-mark: #3b0808; /* 8.58:1 on --color-enemy */
   --color-goal: #f5c84c; /* 7.58:1 (star) */
   --color-start: #c9b8f0; /* 6.63:1 (dashed square + P label) */
 

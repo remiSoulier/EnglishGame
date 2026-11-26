@@ -154,7 +154,7 @@ describe('Grid — walls', () => {
 });
 
 describe('Grid — enemies and goal', () => {
-  it('marks each enemy cell with a diamond and an exclamation mark', () => {
+  it('marks each enemy cell with a plain diamond, no exclamation mark (D26)', () => {
     const svg = renderGrid();
     const enemies = screen.getByTestId('enemies').querySelectorAll(':scope > [data-cell]');
     expect(Array.from(enemies).map((e) => e.getAttribute('data-cell'))).toEqual([
@@ -164,11 +164,11 @@ describe('Grid — enemies and goal', () => {
       'B5',
     ]);
     enemies.forEach((e) => {
-      // Diamond = polygon with 4 points; "!" = a line plus a dot.
+      // Diamond = polygon with 4 points; no "!" (line + dot) on it any more.
       const poly = e.querySelector('polygon');
       expect(poly?.getAttribute('points')?.trim().split(/\s+/)).toHaveLength(4);
-      expect(e.querySelector('line')).not.toBeNull();
-      expect(e.querySelector('circle')).not.toBeNull();
+      expect(e.querySelector('line')).toBeNull();
+      expect(e.querySelector('circle')).toBeNull();
       expect(e.querySelector('title')?.textContent).toMatch(/^Enemy: [A-I][1-9]$/);
     });
     expect(svg).toBeInTheDocument();
@@ -283,14 +283,12 @@ describe('Grid — no pawns', () => {
     ]);
   });
 
-  it('only draws circles as enemy "!" marks or wall end marks (2 per wall)', () => {
+  it('only draws circles as wall end marks (2 per wall)', () => {
     const svg = renderGrid();
     const circles = Array.from(svg.querySelectorAll('circle'));
-    const inEnemies = circles.filter((c) => c.closest('[data-testid="enemies"]'));
     const inEnds = circles.filter((c) => c.closest('[data-testid="wall-ends"]'));
-    expect(inEnemies).toHaveLength(FIXTURE_BOARD.enemies.length);
     expect(inEnds).toHaveLength(2 * FIXTURE_BOARD.walls.length);
-    expect(circles).toHaveLength(inEnemies.length + inEnds.length);
+    expect(circles).toHaveLength(inEnds.length);
   });
 });
 
@@ -380,7 +378,9 @@ describe('Legend', () => {
     const [wall, enemy, goal, start] = Array.from(icons);
     expect(wall.querySelector('path')).not.toBeNull();
     expect(enemy.querySelector('polygon')?.getAttribute('points')?.split(' ')).toHaveLength(4);
-    expect(enemy.querySelector('circle')).not.toBeNull();
+    // No exclamation mark (line + dot) on the enemy diamond (D26).
+    expect(enemy.querySelector('circle')).toBeNull();
+    expect(enemy.querySelector('line')).toBeNull();
     expect(goal.querySelector('polygon')?.getAttribute('points')?.split(' ')).toHaveLength(10);
     expect(start.querySelector('rect')).not.toBeNull();
   });
@@ -421,10 +421,6 @@ describe('colour tokens contrast', () => {
     'color-board-border',
   ])('%s reaches 4.5:1 on the board background', (name) => {
     expect(ratio(token(name), token('color-board-bg'))).toBeGreaterThanOrEqual(4.5);
-  });
-
-  it('enemy mark reaches 4.5:1 on the enemy fill', () => {
-    expect(ratio(token('color-enemy-mark'), token('color-enemy'))).toBeGreaterThanOrEqual(4.5);
   });
 
   it('text reaches 4.5:1 on the page background', () => {

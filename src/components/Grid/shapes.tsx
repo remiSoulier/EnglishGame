@@ -61,21 +61,17 @@ function CharacterArt({
   );
 }
 
-/** Red diamond with a white exclamation mark, of half-diagonal `r`, centred on (cx, cy). */
+/** Plain red diamond (no exclamation mark, D26), of half-diagonal `r`, centred on (cx, cy). */
 function Diamond({ cx, cy, r }: ShapeProps & { r: number }) {
   return (
-    <>
-      <polygon
-        className={styles.enemyBody}
-        points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
-      />
-      <line className={styles.enemyMark} x1={cx} y1={cy - r * 0.5} x2={cx} y2={cy + r * 0.12} />
-      <circle className={styles.enemyDot} cx={cx} cy={cy + r * 0.42} r={Math.min(2.4, r * 0.15)} />
-    </>
+    <polygon
+      className={styles.enemyBody}
+      points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
+    />
   );
 }
 
-/** Enemy: red diamond with a white exclamation mark (a corner badge when a character is shown). */
+/** Enemy: plain red diamond (a corner badge when a character is shown). */
 export function EnemyShape({ cx, cy, character }: CharacterShapeProps) {
   const r = CELL * 0.4;
   if (!character) {
@@ -149,7 +145,7 @@ const PLATE_HEIGHT = 13;
 const PLATE_FROM_EDGE = 7.5;
 /** Height of the character box when it shares the cell with the label plate. */
 const ART_WITH_LABEL = 24;
-/** Soft disc behind the character (a rounded rect: circles are kept for enemies and rivets). */
+/** Soft disc behind the character (a rounded rect: circles are kept for rivets). */
 const GLOW_RADIUS = 13;
 
 /**
