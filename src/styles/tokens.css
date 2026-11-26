@@ -91,5 +91,7 @@
     Roboto, sans-serif;
   --tap-target: 48px;
   --radius: 14px;
+  /* Thin outlines of buttons, options, panels and cards (decision D23, 0.5 px as asked). */
+  --border-thin: 0.5px;
   --radius-pill: 999px;
 }

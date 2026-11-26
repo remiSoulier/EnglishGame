@@ -11,7 +11,7 @@
   width: 100%;
   min-height: var(--tap-target);
   padding: 0 14px;
-  border: 2px solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-bg);
   color: var(--color-text);

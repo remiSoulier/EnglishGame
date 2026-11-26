@@ -21,13 +21,13 @@
 
 .gridLine {
   stroke: var(--color-grid-line);
-  stroke-width: 1;
+  stroke-width: 0.5; /* thin outlines (decision D23) */
 }
 
 .border {
   fill: none;
   stroke: var(--color-board-border);
-  stroke-width: 2;
+  stroke-width: 1; /* thin (D23), still the board's edge (6.07:1) */
 }
 
 .label {

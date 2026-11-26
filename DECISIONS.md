@@ -111,3 +111,7 @@ Maquette : https://www.figma.com/design/HNw6XYnhOeh7hKIpMSd4j1 (frames « 1 · H
 - Le plateau n'affiche plus « Code XXXX-XXX · Medium », seulement la difficulté (« Medium ») sous « Turn N ». *Continue game* sur l'accueil affiche « Turn N · Medium ».
 - Le code reste en interne, comme graine du plateau, dans la sauvegarde (`game.code`) : *End turn* et *New board* marchent comme avant, et les sauvegardes existantes se chargent toujours. Les tests qui ont besoin d'un plateau connu le chargent par la sauvegarde (e2e) ou fixent le prochain code tiré (tests unitaires).
 - On ne peut donc plus afficher le même plateau sur deux téléphones avec un code ; remplace la partie « code partagé » du cahier des charges.
+
+## D23 — Contours fins (2026-11-26, demande utilisateur)
+« Les contours fins en 0.5 » : les contours des boutons, des options de New game (joueurs, personnages, difficulté), du menu, de la liste des positions et des réponses passent de 2 px à **0,5 px** (jeton `--border-thin`). Sur le plateau, les traits des cases passent à 0,5 et le bord du plateau à 1 (il reste le repère du bord). Les réponses juste / fausse du résultat gardent un contour un peu plus marqué (1,5 px), et la carte de question / résultat garde son cadre bleu marine de 2 px de la maquette (D18). Les anneaux de focus clavier ne changent pas. L'option choisie reste reconnaissable à son fond vert citron et à son contour plus foncé.
+

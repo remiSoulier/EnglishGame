@@ -9,7 +9,7 @@
   min-height: var(--tap-target);
   min-width: var(--tap-target);
   padding: 0;
-  border: 2px solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   border-radius: 12px;
   background: var(--color-surface);
   color: var(--color-text);
@@ -45,7 +45,7 @@
   min-width: 220px;
   max-width: calc(100vw - 24px);
   padding: 6px;
-  border: 2px solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
   box-shadow: var(--shadow-popover);

@@ -122,7 +122,7 @@
   display: block;
   margin-bottom: 14px;
   padding: 12px 14px;
-  border: 2px solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-surface);
   font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
@@ -154,7 +154,7 @@
   height: 100%;
   min-height: var(--choice-min-height);
   padding: 12px 14px;
-  border: 2px solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   border-radius: var(--radius);
   background: var(--color-bg);
   color: var(--color-text);
@@ -200,7 +200,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border: 2px solid var(--color-border);
+  border: var(--border-thin) solid var(--color-border);
   border-radius: 9px;
   background: var(--color-surface);
   color: var(--color-text);

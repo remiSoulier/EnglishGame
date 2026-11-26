@@ -153,3 +153,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #39 Plus de code de plateau sur New game, le plateau et l'accueil (D22)
 
 | 2026-11-26 | #39 | Done (D22). 1700 unit tests, 95 e2e, lint and typecheck green. |
+- [x] #40 Contours fins de 0,5 px (D23)
+
+| 2026-11-26 | #40 | Done (D23). 1700 unit tests, 95 e2e, lint and typecheck green. |
