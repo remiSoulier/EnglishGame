@@ -75,6 +75,19 @@
   --color-card-back: #00006d;
   --color-card-instruction: #5d52de;
 
+  /*
+   * Lexicon cards (decision D25), from the SILVA brand chart. --color-text on each is >= 8.9:1.
+   * Only yellow is confirmed so far; mint, lavender, lime and blue are provisional.
+   */
+  --color-lexicon-yellow: #ffd46e; /* --color-text on it: 11.43:1 */
+  --color-lexicon-mint: #a8e6cf; /* 11.42:1 */
+  --color-lexicon-lavender: #c9b8f0; /* 8.90:1 */
+  --color-lexicon-lime: #e9f9b8; /* 14.36:1 */
+  --color-lexicon-blue: #bfe0f7; /* 11.68:1 */
+  /* Light box behind the mini program on a card. */
+  --color-lexicon-code-bg: rgb(255 255 255 / 60%);
+  --shadow-lexicon-card: 0 -6px 14px rgb(15 61 58 / 14%);
+
   /* Question results. Never the only cue: always paired with an icon and a text label. */
   --color-success: #035e44; /* 7.81:1; 5.54:1 on --color-success-bg */
   --color-success-bg: #a8e6cf; /* mint; --color-text on it: 11.42:1 */
