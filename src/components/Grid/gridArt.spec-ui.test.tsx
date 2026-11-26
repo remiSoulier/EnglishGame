@@ -105,10 +105,11 @@ describe('Grid — board texture', () => {
 
   it('defines a translucent veil and board-coloured outlines on every mark (CSS)', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/components/Grid/Grid.module.css'), 'utf8');
+    /** Every declaration block whose selector ends with `.name` (a rule can appear twice). */
     const rule = (name: string) => {
-      const m = css.match(new RegExp(`\\.${name}\\s*\\{([^}]*)\\}`));
-      expect(m, `.${name} rule`).not.toBeNull();
-      return m![1];
+      const blocks = [...css.matchAll(new RegExp(`\\.${name}\\s*\\{([^}]*)\\}`, 'g'))];
+      expect(blocks.length, `.${name} rule`).toBeGreaterThan(0);
+      return blocks.map((m) => m[1]).join('\n');
     };
     expect(rule('boardVeil')).toMatch(/fill:\s*var\(--color-board-veil\)/);
     const tokens = readFileSync(resolve(process.cwd(), 'src/styles/tokens.css'), 'utf8');
