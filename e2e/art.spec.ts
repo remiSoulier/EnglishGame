@@ -20,6 +20,11 @@ const ART = [
   'bg-blue-sky',
   'bg-vert',
   'board-texture',
+  'card-forward',
+  'card-instruction',
+  'card-question',
+  'card-repeat',
+  'card-turn',
   'char-batman',
   'char-croco',
   'char-croque-mort',
@@ -30,6 +35,20 @@ const ART = [
   'char-toad',
 ];
 const HOME_ART = ['/art/bg-lake.webp', '/art/scene-boat.webp'];
+/** How to play (D28): the scene, the six step characters and the cards it draws. */
+const HOW_TO_PLAY_ART = [
+  '/art/bg-lake.webp',
+  '/art/char-kitkat.webp',
+  '/art/char-toad.webp',
+  '/art/char-gus.webp',
+  '/art/char-croco.webp',
+  '/art/char-batman.webp',
+  '/art/char-dragon.webp',
+  '/art/card-forward.webp',
+  '/art/card-turn.webp',
+  '/art/card-repeat.webp',
+  '/art/card-question.webp',
+];
 /** Distinct art on a 4-player board (D15): texture, 4 players, the dragon goal, 3 enemies. */
 const BOARD_ART = [
   '/art/board-texture.webp',
@@ -240,7 +259,7 @@ const OUTLINES_SCRIPT = `(() => {
 
 test.use({ viewport: VIEWPORT });
 
-test('dist/sw.js precaches all 14 art files', () => {
+test('dist/sw.js precaches all 19 art files', () => {
   const sw = readFileSync(new URL('sw.js', DIST), 'utf8');
   for (const name of ART) {
     expect(sw, `precache of art/${name}.webp`).toContain(`"art/${name}.webp"`);
@@ -346,6 +365,31 @@ test('Board: texture and the four characters load; marks keep their outlines', a
   }
 });
 
+const HOW = 'main[aria-labelledby="how-title"]';
+
+test('How to play: title, Skip and step badges readable (D28)', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'How to play' }).click();
+  await expect(h1(page)).toHaveText('How to play');
+  await page.evaluate('document.fonts.ready.then(() => true)');
+  for (let step = 1; step <= 6; step++) {
+    const selectors: Record<string, string> = {
+      [`badge ${step}`]: `${HOW} section > p:first-child`,
+    };
+    if (step === 1) {
+      selectors.title = `${HOW} h1`;
+      selectors.Skip = `${HOW} h1 + button`;
+    }
+    const contrast = await measuredContrast(page, selectors);
+    for (const [name, { worst, samples }] of Object.entries(contrast)) {
+      expect(samples, `${name}: pixels sampled`).toBeGreaterThan(20);
+      expect(worst, `${name}: worst contrast`).toBeGreaterThanOrEqual(4.5);
+    }
+    await expectNoHorizontalScroll(page, `How to play step ${step}`);
+    if (step < 6) await page.getByRole('button', { name: 'Next' }).click();
+  }
+});
+
 test.describe('offline', () => {
   test.use({ serviceWorkers: 'allow' });
 
@@ -386,6 +430,32 @@ test.describe('offline', () => {
 
     const paths = art.map((r) => new URL(r.url()).pathname);
     for (const url of [...HOME_ART, ...BOARD_ART]) expect(paths, url).toContain(url);
+    for (const r of art) {
+      expect(r.status(), r.url()).toBe(200);
+      expect(r.fromServiceWorker(), `${r.url()} from the service worker`).toBe(true);
+    }
+    expect(failed).toEqual([]);
+  });
+
+  test('How to play scene, characters and cards load from the precache (D28)', async ({
+    page,
+    context,
+  }) => {
+    const failed = failures(context);
+    await page.goto('/');
+    await expect(h1(page)).toHaveText(APP_NAME);
+    await waitForControl(page);
+
+    await context.setOffline(true);
+    const art = watchArt(page);
+    await page.reload();
+    await page.getByRole('button', { name: 'How to play' }).click();
+    for (let step = 1; step < 6; step++) await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByRole('button', { name: 'Start a game' })).toBeVisible();
+    await expectDecoded(page, HOW_TO_PLAY_ART, 'offline How to play');
+
+    const paths = art.map((r) => new URL(r.url()).pathname);
+    for (const url of HOW_TO_PLAY_ART) expect(paths, url).toContain(url);
     for (const r of art) {
       expect(r.status(), r.url()).toBe(200);
       expect(r.fromServiceWorker(), `${r.url()} from the service worker`).toBe(true);
