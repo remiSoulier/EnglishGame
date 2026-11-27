@@ -174,3 +174,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #46 How to play, étape 2 : cartes rognées, entières et en éventail sans chevauchement (D34)
 
 | 2026-11-27 | #46 | Done (D34). 1763 unit tests, 107 e2e, lint, typecheck, format and build green. Branch feat/46-rules-step2-cards, merged locally, not pushed. |
+- [x] #47 How to play : changer d'étape en glissant le doigt à gauche ou à droite (D35)
+
+| 2026-11-27 | #47 | Done (D35). 1768 unit tests, 108 e2e, lint, typecheck, format and build green. Branch feat/47-rules-swipe, merged locally, not pushed. |

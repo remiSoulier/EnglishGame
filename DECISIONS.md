@@ -165,3 +165,9 @@ Remplace l'échange de D19 / D26 (« choisir un personnage déjà pris le donne 
 - **Demande** : « corrige l'affichage des cartes de la page 2 » (des règles).
 - **Cause** : les images exportées `card-forward`, `card-turn` et `card-repeat` avaient une bande transparente de 14 à 21 px à droite ; l'ombre et les coins arrondis tombaient à côté de la carte, et les cartes se chevauchaient (−14 px) jusqu'à cacher le texte de la troisième.
 - **Correction** : `scripts/optimize-art.mjs` rogne ces trois cartes à la carte elle-même (240 × 337, sans marge ; le script accepte aussi des noms pour ne refaire que certaines images). Les cartes sont posées côte à côte avec 6 px d'écart, inclinées à partir de leur bord bas (−7°, 0°, 7°), celle du milieu 10 px plus haut ; 92 px de large, moins sur les petits écrans pour garder une marge (≥ 12 px à 320 px de large).
+
+## D35 — How to play : changer d'étape en glissant le doigt (2026-11-27, demande utilisateur)
+- **Demande** : « fais qu'on puisse défiler les règles en swipant ».
+- Sur l'écran How to play, glisser vers la gauche passe à l'étape suivante et glisser vers la droite revient à la précédente, comme Next / Back. Il faut au moins 50 px de déplacement, nettement plus horizontal que vertical (|dx| ≥ 1,5 × |dy|) : un toucher, un petit mouvement ou un défilement vertical ne changent pas d'étape (`src/screens/HowToPlay/swipe.ts`). Seuls le doigt et le stylet comptent, pas la souris. L'écran garde son défilement vertical (`touch-action: pan-y`).
+- Aux extrémités, rien ne se passe : pas d'étape avant la 1, et glisser après l'étape 6 ne lance pas de partie (seul le bouton « Start a game » le fait).
+- La feuille de la nouvelle étape glisse depuis le côté d'où elle vient (0,22 s), pour les boutons, les flèches du clavier et le glissé ; pas d'animation avec `prefers-reduced-motion`. Le focus va toujours sur le titre de l'étape.
