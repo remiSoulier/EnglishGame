@@ -1,7 +1,7 @@
 import { useId, useState, type FormEvent, type ReactNode } from 'react';
 import { ENEMY_COUNT, newCode, type Difficulty } from '../../engine';
 import { Button } from '../../components/Button';
-import { defaultCharacters, pickCharacter, PLAYER_CHARACTERS } from '../../state/players';
+import { pickCharacter, PLAYER_CHARACTERS } from '../../state/players';
 import type { PlayerCount } from '../../state/types';
 import styles from './NewGameScreen.module.css';
 
@@ -34,6 +34,8 @@ interface SegmentProps<T extends string | number> {
   name: string;
   value: T;
   checked: boolean;
+  /** Not selectable (a character already taken by another player). */
+  disabled?: boolean;
   /** Accessible name when the visible text is split over several lines. */
   ariaLabel?: string;
   onSelect: (value: T) => void;
@@ -47,6 +49,7 @@ function Segment<T extends string | number>({
   name,
   value,
   checked,
+  disabled = false,
   ariaLabel,
   onSelect,
   onDeselect,
@@ -60,6 +63,7 @@ function Segment<T extends string | number>({
         name={name}
         value={String(value)}
         checked={checked}
+        disabled={disabled}
         aria-label={ariaLabel}
         onChange={() => onSelect(value)}
         // A checked radio fires no change when clicked again: the click deselects it instead.
@@ -74,7 +78,7 @@ function Segment<T extends string | number>({
 export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGameScreenProps) {
   const [playerCount, setPlayerCount] = useState<PlayerCount>(2);
   // One character per possible player (4); the first `playerCount` are used. `null` = deselected.
-  const [characters, setCharacters] = useState<(number | null)[]>(() => defaultCharacters(4));
+  const [characters, setCharacters] = useState<(number | null)[]>([null, null, null, null]);
   const [difficulty, setDifficulty] = useState<Difficulty>('medium');
   const id = useId();
 
@@ -140,6 +144,8 @@ export function NewGameScreen({ onStart, onBack, replacesGame = false }: NewGame
                       name={`${id}-character-${player}`}
                       value={index}
                       checked={current === index}
+                      // A character can belong to one player only: taken ones are greyed out.
+                      disabled={chosen.some((c, other) => other !== player && c === index)}
                       ariaLabel={character.name}
                       onSelect={(value) =>
                         setCharacters((list) => pickCharacter(list, player, value))

@@ -1,5 +1,5 @@
 /**
- * Layout of the scroll-driven Lexicon deck (decision D29): scrolling the screen moves the cards
+ * Layout of the scroll-driven Lexicon deck (decision D32): scrolling the screen moves the cards
  * one by one to the front, where the card shows its detailed view. Pure functions, no DOM.
  */
 

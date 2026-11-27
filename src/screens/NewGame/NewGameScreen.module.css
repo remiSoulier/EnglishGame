@@ -149,7 +149,7 @@
   text-align: left;
 }
 
-.segment:hover .radio:not(:checked) + .segmentText {
+.segment:hover .radio:not(:checked, :disabled) + .segmentText {
   background: var(--color-surface);
 }
 
@@ -158,6 +158,22 @@
   border-color: var(--color-accent-border);
   background: var(--color-accent);
   color: var(--color-on-accent);
+}
+
+/* Taken by another player: greyed out and not selectable. */
+.radio:disabled {
+  cursor: not-allowed;
+}
+
+.radio:disabled + .segmentText {
+  border-color: var(--color-disabled-bg);
+  background: var(--color-disabled-bg);
+  color: var(--color-disabled-text);
+}
+
+.radio:disabled + .segmentText img {
+  opacity: 0.35;
+  filter: grayscale(1);
 }
 
 .radio:focus-visible + .segmentText {

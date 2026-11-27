@@ -18,7 +18,7 @@ const toggle = (word: string) => toggles().find((b) => b.textContent?.startsWith
 const openCards = () => toggles().filter((b) => b.getAttribute('aria-expanded') === 'true');
 const stat = (label: string) => screen.getByText(label).nextElementSibling?.textContent;
 
-describe('LexiconScreen (D25, scroll deck D29)', () => {
+describe('LexiconScreen (D25, scroll deck D32)', () => {
   beforeEach(() => localStorage.clear());
 
   it('shows the header, the 3 stats and the 10 cards in two sections; the dragon is decorative', () => {
@@ -61,7 +61,7 @@ describe('LexiconScreen (D25, scroll deck D29)', () => {
     expect(openCards()).toEqual([loop]);
   });
 
-  it('one front card across both sections; the shown section title follows it (D29)', async () => {
+  it('one front card across both sections; the shown section title follows it (D32)', async () => {
     const { user } = setup();
     const basic = screen.getByRole('heading', { level: 2, name: 'Basic concepts' });
     const further = screen.getByRole('heading', { level: 2, name: 'Going further' });

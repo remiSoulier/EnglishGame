@@ -8,6 +8,7 @@ import { APP_NAME } from './state/appInfo';
 import { gameReducer, initialState, type GameAction } from './state/gameReducer';
 import { STORAGE_KEY, saveState } from './state/storage';
 import type { GameState } from './state/types';
+import { chooseCharacters } from './test/chooseCharacters';
 
 /**
  * Decision D22: the board code is neither shown nor typed any more; every new game draws a random
@@ -90,6 +91,7 @@ async function startGame(
   await user.click(screen.getByRole('button', { name: 'New game' }));
   await user.click(screen.getByRole('radio', { name: String(count) }));
   await user.click(screen.getByRole('radio', { name: DIFFICULTY_RADIO[difficulty] }));
+  await chooseCharacters(user, count);
   nextCode.value = code;
   await user.click(screen.getByRole('button', { name: 'Start game' }));
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/^Turn 1$/);
@@ -1010,6 +1012,7 @@ describe('Navigation (#12, D10)', () => {
       expect(h1()).toHaveFocus();
       await user.click(screen.getByRole('button', { name: 'New game' }));
       await user.click(screen.getByRole('radio', { name: '2' }));
+      await chooseCharacters(user, 2);
       await user.click(screen.getByRole('button', { name: 'Start game' }));
       expect(h1()).toHaveTextContent('Turn 1');
       expect(h1()).toHaveFocus();

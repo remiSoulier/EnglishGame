@@ -9,7 +9,7 @@ import {
   TOP_MARGIN,
 } from './deckLayout';
 
-describe('activeIndex (D29)', () => {
+describe('activeIndex (D32)', () => {
   it('moves one card per DECK_STEP of scroll, rounding to the nearest card', () => {
     expect(activeIndex(-300, 10)).toBe(0);
     expect(activeIndex(0, 10)).toBe(0);
@@ -25,7 +25,7 @@ describe('activeIndex (D29)', () => {
   });
 });
 
-describe('placeCards (D29)', () => {
+describe('placeCards (D32)', () => {
   const heights = [300, 90, 90, 90, 90, 90];
 
   it('first card at the front at the top, the next ones stacked under it', () => {

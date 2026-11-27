@@ -73,11 +73,11 @@ test('no horizontal scroll on a phone', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-/** Decision D29: scrolling the Lexicon brings the cards one by one to the front, in detail. */
+/** Decision D32: scrolling the Lexicon brings the cards one by one to the front, in detail. */
 const STEP = 200;
 const front = (page: Page) => page.locator('button[aria-expanded="true"]');
 /** Browser-side: the Lexicon scroller and how far it has scrolled into the deck track. */
-/** Browser-side: the deck's own scroller (only the deck scrolls, D30). */
+/** Browser-side: the deck's own scroller (only the deck scrolls, D33). */
 const SCROLLER =
   'document.querySelector(\'main[aria-labelledby="lexicon-title"] [class*="deckScroller"]\')';
 const DECK_SCROLLED = `${SCROLLER}.scrollTop`;

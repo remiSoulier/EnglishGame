@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Grid } from '../components/Grid';
 import { generateBoard } from '../engine';
 import { NewGameScreen } from '../screens/NewGame';
+import { chooseCharacters } from '../test/chooseCharacters';
 import { gameReducer, initialState } from './gameReducer';
 import {
   defaultCharacters,
@@ -128,17 +129,27 @@ describe('New game screen', () => {
     for (const group of groups) expect(within(group).getAllByRole('radio')).toHaveLength(4);
   });
 
-  it('picking a taken character swaps it, and Start sends the choice', async () => {
+  it('a character taken by another player is greyed out, and Start sends the choice', async () => {
     const user = userEvent.setup();
     const onStart = vi.fn();
     render(<NewGameScreen onStart={onStart} onBack={vi.fn()} />);
     const p1 = screen.getByRole('group', { name: 'Player 1' });
     const p2 = screen.getByRole('group', { name: 'Player 2' });
+    // Nothing is chosen at first (D30), so nothing is greyed out.
+    expect(within(p2).getByRole('radio', { name: 'Kitkat' })).toBeEnabled();
+    await chooseCharacters(user, 2);
+    // P1 Kitkat, P2 Batman: each one's character is unavailable to the other.
+    expect(within(p1).getByRole('radio', { name: 'Batman' })).toBeDisabled();
+    expect(within(p2).getByRole('radio', { name: 'Kitkat' })).toBeDisabled();
+    expect(within(p1).getByRole('radio', { name: 'Mushi' })).toBeEnabled();
     await user.click(within(p1).getByRole('radio', { name: 'Batman' }));
-    expect(within(p1).getByRole('radio', { name: 'Batman' })).toBeChecked();
-    expect(within(p2).getByRole('radio', { name: 'Kitkat' })).toBeChecked();
+    expect(within(p1).getByRole('radio', { name: 'Kitkat' })).toBeChecked();
+    expect(within(p2).getByRole('radio', { name: 'Batman' })).toBeChecked();
+    // Hidden players (3 and 4) don't block anyone: Mushi and Gus are free.
+    await user.click(within(p1).getByRole('radio', { name: 'Mushi' }));
+    expect(within(p2).getByRole('radio', { name: 'Kitkat' })).toBeEnabled();
     await user.click(within(p2).getByRole('radio', { name: 'Gus' }));
     await user.click(screen.getByRole('button', { name: 'Start game' }));
-    expect(onStart.mock.calls[0][0].characters).toEqual([1, 3]);
+    expect(onStart.mock.calls[0][0].characters).toEqual([2, 3]);
   });
 });

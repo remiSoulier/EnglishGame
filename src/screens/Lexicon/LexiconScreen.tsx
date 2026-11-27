@@ -48,11 +48,11 @@ export interface LexiconScreenProps {
  */
 export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
   const [learned, setLearned] = useState<string[]>(loadLearned);
-  /** Card at the front of the deck, driven by the scroll (D29). */
+  /** Card at the front of the deck, driven by the scroll (D32). */
   const [active, setActive] = useState(0);
   const [heights, setHeights] = useState<number[]>(() => LEXICON_CONCEPTS.map(() => 0));
   const headingRef = useRef<HTMLHeadingElement>(null);
-  /** The deck's own scroller: the header, the stats and the section title stay put (D30). */
+  /** The deck's own scroller: the header, the stats and the section title stay put (D33). */
   const scrollerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLLIElement | null)[]>([]);
   /** Card being scrolled to after a tap: scroll positions on the way are ignored. */
@@ -210,7 +210,7 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
             </button>
           </div>
 
-          {/* The deck (D29): only this part scrolls (D30). Its tall track holds a sticky stage
+          {/* The deck (D32): only this part scrolls (D33). Its tall track holds a sticky stage
               showing the cards; each DECK_STEP of scroll brings the next card to the front, in
               its detailed view. */}
           <div ref={scrollerRef} className={styles.deckScroller}>

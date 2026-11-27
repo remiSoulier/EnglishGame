@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
-import { APP_NAME } from './helpers';
+import { APP_NAME, chooseCharacters } from './helpers';
 
 const DIST = new URL('../dist/', import.meta.url);
 
@@ -158,6 +158,7 @@ test.describe('service worker and offline', () => {
     await expect(h1(page)).toHaveText('New game');
     await page.getByRole('radio', { name: '3', exact: true }).check();
     await page.getByRole('radio', { name: 'Hard — 6 enemies' }).check();
+    await chooseCharacters(page, 3);
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
     await expect(page.getByText('Hard', { exact: true })).toBeVisible();

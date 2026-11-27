@@ -165,9 +165,9 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #43 How to play : tutoriel des règles en 6 étapes, README sans code de plateau (D27, D28)
 
 | 2026-11-26 | #43 | Done (D27, D28). 1753 unit tests, 104 e2e, lint and typecheck green. Branch feat/how-to-play (from feat/lexicon), not pushed yet (waiting for the user's OK). |
-- [x] #44 Lexicon : les cartes passent une à une au premier plan, en vue détaillée, au défilement (D29)
+- [x] #44 Lexicon : les cartes passent une à une au premier plan, en vue détaillée, au défilement (D32)
 
-| 2026-11-27 | #44 | Done (D29). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/44-lexicon-scroll, merged locally, not pushed (user: no automatic push). |
-- [x] #45 Lexicon : en-tête, compteurs et titre de section fixes, seule la pile de cartes défile (D30)
+| 2026-11-27 | #44 | Done (D32). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/44-lexicon-scroll, merged and pushed with #45 (user OK). |
+- [x] #45 Lexicon : en-tête, compteurs et titre de section fixes, seule la pile de cartes défile (D33)
 
-| 2026-11-27 | #45 | Done (D30). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/45-lexicon-static-header, merged locally, not pushed. |
+| 2026-11-27 | #45 | Done (D33). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/45-lexicon-static-header, merged and pushed (user OK); renumbered D32 / D33 after merging origin D29–D31. |
