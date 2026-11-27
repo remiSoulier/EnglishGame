@@ -146,3 +146,6 @@ Remplace l'échange de D19 / D26 (« choisir un personnage déjà pris le donne 
 
 ## D30 — Aucun personnage choisi au départ (2026-11-27, demande utilisateur)
 « Que les personnages ne soient pas déjà sélectionnés de base » : New game s'ouvre sans aucun personnage choisi. Chaque joueur tape le sien ; « Start game » reste grisé avec « Choose a character for each player. » tant qu'il en manque un. Les personnages par défaut (Kitkat, Batman, Mushi, Gus) servent seulement aux anciennes sauvegardes sans personnages (`defaultCharacters` dans `gameReducer`).
+
+## D31 — Logo SILVA en favicon (2026-11-27, demande utilisateur)
+- L'icône de l'onglet (`public/favicon.svg`) est le logo SILVA fourni par l'utilisatrice, en bleu marine de la charte (`#00006D`) sur le jaune pâle de sa maquette (`#F7EF8B`), dans une tuile arrondie. `scripts/generate-icons.mjs` écrit ce même favicon ; les icônes PNG de la PWA ne changent pas.
