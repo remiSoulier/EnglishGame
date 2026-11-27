@@ -160,3 +160,8 @@ Remplace l'échange de D19 / D26 (« choisir un personnage déjà pris le donne 
 ## D33 — Lexicon : en-tête fixe, seule la pile de cartes défile (2026-11-27, demande utilisateur)
 - **Demande** : « garder le header statique et seulement rendre la liste scrollable ». Précise D32.
 - L'en-tête (‹, « Lexicon », dragon), les blocs Concepts / Learned / Level et la ligne de section (titre + « See all ») ne bougent plus. Seule la zone des cartes, en dessous, défile (son propre conteneur, `deckScroller`) ; l'écran lui-même ne défile plus. Le défilement des cartes reste celui de D32 (200 px par carte, carte de devant dépliée, accroches douces), mesuré dans cette zone (unités `cqh` de conteneur). « See all » garde son défilement d'écran habituel.
+
+## D34 — How to play, étape 2 : cartes entières, en éventail sans chevauchement (2026-11-27, demande utilisateur)
+- **Demande** : « corrige l'affichage des cartes de la page 2 » (des règles).
+- **Cause** : les images exportées `card-forward`, `card-turn` et `card-repeat` avaient une bande transparente de 14 à 21 px à droite ; l'ombre et les coins arrondis tombaient à côté de la carte, et les cartes se chevauchaient (−14 px) jusqu'à cacher le texte de la troisième.
+- **Correction** : `scripts/optimize-art.mjs` rogne ces trois cartes à la carte elle-même (240 × 337, sans marge ; le script accepte aussi des noms pour ne refaire que certaines images). Les cartes sont posées côte à côte avec 6 px d'écart, inclinées à partir de leur bord bas (−7°, 0°, 7°), celle du milieu 10 px plus haut ; 92 px de large, moins sur les petits écrans pour garder une marge (≥ 12 px à 320 px de large).
