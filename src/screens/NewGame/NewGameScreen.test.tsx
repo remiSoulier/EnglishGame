@@ -41,12 +41,13 @@ describe('NewGameScreen', () => {
     await user.click(start);
     expect(onStart).not.toHaveBeenCalled();
 
-    // Picking a character again (here P2's Batman) moves it over and frees P2.
+    // P2's Batman is greyed out for P1; once P2 picks Gus, Batman is free for P1.
+    const p2 = within(screen.getByRole('group', { name: 'Player 2' }));
+    expect(p1.getByRole('radio', { name: 'Batman' })).toBeDisabled();
+    await user.click(p2.getByRole('radio', { name: 'Gus' }));
+    expect(p1.getByRole('radio', { name: 'Gus' })).toBeDisabled();
     await user.click(p1.getByRole('radio', { name: 'Batman' }));
     expect(p1.getByRole('radio', { name: 'Batman' })).toBeChecked();
-    const p2 = within(screen.getByRole('group', { name: 'Player 2' }));
-    expect(p2.queryAllByRole('radio', { checked: true })).toHaveLength(0);
-    await user.click(p2.getByRole('radio', { name: 'Gus' }));
     expect(start).toBeEnabled();
     await user.click(start);
     expect(onStart.mock.calls[0][0].characters).toEqual([1, 3]);

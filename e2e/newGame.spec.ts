@@ -179,17 +179,21 @@ test.describe('new game screen', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('radio', { name: '4', exact: true })).toBeChecked();
-    // One tab stop per player's character (D19); arrows pick another one (swapping if taken).
+    // One tab stop per player's character (D19). With 4 players every other character is
+    // taken, so greyed out (D29): the arrows skip them and P4 keeps Gus.
     for (const [i, name] of ['Kitkat', 'Batman', 'Mushi', 'Gus'].entries()) {
       await page.keyboard.press('Tab');
       const group = page.getByRole('group', { name: `Player ${i + 1}` });
       await expect(group.getByRole('radio', { name })).toBeFocused();
     }
-    await page.keyboard.press('ArrowLeft');
     const p4 = page.getByRole('group', { name: 'Player 4' });
-    await expect(p4.getByRole('radio', { name: 'Mushi' })).toBeChecked();
+    for (const name of ['Kitkat', 'Batman', 'Mushi']) {
+      await expect(p4.getByRole('radio', { name })).toBeDisabled();
+    }
+    await page.keyboard.press('ArrowLeft');
+    await expect(p4.getByRole('radio', { name: 'Gus' })).toBeChecked();
     await expect(
-      page.getByRole('group', { name: 'Player 3' }).getByRole('radio', { name: 'Gus' }),
+      page.getByRole('group', { name: 'Player 3' }).getByRole('radio', { name: 'Mushi' }),
     ).toBeChecked();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('radio', { name: DIFFICULTY_RADIO.Medium })).toBeFocused();
