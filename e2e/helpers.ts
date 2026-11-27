@@ -107,3 +107,14 @@ export async function gameLine(page: Page): Promise<string> {
   const difficulty = await page.getByText(DIFFICULTY_LINE).textContent();
   return `${await savedCode(page)} · ${difficulty}`;
 }
+
+/**
+ * Waits for the finite animations to end, e.g. the How to play step sliding in (D35); endless
+ * ones (the floating character, the rocking moon) are not awaited.
+ */
+export async function waitForAnimations(page: Page) {
+  await page.waitForFunction(
+    `document.getAnimations().every((a) => a.playState !== 'running' ||
+      a.effect.getComputedTiming().iterations === Infinity)`,
+  );
+}
