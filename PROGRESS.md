@@ -168,3 +168,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #44 Lexicon : les cartes passent une à une au premier plan, en vue détaillée, au défilement (D29)
 
 | 2026-11-27 | #44 | Done (D29). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/44-lexicon-scroll, merged locally, not pushed (user: no automatic push). |
+- [x] #45 Lexicon : en-tête, compteurs et titre de section fixes, seule la pile de cartes défile (D30)
+
+| 2026-11-27 | #45 | Done (D30). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/45-lexicon-static-header, merged locally, not pushed. |

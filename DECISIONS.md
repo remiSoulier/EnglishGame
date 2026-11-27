@@ -147,3 +147,7 @@ Confirme D22 : un seul téléphone mène la partie pour toute la table, il n'y a
 - **Paquet** : les cartes déjà vues passent derrière, plus petites, et dépassent de 10 px chacune au-dessus (3 au plus, les autres disparaissent) ; les suivantes s'empilent dessous, repliées, avec le chevauchement de 18 px de D25. Points d'accroche doux (`scroll-snap-type: y proximity`) sur chaque carte et sur l'en-tête. La première carte (Algorithm) est devant à l'ouverture.
 - **Toucher et clavier** : toucher le titre d'une carte la fait défiler jusqu'à sa place (sans faire défiler les cartes intermédiaires) ; le focus clavier sur une carte l'amène devant. Cocher « appris » ne déplace plus les cartes (avant, cocher la carte ouverte la fermait).
 - **Mouvement** : déplacements et dépliage en 0,35 s ; avec `prefers-reduced-motion`, ni animation, ni défilement doux, ni inclinaison. « See all » ne change pas.
+
+## D30 — Lexicon : en-tête fixe, seule la pile de cartes défile (2026-11-27, demande utilisateur)
+- **Demande** : « garder le header statique et seulement rendre la liste scrollable ». Précise D29.
+- L'en-tête (‹, « Lexicon », dragon), les blocs Concepts / Learned / Level et la ligne de section (titre + « See all ») ne bougent plus. Seule la zone des cartes, en dessous, défile (son propre conteneur, `deckScroller`) ; l'écran lui-même ne défile plus. Le défilement des cartes reste celui de D29 (200 px par carte, carte de devant dépliée, accroches douces), mesuré dans cette zone (unités `cqh` de conteneur). « See all » garde son défilement d'écran habituel.

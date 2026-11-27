@@ -77,12 +77,13 @@ test('no horizontal scroll on a phone', async ({ page }) => {
 const STEP = 200;
 const front = (page: Page) => page.locator('button[aria-expanded="true"]');
 /** Browser-side: the Lexicon scroller and how far it has scrolled into the deck track. */
-const SCROLLER = 'document.querySelector(\'main[aria-labelledby="lexicon-title"]\')';
-const TRACK = `${SCROLLER}.querySelector('[class*="track"]')`;
-const DECK_SCROLLED = `${SCROLLER}.scrollTop - ${TRACK}.offsetTop`;
+/** Browser-side: the deck's own scroller (only the deck scrolls, D30). */
+const SCROLLER =
+  'document.querySelector(\'main[aria-labelledby="lexicon-title"] [class*="deckScroller"]\')';
+const DECK_SCROLLED = `${SCROLLER}.scrollTop`;
 /** Scrolls the Lexicon to card `index` of the deck (0-based). */
 const scrollToCard = (page: Page, index: number) =>
-  page.evaluate(`${SCROLLER}.scrollTo({ top: ${TRACK}.offsetTop + ${index * STEP} })`);
+  page.evaluate(`${SCROLLER}.scrollTo({ top: ${index * STEP} })`);
 /** Gap between the bottom of the front card and the top of the next card (px, < 0 = overlap). */
 const FRONT_GAP = `(() => {
   const cards = Array.from(${SCROLLER}.querySelectorAll('li'));
@@ -91,17 +92,30 @@ const FRONT_GAP = `(() => {
   return next ? next.offsetTop - (li.offsetTop + li.offsetHeight) : null;
 })()`;
 
-test('scrolling brings the cards one by one to the front, in their detailed view', async ({
+test('scrolling the deck brings the cards one by one to the front, in their detailed view', async ({
   page,
 }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Lexicon', exact: true }).click();
   await expect(front(page)).toHaveText(/^Algorithm/);
 
-  // A real wheel scroll moves the deck on.
-  await page.mouse.move(180, 500);
+  // A real wheel scroll moves the deck on; the header, the stats and the section title stay put.
+  const fixed = [
+    page.getByRole('heading', { level: 1, name: 'Lexicon' }),
+    page.getByText('Learned', { exact: true }),
+    page.getByRole('button', { name: 'See all' }),
+  ];
+  const before = await Promise.all(fixed.map((l) => l.boundingBox()));
+  await page.mouse.move(180, 600);
   await page.mouse.wheel(0, 700);
   await expect(front(page)).not.toHaveText(/^Algorithm/);
+  expect(await page.evaluate(DECK_SCROLLED)).toBeGreaterThan(0);
+  expect(await Promise.all(fixed.map((l) => l.boundingBox()))).toEqual(before);
+  expect(
+    await page.evaluate(
+      'document.querySelector(\'main[aria-labelledby="lexicon-title"]\').scrollTop',
+    ),
+  ).toBe(0);
 
   await scrollToCard(page, 3);
   await expect(front(page)).toHaveText(/^Loop/);
