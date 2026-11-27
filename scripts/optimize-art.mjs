@@ -5,10 +5,12 @@
  * - board-texture.png: board texture, kept at its size (never upscaled past 720 px);
  * - char-*.png: player tokens, transparent margins trimmed, longest side 256 px;
  * - card-*.png: card backs (question / instruction) and the How to play cards (forward / turn /
- *   repeat), longest side 720 px.
+ *   repeat), longest side 720 px; the How to play cards also lose their transparent margin (the
+ *   exported cards carry a see-through strip on their right edge), so their box is the card.
  * Alpha is preserved. Needs libwebp's `cwebp` and `dwebp` on the PATH (`brew install webp`).
  *
- * Usage: node scripts/optimize-art.mjs   (or npm run art)
+ * Usage: node scripts/optimize-art.mjs [name …]   (or npm run art; names limit the run, e.g.
+ * `node scripts/optimize-art.mjs card-turn`)
  */
 import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
@@ -28,6 +30,9 @@ const CHAR_MAX = 256;
 const ALPHA_THRESHOLD = 8;
 /** Transparent padding (px, source scale) kept around a trimmed character. */
 const TRIM_PADDING = 8;
+/** How to play cards, trimmed to the card itself (no padding, faint edge pixels dropped). */
+const HAND_CARDS = new Set(['card-forward', 'card-turn', 'card-repeat']);
+const CARD_ALPHA_THRESHOLD = 32;
 
 /** Runs a libwebp tool quietly and returns its stdout. */
 function run(cmd, args) {
@@ -52,14 +57,14 @@ async function decodeRgba(png, tmp) {
 }
 
 /** Bounding box of the non-transparent pixels, padded and clamped to the image. */
-function opaqueBox({ width, height, data }) {
+function opaqueBox({ width, height, data }, padding = TRIM_PADDING, threshold = ALPHA_THRESHOLD) {
   let minX = width;
   let minY = height;
   let maxX = -1;
   let maxY = -1;
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      if (data[(y * width + x) * 4 + 3] > ALPHA_THRESHOLD) {
+      if (data[(y * width + x) * 4 + 3] > threshold) {
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
         if (y < minY) minY = y;
@@ -68,10 +73,10 @@ function opaqueBox({ width, height, data }) {
     }
   }
   if (maxX < 0) return { x: 0, y: 0, w: width, h: height };
-  const x = Math.max(0, minX - TRIM_PADDING);
-  const y = Math.max(0, minY - TRIM_PADDING);
-  const w = Math.min(width, maxX + 1 + TRIM_PADDING) - x;
-  const h = Math.min(height, maxY + 1 + TRIM_PADDING) - y;
+  const x = Math.max(0, minX - padding);
+  const y = Math.max(0, minY - padding);
+  const w = Math.min(width, maxX + 1 + padding) - x;
+  const h = Math.min(height, maxY + 1 + padding) - y;
   return { x, y, w, h };
 }
 
@@ -88,6 +93,10 @@ async function sizeArgs(name, png, tmp) {
     const h = Math.round(box.h * scale);
     return ['-crop', ...[box.x, box.y, box.w, box.h].map(String), '-resize', String(w), String(h)];
   }
+  if (HAND_CARDS.has(name)) {
+    const box = opaqueBox(img, 0, CARD_ALPHA_THRESHOLD);
+    return ['-crop', ...[box.x, box.y, box.w, box.h].map(String)];
+  }
   const longest = Math.max(img.width, img.height);
   if (longest <= BOARD_MAX) return [];
   return img.width >= img.height
@@ -98,7 +107,10 @@ async function sizeArgs(name, png, tmp) {
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
   const tmp = await mkdtemp(join(tmpdir(), 'silva-art-'));
-  const files = (await readdir(SRC_DIR)).filter((f) => f.endsWith('.png')).sort();
+  const only = new Set(process.argv.slice(2));
+  const files = (await readdir(SRC_DIR))
+    .filter((f) => f.endsWith('.png') && (only.size === 0 || only.has(basename(f, '.png'))))
+    .sort();
   let before = 0;
   let after = 0;
   try {

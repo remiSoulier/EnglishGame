@@ -361,26 +361,29 @@
   font-weight: 600;
 }
 
-/* 2 · The hand of cards. */
+/* 2 · The hand of cards (D34): three whole cards side by side, fanned from their bottom edge
+   (tilts in TUTORIAL_CARDS), the middle one a little higher; none hides another's text. */
 .hand {
-  gap: 0;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 8px 0 4px;
 }
 
 .handCard {
-  width: 92px;
+  flex: none;
+  /* 92 px, narrower on small phones so the tilted cards keep a margin (≥ 12 px at 320 px). */
+  width: min(92px, calc((100vw - 76px) / 3));
   height: auto;
+  aspect-ratio: 240 / 337;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgb(15 61 58 / 25%);
-}
-
-.handCard + .handCard {
-  margin-left: -14px;
+  transform-origin: 50% 100%;
 }
 
 .handCard:nth-child(2) {
   position: relative;
   z-index: 1;
-  margin-top: -10px;
+  margin-bottom: 10px;
 }
 
 /* 3 · Question card and the 3 outcomes. */
