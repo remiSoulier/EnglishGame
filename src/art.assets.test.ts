@@ -104,6 +104,14 @@ describe('public/art (optimised Figma art)', () => {
     expect({ width: info.width, height: info.height }).toEqual({ width: 644, height: 644 });
   });
 
+  it.each(['card-forward', 'card-turn', 'card-repeat'])(
+    '%s.webp is trimmed to the card, 240 × 337 (no see-through strip, D34)',
+    (name) => {
+      const info = webp(resolve(ART, `${name}.webp`));
+      expect({ width: info.width, height: info.height }).toEqual({ width: 240, height: 337 });
+    },
+  );
+
   it('total size of the art is under 1 MB', () => {
     const total = ALL.reduce((sum, n) => sum + statSync(resolve(ART, `${n}.webp`)).size, 0);
     expect(total).toBeLessThan(1024 * 1024);

@@ -29,7 +29,9 @@ async function openHowToPlay(page: Page) {
 
 async function expectNoHorizontalScroll(page: Page, label: string) {
   const scrollWidth = await page.evaluate<number>('document.documentElement.scrollWidth');
-  expect(scrollWidth, `${label}: no horizontal scroll`).toBeLessThanOrEqual(390);
+  expect(scrollWidth, `${label}: no horizontal scroll`).toBeLessThanOrEqual(
+    page.viewportSize()?.width ?? 390,
+  );
 }
 
 test('Home → the 6 steps → Start a game opens New game', async ({ page }) => {
@@ -90,3 +92,42 @@ test('Skip, ‹ and the system back return to Home', async ({ page }) => {
   await page.goBack();
   await expect(h1(page)).toHaveText(APP_NAME);
 });
+
+/** D34: the step 2 cards are whole, side by side, and inside the screen (390 and 320 px wide). */
+const CARD_BOXES = `Array.from(document.querySelectorAll('img[alt^="Card:"]')).map((img) => {
+  const r = img.getBoundingClientRect();
+  return { left: r.left, right: r.right, natural: img.naturalWidth, height: img.naturalHeight };
+})`;
+
+for (const width of [390, 320]) {
+  test(`step 2: the three cards are whole and none covers another (${width} px)`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 740 });
+    await openHowToPlay(page);
+    await page.getByRole('button', { name: 'Next' }).click();
+    await expect(page.getByText('Step 2 of 6')).toBeVisible();
+    for (const alt of ['Card: Move forward(1)', 'Card: Turn left(90)', 'Card: Repeat(2)']) {
+      await expect(page.getByRole('img', { name: alt })).toBeVisible();
+    }
+    await expect
+      .poll(async () => (await page.evaluate<{ natural: number }[]>(CARD_BOXES))[2].natural)
+      .toBe(240);
+    const cards =
+      await page.evaluate<{ left: number; right: number; natural: number; height: number }[]>(
+        CARD_BOXES,
+      );
+    // The art is the card itself: no see-through strip on its side.
+    expect(cards.map((c) => [c.natural, c.height])).toEqual([
+      [240, 337],
+      [240, 337],
+      [240, 337],
+    ]);
+    // Left to right, a gap between two cards (tilted from their bottom edge), inside the screen.
+    expect(cards[0].right).toBeLessThan(cards[1].left);
+    expect(cards[1].right).toBeLessThan(cards[2].left);
+    expect(cards[0].left).toBeGreaterThanOrEqual(8);
+    expect(cards[2].right).toBeLessThanOrEqual(width - 8);
+    await expectNoHorizontalScroll(page, `step 2 at ${width} px`);
+  });
+}
