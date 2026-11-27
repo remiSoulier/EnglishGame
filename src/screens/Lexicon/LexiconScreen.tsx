@@ -52,8 +52,8 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
   const [active, setActive] = useState(0);
   const [heights, setHeights] = useState<number[]>(() => LEXICON_CONCEPTS.map(() => 0));
   const headingRef = useRef<HTMLHeadingElement>(null);
-  const screenRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+  /** The deck's own scroller: the header, the stats and the section title stay put (D30). */
+  const scrollerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLLIElement | null)[]>([]);
   /** Card being scrolled to after a tap: scroll positions on the way are ignored. */
   const pending = useRef<number | null>(null);
@@ -64,16 +64,14 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
     headingRef.current?.focus();
   }, [view]);
 
-  // Scrolling the screen moves the deck: one card per DECK_STEP pixels of scroll.
+  // Scrolling the deck moves it on: one card per DECK_STEP pixels of scroll.
   useEffect(() => {
-    const screenEl = screenRef.current;
-    if (view !== 'main' || !screenEl) return;
+    const scroller = scrollerRef.current;
+    if (view !== 'main' || !scroller) return;
     let frame = 0;
     const update = () => {
       frame = 0;
-      const track = trackRef.current;
-      if (!track) return;
-      const index = activeIndex(screenEl.scrollTop - track.offsetTop, LEXICON_CONCEPTS.length);
+      const index = activeIndex(scroller.scrollTop, LEXICON_CONCEPTS.length);
       if (pending.current !== null) {
         if (index !== pending.current) return;
         pending.current = null;
@@ -83,9 +81,9 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
     const onScroll = () => {
       if (!frame) frame = requestAnimationFrame(update);
     };
-    screenEl.addEventListener('scroll', onScroll, { passive: true });
+    scroller.addEventListener('scroll', onScroll, { passive: true });
     return () => {
-      screenEl.removeEventListener('scroll', onScroll);
+      scroller.removeEventListener('scroll', onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
   }, [view]);
@@ -113,21 +111,20 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
   }, [measure, active]);
   useEffect(() => () => window.clearTimeout(pendingTimer.current), []);
 
-  /** Brings card `index` to the front, scrolling the screen to its place in the deck. */
+  /** Brings card `index` to the front, scrolling the deck to its place. */
   const select = (index: number) => {
     if (index === active) return;
     setActive(index);
-    const screenEl = screenRef.current;
-    const track = trackRef.current;
-    if (!screenEl || !track) return;
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
     // Until the scroll reaches the card (or gives up), the cards on the way stay behind.
     pending.current = index;
     window.clearTimeout(pendingTimer.current);
     pendingTimer.current = window.setTimeout(() => {
       pending.current = null;
     }, 1000);
-    screenEl.scrollTo?.({
-      top: track.offsetTop + index * DECK_STEP,
+    scroller.scrollTo?.({
+      top: index * DECK_STEP,
       behavior: reducedMotion() ? 'auto' : 'smooth',
     });
   };
@@ -148,8 +145,7 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
 
   return (
     <main
-      ref={screenRef}
-      className={view === 'main' ? `${styles.screen} ${styles.snap}` : styles.screen}
+      className={view === 'main' ? `${styles.screen} ${styles.deckView}` : styles.screen}
       aria-labelledby="lexicon-title"
     >
       <header className={styles.header}>
@@ -193,74 +189,77 @@ export function LexiconScreen({ view, onBack, onSeeAll }: LexiconScreenProps) {
             </div>
           </dl>
 
-          {/* The deck (D29): a tall track whose sticky stage shows the cards; each DECK_STEP of
-              scroll brings the next card to the front, in its detailed view. */}
-          <div
-            ref={trackRef}
-            className={styles.track}
-            style={{ '--deck-steps': LEXICON_CONCEPTS.length - 1 } as CSSProperties}
-          >
-            {LEXICON_CONCEPTS.map((concept, i) => (
-              <span
-                key={concept.id}
-                className={styles.snapPoint}
-                style={{ top: i * DECK_STEP }}
-                aria-hidden="true"
-              />
-            ))}
-            <div className={styles.stage}>
-              <div className={styles.sectionHead}>
-                <div className={styles.sectionTitles}>
+          <div className={styles.sectionHead}>
+            <div className={styles.sectionTitles}>
+              {SECTIONS.map((section) => (
+                <h2
+                  key={section}
+                  id={`lexicon-${section}`}
+                  className={
+                    section === activeSection
+                      ? styles.sectionTitle
+                      : `${styles.sectionTitle} sr-only`
+                  }
+                >
+                  {SECTION_TITLE[section]}
+                </h2>
+              ))}
+            </div>
+            <button type="button" className={styles.seeAll} onClick={onSeeAll}>
+              See all
+            </button>
+          </div>
+
+          {/* The deck (D29): only this part scrolls (D30). Its tall track holds a sticky stage
+              showing the cards; each DECK_STEP of scroll brings the next card to the front, in
+              its detailed view. */}
+          <div ref={scrollerRef} className={styles.deckScroller}>
+            <div
+              className={styles.track}
+              style={{ '--deck-steps': LEXICON_CONCEPTS.length - 1 } as CSSProperties}
+            >
+              {LEXICON_CONCEPTS.map((concept, i) => (
+                <span
+                  key={concept.id}
+                  className={styles.snapPoint}
+                  style={{ top: i * DECK_STEP }}
+                  aria-hidden="true"
+                />
+              ))}
+              <div className={styles.stage}>
+                <div className={styles.deck}>
                   {SECTIONS.map((section) => (
-                    <h2
-                      key={section}
-                      id={`lexicon-${section}`}
-                      className={
-                        section === activeSection
-                          ? styles.sectionTitle
-                          : `${styles.sectionTitle} sr-only`
-                      }
-                    >
-                      {SECTION_TITLE[section]}
-                    </h2>
+                    <section key={section} aria-labelledby={`lexicon-${section}`}>
+                      <ul className={styles.stack}>
+                        {conceptsOf(section).map((concept) => {
+                          const i = DECK_INDEX.get(concept.id)!;
+                          const place = placements[i];
+                          return (
+                            <ConceptCard
+                              key={concept.id}
+                              itemRef={(el) => {
+                                cardRefs.current[i] = el;
+                              }}
+                              concept={concept}
+                              open={i === active}
+                              learned={learned.includes(concept.id)}
+                              hidden={place.hidden}
+                              style={
+                                {
+                                  top: place.top,
+                                  zIndex: place.z,
+                                  '--card-scale': place.scale,
+                                } as CSSProperties
+                              }
+                              onSelect={() => select(i)}
+                              onToggleLearned={() => toggleLearned(concept.id)}
+                            />
+                          );
+                        })}
+                      </ul>
+                    </section>
                   ))}
                 </div>
-                <button type="button" className={styles.seeAll} onClick={onSeeAll}>
-                  See all
-                </button>
-              </div>
-              <div className={styles.deck}>
-                {SECTIONS.map((section) => (
-                  <section key={section} aria-labelledby={`lexicon-${section}`}>
-                    <ul className={styles.stack}>
-                      {conceptsOf(section).map((concept) => {
-                        const i = DECK_INDEX.get(concept.id)!;
-                        const place = placements[i];
-                        return (
-                          <ConceptCard
-                            key={concept.id}
-                            itemRef={(el) => {
-                              cardRefs.current[i] = el;
-                            }}
-                            concept={concept}
-                            open={i === active}
-                            learned={learned.includes(concept.id)}
-                            hidden={place.hidden}
-                            style={
-                              {
-                                top: place.top,
-                                zIndex: place.z,
-                                '--card-scale': place.scale,
-                              } as CSSProperties
-                            }
-                            onSelect={() => select(i)}
-                            onToggleLearned={() => toggleLearned(concept.id)}
-                          />
-                        );
-                      })}
-                    </ul>
-                  </section>
-                ))}
               </div>
             </div>
           </div>

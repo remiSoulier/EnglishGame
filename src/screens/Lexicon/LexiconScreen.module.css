@@ -154,23 +154,44 @@
 }
 
 /*
- * The deck (decision D29): the track is as tall as the stage plus one DECK_STEP (200 px, see
+ * The deck (decisions D29, D30): the header, the stats and the section title stay put; only
+ * the deck scrolls. Its track is as tall as the scroller plus one DECK_STEP (200 px, see
  * deckLayout.ts) per card; the stage sticks to the top while the track scrolls by, and the
  * cards move inside it, one by one to the front.
  */
-.snap {
-  scroll-snap-type: y proximity;
+.deckView {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.snap .header {
-  scroll-snap-align: start;
+.deckView > * {
+  flex: none;
+  width: 100%;
+}
+
+.deckView .sectionHead {
+  margin-top: 20px;
+  margin-bottom: 0;
+  padding: 0 16px;
+}
+
+.deckView > .deckScroller {
+  flex: 1;
+  min-height: 0;
+}
+
+.deckScroller {
+  position: relative;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  container-type: size;
+  scroll-snap-type: y proximity;
 }
 
 .track {
   position: relative;
-  height: calc(100vh + var(--deck-steps) * 200px);
-  height: calc(100dvh + var(--deck-steps) * 200px);
-  margin-top: 20px;
+  height: calc(100cqh + var(--deck-steps) * 200px);
 }
 
 .snapPoint {
@@ -187,14 +208,8 @@
   position: sticky;
   top: 0;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-  padding-top: env(safe-area-inset-top);
-}
-
-.stage .sectionHead {
-  margin-bottom: 0;
-  padding: 4px 16px 0;
+  height: 100cqh;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .sectionTitles {
