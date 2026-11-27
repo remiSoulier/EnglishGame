@@ -1,6 +1,14 @@
-import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react';
 import { HOW_TO_PLAY_STEPS } from '../../data/howToPlay';
 import { Illustration } from './Illustrations';
+import { swipeStep } from './swipe';
 import styles from './HowToPlayScreen.module.css';
 
 export interface HowToPlayScreenProps {
@@ -21,6 +29,11 @@ export function HowToPlayScreen({ onClose, onStartGame }: HowToPlayScreenProps) 
   const titleRef = useRef<HTMLHeadingElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const first = useRef(true);
+  const sheetRef = useRef<HTMLElement>(null);
+  /** Where the finger went down (touch or pen only), to tell a swipe from a tap or a scroll. */
+  const touchStart = useRef<{ id: number; x: number; y: number } | null>(null);
+  /** Direction of the last step change: +1 forward, −1 back (slides the sheet in from there). */
+  const direction = useRef(0);
   const step = HOW_TO_PLAY_STEPS[index];
 
   // Opening: focus the screen title. Each step change: focus the step title (announced).
@@ -31,9 +44,42 @@ export function HowToPlayScreen({ onClose, onStartGame }: HowToPlayScreenProps) 
       return;
     }
     headingRef.current?.focus();
+    // The new step slides in from the side it comes from (not with reduced motion).
+    const sheet = sheetRef.current;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    if (sheet?.animate && !reduce && direction.current !== 0) {
+      sheet.animate(
+        [
+          { transform: `translateX(${direction.current * 32}px)`, opacity: 0.4 },
+          { transform: 'none', opacity: 1 },
+        ],
+        { duration: 220, easing: 'ease-out' },
+      );
+    }
   }, [index]);
 
-  const go = (to: number) => setIndex(Math.min(LAST, Math.max(0, to)));
+  const go = (to: number) => {
+    const next = Math.min(LAST, Math.max(0, to));
+    direction.current = Math.sign(next - index);
+    setIndex(next);
+  };
+
+  // Swipe left: next step; swipe right: previous step (D35). A swipe left on the last step does
+  // not start a game: only the "Start a game" button does.
+  const onPointerDown = (event: PointerEvent<HTMLElement>) => {
+    if (event.pointerType === 'mouse' || !event.isPrimary) return;
+    touchStart.current = { id: event.pointerId, x: event.clientX, y: event.clientY };
+  };
+  const onPointerUp = (event: PointerEvent<HTMLElement>) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start || start.id !== event.pointerId) return;
+    const move = swipeStep(event.clientX - start.x, event.clientY - start.y);
+    if (move !== 0) go(index + move);
+  };
+  const onPointerCancel = () => {
+    touchStart.current = null;
+  };
 
   // Left / right arrows move between steps while focus is inside the screen (no global shortcut).
   const onKeyDown = (event: KeyboardEvent<HTMLElement>) => {
@@ -48,7 +94,14 @@ export function HowToPlayScreen({ onClose, onStartGame }: HowToPlayScreenProps) 
   };
 
   return (
-    <main className={styles.screen} aria-labelledby="how-title" onKeyDown={onKeyDown}>
+    <main
+      className={styles.screen}
+      aria-labelledby="how-title"
+      onKeyDown={onKeyDown}
+      onPointerDown={onPointerDown}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+    >
       <div className={styles.scene}>
         <div className={styles.bar}>
           <button type="button" className={styles.back} onClick={onClose}>
@@ -75,7 +128,7 @@ export function HowToPlayScreen({ onClose, onStartGame }: HowToPlayScreenProps) 
         />
       </div>
 
-      <section className={styles.sheet} aria-labelledby="how-step-title">
+      <section ref={sheetRef} className={styles.sheet} aria-labelledby="how-step-title">
         <p
           className={step.dark ? `${styles.badge} ${styles.badgeDark}` : styles.badge}
           style={{ '--step-color': step.color } as CSSProperties}

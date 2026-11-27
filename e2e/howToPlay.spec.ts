@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { APP_NAME } from './helpers';
+import { APP_NAME, waitForAnimations } from './helpers';
 
 /**
  * D28 — How to play at 390 × 844: Home → the 6 steps → Start a game; Skip and ‹ go back to
@@ -107,6 +107,8 @@ for (const width of [390, 320]) {
     await openHowToPlay(page);
     await page.getByRole('button', { name: 'Next' }).click();
     await expect(page.getByText('Step 2 of 6')).toBeVisible();
+    // The step slides in (D35): measure once it has landed.
+    await waitForAnimations(page);
     for (const alt of ['Card: Move forward(1)', 'Card: Turn left(90)', 'Card: Repeat(2)']) {
       await expect(page.getByRole('img', { name: alt })).toBeVisible();
     }
@@ -131,3 +133,36 @@ for (const width of [390, 320]) {
     await expectNoHorizontalScroll(page, `step 2 at ${width} px`);
   });
 }
+
+/** D35: a real finger swipe (Chromium touch events) moves between the steps. */
+async function fingerSwipe(page: Page, fromX: number, toX: number, y = 560) {
+  const cdp = await page.context().newCDPSession(page);
+  const touch = (type: 'touchStart' | 'touchMove' | 'touchEnd', x: number) =>
+    cdp.send('Input.dispatchTouchEvent', {
+      type,
+      touchPoints: type === 'touchEnd' ? [] : [{ x, y }],
+    });
+  await touch('touchStart', fromX);
+  for (let i = 1; i <= 6; i++) await touch('touchMove', fromX + ((toX - fromX) * i) / 6);
+  await touch('touchEnd', toX);
+  await cdp.detach();
+}
+
+test('swiping left and right moves between the steps; past the last step stays there', async ({
+  page,
+}) => {
+  await openHowToPlay(page);
+  await fingerSwipe(page, 320, 80);
+  await expect(page.getByText('Step 2 of 6')).toBeVisible();
+  await expect(h2(page)).toHaveText(TITLES[1]);
+  await expect(h2(page)).toBeFocused();
+  await fingerSwipe(page, 320, 80);
+  await expect(h2(page)).toHaveText(TITLES[2]);
+  await fingerSwipe(page, 80, 320);
+  await expect(h2(page)).toHaveText(TITLES[1]);
+
+  for (let i = 0; i < 5; i++) await fingerSwipe(page, 320, 80);
+  await expect(page.getByText('Step 6 of 6')).toBeVisible();
+  await expect(h1(page)).toHaveText('How to play');
+  await expect(page.getByRole('button', { name: 'Start a game' })).toBeVisible();
+});

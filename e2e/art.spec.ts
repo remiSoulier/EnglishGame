@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type BrowserContext, type Page, type Response } from '@playwright/test';
-import { APP_NAME, startGame } from './helpers';
+import { APP_NAME, startGame, waitForAnimations } from './helpers';
 
 /**
  * Tasks #29 / #30 — Figma art at 390 × 844: the WebP files are precached and actually load
@@ -373,6 +373,8 @@ test('How to play: title, Skip and step badges readable (D28)', async ({ page })
   await expect(h1(page)).toHaveText('How to play');
   await page.evaluate('document.fonts.ready.then(() => true)');
   for (let step = 1; step <= 6; step++) {
+    // Measure once the step has slid in (D35).
+    await waitForAnimations(page);
     const selectors: Record<string, string> = {
       [`badge ${step}`]: `${HOW} section > p:first-child`,
     };
