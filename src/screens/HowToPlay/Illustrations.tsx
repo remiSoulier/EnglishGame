@@ -53,7 +53,7 @@ function Cards() {
           src={card.src}
           alt={card.alt}
           width={92}
-          height={122}
+          height={129}
           style={{ transform: `rotate(${card.tilt}deg)` }}
         />
       ))}

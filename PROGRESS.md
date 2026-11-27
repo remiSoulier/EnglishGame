@@ -171,3 +171,6 @@ Légende : `[ ]` à faire · `[~]` en cours · `[x]` validée · `[!]` bloquée 
 - [x] #45 Lexicon : en-tête, compteurs et titre de section fixes, seule la pile de cartes défile (D33)
 
 | 2026-11-27 | #45 | Done (D33). 1760 unit tests, 105 e2e, lint, typecheck, format and build green. Branch feat/45-lexicon-static-header, merged and pushed (user OK); renumbered D32 / D33 after merging origin D29–D31. |
+- [x] #46 How to play, étape 2 : cartes rognées, entières et en éventail sans chevauchement (D34)
+
+| 2026-11-27 | #46 | Done (D34). 1763 unit tests, 107 e2e, lint, typecheck, format and build green. Branch feat/46-rules-step2-cards, merged locally, not pushed. |
