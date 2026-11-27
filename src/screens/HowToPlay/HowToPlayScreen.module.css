@@ -6,6 +6,8 @@
   overflow-y: auto;
   background: var(--color-bg);
   color: var(--color-text);
+  /* The page still scrolls up and down; sideways swipes are left to the steps (D35). */
+  touch-action: pan-y;
 }
 
 /* Scene: Home's lake (cover, framed ~30 % / 52 %), veiled top and bottom for the white text. */
