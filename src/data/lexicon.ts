@@ -179,8 +179,5 @@ export const SECTION_TITLE: Readonly<Record<LexiconSection, string>> = {
   further: 'Going further',
 };
 
-/** The card open when the Lexicon opens. */
-export const DEFAULT_OPEN_CONCEPT = 'loop';
-
 /** Level shown in the stats row. */
 export const LEXICON_LEVEL = 'Beginner';
