@@ -72,3 +72,52 @@ test('no horizontal scroll on a phone', async ({ page }) => {
     .evaluate((el) => el.scrollWidth - el.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+/** Decision D29: scrolling the Lexicon brings the cards one by one to the front, in detail. */
+const STEP = 200;
+const front = (page: Page) => page.locator('button[aria-expanded="true"]');
+/** Browser-side: the Lexicon scroller and how far it has scrolled into the deck track. */
+const SCROLLER = 'document.querySelector(\'main[aria-labelledby="lexicon-title"]\')';
+const TRACK = `${SCROLLER}.querySelector('[class*="track"]')`;
+const DECK_SCROLLED = `${SCROLLER}.scrollTop - ${TRACK}.offsetTop`;
+/** Scrolls the Lexicon to card `index` of the deck (0-based). */
+const scrollToCard = (page: Page, index: number) =>
+  page.evaluate(`${SCROLLER}.scrollTo({ top: ${TRACK}.offsetTop + ${index * STEP} })`);
+/** Gap between the bottom of the front card and the top of the next card (px, < 0 = overlap). */
+const FRONT_GAP = `(() => {
+  const cards = Array.from(${SCROLLER}.querySelectorAll('li'));
+  const li = cards.find((c) => c.querySelector('button[aria-expanded="true"]'));
+  const next = cards[cards.indexOf(li) + 1];
+  return next ? next.offsetTop - (li.offsetTop + li.offsetHeight) : null;
+})()`;
+
+test('scrolling brings the cards one by one to the front, in their detailed view', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Lexicon', exact: true }).click();
+  await expect(front(page)).toHaveText(/^Algorithm/);
+
+  // A real wheel scroll moves the deck on.
+  await page.mouse.move(180, 500);
+  await page.mouse.wheel(0, 700);
+  await expect(front(page)).not.toHaveText(/^Algorithm/);
+
+  await scrollToCard(page, 3);
+  await expect(front(page)).toHaveText(/^Loop/);
+  await expect(page.getByText('Repeat 3 times: Move forward 1', { exact: true })).toBeVisible();
+  // The next cards stack under the front card without hiding its detail (18 px overlap).
+  await expect.poll(() => page.evaluate(FRONT_GAP)).toBe(-18);
+
+  await scrollToCard(page, 9);
+  await expect(front(page)).toHaveText(/^Nested loop/);
+  await expect(page.getByRole('heading', { level: 2, name: 'Going further' })).toBeVisible();
+
+  // Tapping a card brings it to the front and scrolls to its place.
+  await scrollToCard(page, 1);
+  await expect(front(page)).toHaveText(/^Instruction/);
+  await page.locator('button[aria-expanded]', { hasText: 'Bug' }).click();
+  await expect(front(page)).toHaveText(/^Bug/);
+  await expect.poll(() => page.evaluate(DECK_SCROLLED)).toBeCloseTo(4 * STEP, -1);
+  await expect(page.getByRole('heading', { level: 2, name: 'Basic concepts' })).toBeVisible();
+});

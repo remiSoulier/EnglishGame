@@ -153,7 +153,62 @@
   cursor: pointer;
 }
 
-/* The stack: each card rises ~18 px over the one above it. */
+/*
+ * The deck (decision D29): the track is as tall as the stage plus one DECK_STEP (200 px, see
+ * deckLayout.ts) per card; the stage sticks to the top while the track scrolls by, and the
+ * cards move inside it, one by one to the front.
+ */
+.snap {
+  scroll-snap-type: y proximity;
+}
+
+.snap .header {
+  scroll-snap-align: start;
+}
+
+.track {
+  position: relative;
+  height: calc(100vh + var(--deck-steps) * 200px);
+  height: calc(100dvh + var(--deck-steps) * 200px);
+  margin-top: 20px;
+}
+
+.snapPoint {
+  position: absolute;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  scroll-snap-align: start;
+  pointer-events: none;
+}
+
+.stage {
+  display: flex;
+  position: sticky;
+  top: 0;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  padding-top: env(safe-area-inset-top);
+}
+
+.stage .sectionHead {
+  margin-bottom: 0;
+  padding: 4px 16px 0;
+}
+
+.sectionTitles {
+  position: relative;
+  min-width: 0;
+}
+
+.deck {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* The cards are placed by the deck (absolute), not by their lists. */
 .stack {
   margin: 0;
   padding: 0;
@@ -161,32 +216,38 @@
 }
 
 .card {
-  position: relative;
+  position: absolute;
+  right: 16px;
+  left: 16px;
   padding: 14px 14px 32px;
   border: var(--border-thin) solid var(--color-border);
   border-radius: 24px;
   background: var(--card-color);
   box-shadow: var(--shadow-lexicon-card);
+  transform: scale(var(--card-scale, 1));
+  transform-origin: top center;
+  transition:
+    top 0.35s ease,
+    transform 0.35s ease,
+    opacity 0.35s ease;
 }
 
-.card + .card {
-  margin-top: -18px;
+.cardHidden {
+  opacity: 0;
 }
 
-.card:last-child {
-  padding-bottom: 14px;
-}
-
+/* The front card, in its detailed view, slightly tilted. */
 .cardOpen {
-  z-index: 1;
   transform: rotate(-1.5deg);
-  transition: transform 0.2s ease;
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .card {
+    transition: none;
+  }
+
   .cardOpen {
     transform: none;
-    transition: none;
   }
 }
 
@@ -272,14 +333,44 @@
 }
 
 .panel {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition:
+    grid-template-rows 0.35s ease,
+    opacity 0.35s ease;
+}
+
+/* Closed: kept in the layout, 0 high and invisible (also to assistive tech), to unfold smoothly. */
+.panel[hidden] {
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.35s ease,
+    opacity 0.35s ease,
+    visibility 0s 0.35s;
+}
+
+.panelInner {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 12px;
+  min-height: 0;
+  padding-top: 12px;
+  overflow: hidden;
 }
 
-.panel[hidden] {
-  display: none;
+/* Full size even while the panel is folded, so it can be measured (see LexiconScreen). */
+.panelInner > * {
+  flex-shrink: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panel[hidden] {
+    transition: none;
+  }
 }
 
 .explanation {
