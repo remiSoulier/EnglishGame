@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   APP_NAME,
+  chooseCharacters,
   DIFFICULTY_LINE,
   DIFFICULTY_RADIO,
   openNewGame,
@@ -152,6 +153,9 @@ test.describe('new game screen', () => {
     await expect(page.getByRole('radio', { name: DIFFICULTY_RADIO.Medium })).toBeChecked();
     await expect(page.getByRole('radio', { name: /board/i })).toHaveCount(0);
     await expect(page.getByRole('textbox')).toHaveCount(0);
+    // D30: no character chosen at first; Start game waits for every player's.
+    await expect(page.getByRole('button', { name: 'Start game' })).toBeDisabled();
+    await chooseCharacters(page, 2);
 
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
@@ -179,12 +183,15 @@ test.describe('new game screen', () => {
     await page.keyboard.press('ArrowRight');
     await page.keyboard.press('ArrowRight');
     await expect(page.getByRole('radio', { name: '4', exact: true })).toBeChecked();
-    // One tab stop per player's character (D19). With 4 players every other character is
-    // taken, so greyed out (D29): the arrows skip them and P4 keeps Gus.
+    // One tab stop per player's character (D19). Nothing is chosen at first (D30): Tab lands on
+    // the first free character (taken ones are greyed out, D29) and Space picks it. With 4
+    // players every other character is then taken: the arrows skip them and P4 keeps Gus.
     for (const [i, name] of ['Kitkat', 'Batman', 'Mushi', 'Gus'].entries()) {
       await page.keyboard.press('Tab');
       const group = page.getByRole('group', { name: `Player ${i + 1}` });
       await expect(group.getByRole('radio', { name })).toBeFocused();
+      await page.keyboard.press('Space');
+      await expect(group.getByRole('radio', { name })).toBeChecked();
     }
     const p4 = page.getByRole('group', { name: 'Player 4' });
     for (const name of ['Kitkat', 'Batman', 'Mushi']) {

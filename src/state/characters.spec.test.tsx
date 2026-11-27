@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Grid } from '../components/Grid';
 import { generateBoard } from '../engine';
 import { NewGameScreen } from '../screens/NewGame';
+import { chooseCharacters } from '../test/chooseCharacters';
 import { gameReducer, initialState } from './gameReducer';
 import {
   defaultCharacters,
@@ -134,7 +135,10 @@ describe('New game screen', () => {
     render(<NewGameScreen onStart={onStart} onBack={vi.fn()} />);
     const p1 = screen.getByRole('group', { name: 'Player 1' });
     const p2 = screen.getByRole('group', { name: 'Player 2' });
-    // Two players: P1 Kitkat, P2 Batman. Each one's character is unavailable to the other.
+    // Nothing is chosen at first (D30), so nothing is greyed out.
+    expect(within(p2).getByRole('radio', { name: 'Kitkat' })).toBeEnabled();
+    await chooseCharacters(user, 2);
+    // P1 Kitkat, P2 Batman: each one's character is unavailable to the other.
     expect(within(p1).getByRole('radio', { name: 'Batman' })).toBeDisabled();
     expect(within(p2).getByRole('radio', { name: 'Kitkat' })).toBeDisabled();
     expect(within(p1).getByRole('radio', { name: 'Mushi' })).toBeEnabled();

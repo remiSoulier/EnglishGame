@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { isValidCode } from '../../engine';
+import { chooseCharacters } from '../../test/chooseCharacters';
 import { NewGameScreen, type NewGameSettings } from './NewGameScreen';
 
 function setup() {
@@ -49,6 +50,7 @@ describe('NewGameScreen (spec #11)', () => {
       const { user, onStart } = setup();
       await user.click(radio(players));
       await user.click(radio(diff));
+      await chooseCharacters(user, count);
       await user.click(start());
       expect(onStart).toHaveBeenCalledTimes(1);
       const settings = onStart.mock.calls[0][0];
@@ -60,6 +62,7 @@ describe('NewGameScreen (spec #11)', () => {
 
   it('two random starts give different codes', async () => {
     const { user, onStart } = setup();
+    await chooseCharacters(user, 2);
     await user.click(start());
     await user.click(start());
     expect(onStart).toHaveBeenCalledTimes(2);
@@ -76,11 +79,16 @@ describe('NewGameScreen (spec #11)', () => {
     expect(radio('3')).toBeChecked();
     await user.keyboard('{ArrowRight}');
     expect(radio('4')).toBeChecked();
-    // One tab stop per player's character group (D19), on the checked character.
+    // One tab stop per player's character group (D19). Nothing is chosen yet (D30): Tab lands
+    // on the first character still free (taken ones are greyed out, D29), Space picks it.
     for (const [player, name] of ['Kitkat', 'Batman', 'Mushi', 'Gus'].entries()) {
       await user.tab();
       const group = screen.getByRole('group', { name: `Player ${player + 1}` });
-      expect(within(group).getByRole('radio', { name })).toHaveFocus();
+      const character = within(group).getByRole('radio', { name });
+      expect(character).toHaveFocus();
+      expect(character).not.toBeChecked();
+      await user.keyboard(' ');
+      expect(character).toBeChecked();
     }
     await user.tab();
     expect(radio('Medium — 4 enemies')).toHaveFocus();

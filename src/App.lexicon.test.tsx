@@ -5,6 +5,7 @@ import App from './App';
 import { APP_NAME } from './state/appInfo';
 import { LEXICON_STORAGE_KEY } from './state/lexiconProgress';
 import { STORAGE_KEY } from './state/storage';
+import { chooseCharacters } from './test/chooseCharacters';
 
 type User = ReturnType<typeof userEvent.setup>;
 
@@ -20,6 +21,7 @@ async function systemBack() {
 
 async function startGame(user: User) {
   await user.click(screen.getByRole('button', { name: 'New game' }));
+  await chooseCharacters(user, 2);
   await user.click(screen.getByRole('button', { name: 'Start game' }));
   expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Turn 1');
 }

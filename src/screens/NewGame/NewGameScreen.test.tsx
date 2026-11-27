@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { isValidCode } from '../../engine';
+import { chooseCharacters } from '../../test/chooseCharacters';
 import { NewGameScreen } from './NewGameScreen';
 
 function setup() {
@@ -19,7 +20,14 @@ describe('NewGameScreen', () => {
     // D22: no board choice and no code field; the board is always random.
     expect(screen.queryByRole('radio', { name: /board/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'Start game' }));
+    // D30: no character is chosen at first, so Start game waits for them.
+    expect(
+      screen.queryAllByRole('radio', { name: /^(Kitkat|Batman|Mushi|Gus)$/, checked: true }),
+    ).toHaveLength(0);
+    const start = screen.getByRole('button', { name: 'Start game' });
+    expect(start).toBeDisabled();
+    await chooseCharacters(user, 2);
+    await user.click(start);
     expect(onStart).toHaveBeenCalledTimes(1);
     const settings = onStart.mock.calls[0][0];
     expect(settings).toMatchObject({ playerCount: 2, difficulty: 'medium' });
@@ -30,6 +38,7 @@ describe('NewGameScreen', () => {
     const { user, onStart } = setup();
     const p1 = within(screen.getByRole('group', { name: 'Player 1' }));
     const kitkat = p1.getByRole('radio', { name: 'Kitkat' });
+    await chooseCharacters(user, 2);
     expect(kitkat).toBeChecked();
 
     await user.click(kitkat);

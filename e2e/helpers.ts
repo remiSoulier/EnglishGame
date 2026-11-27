@@ -37,7 +37,16 @@ export async function openNewGame(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { level: 1, name: 'New game' })).toBeVisible();
 }
 
-/** Home → New game → players / difficulty / board → Start game, then waits for turn 1. */
+/** Players 1..count tap their default character (nothing is chosen at first, D30). */
+export async function chooseCharacters(page: Page, count: number): Promise<void> {
+  const names = ['Kitkat', 'Batman', 'Mushi', 'Gus'];
+  for (let player = 0; player < count; player++) {
+    const group = page.getByRole('group', { name: `Player ${player + 1}` });
+    await group.getByRole('radio', { name: names[player] }).check();
+  }
+}
+
+/** Home → New game → players / difficulty / characters → Start game, then waits for turn 1. */
 export async function startGame(
   page: Page,
   { players = 4, difficulty = 'Medium', code, goto = true }: StartGameOptions = {},
@@ -49,6 +58,7 @@ export async function startGame(
   if ((await heading.textContent()) !== 'New game') await openNewGame(page);
   await page.getByRole('radio', { name: String(players), exact: true }).check();
   await page.getByRole('radio', { name: DIFFICULTY_RADIO[difficulty] }).check();
+  await chooseCharacters(page, players);
   await page.getByRole('button', { name: 'Start game' }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Turn 1' })).toBeVisible();
   if (code !== undefined) await loadBoardCode(page, code);

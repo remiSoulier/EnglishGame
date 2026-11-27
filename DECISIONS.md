@@ -143,3 +143,6 @@ Confirme D22 : un seul téléphone mène la partie pour toute la table, il n'y a
 
 ## D29 — Un personnage pris est grisé pour les autres joueurs (2026-11-27, demande utilisateur)
 Remplace l'échange de D19 / D26 (« choisir un personnage déjà pris le donne au joueur, l'autre se retrouve sans ») : sur New game, un personnage choisi par un autre joueur est grisé et ne peut pas être choisi (radio `disabled`, annoncé « indisponible », ignoré par les flèches). Il redevient disponible dès que son joueur le désélectionne ou en prend un autre. Seuls les joueurs affichés comptent : avec 2 joueurs, Mushi et Gus restent libres.
+
+## D30 — Aucun personnage choisi au départ (2026-11-27, demande utilisateur)
+« Que les personnages ne soient pas déjà sélectionnés de base » : New game s'ouvre sans aucun personnage choisi. Chaque joueur tape le sien ; « Start game » reste grisé avec « Choose a character for each player. » tant qu'il en manque un. Les personnages par défaut (Kitkat, Batman, Mushi, Gus) servent seulement aux anciennes sauvegardes sans personnages (`defaultCharacters` dans `gameReducer`).

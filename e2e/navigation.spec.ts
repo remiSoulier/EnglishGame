@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { APP_NAME, gameLine, openNewGame, savedCode, startGame } from './helpers';
+import { APP_NAME, chooseCharacters, gameLine, openNewGame, savedCode, startGame } from './helpers';
 
 /** Backlog #12 / decision D10: quit to home, continue game, system back, focus. */
 
@@ -345,6 +345,7 @@ test.describe('system back', () => {
   }) => {
     await page.goto('/');
     await openNewGame(page);
+    await chooseCharacters(page, 2);
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
     await page.waitForTimeout(300);
@@ -368,6 +369,7 @@ test.describe('focus on navigation', () => {
     await expect(home(page)).toBeFocused();
     await openNewGame(page);
     await page.getByRole('radio', { name: '2', exact: true }).check();
+    await chooseCharacters(page, 2);
     await page.getByRole('button', { name: 'Start game' }).click();
     await expect(h1(page)).toHaveText('Turn 1');
     await expectH1Focused(page);
