@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LEXICON_CONCEPTS } from '../../data/lexicon';
@@ -18,7 +18,7 @@ const toggle = (word: string) => toggles().find((b) => b.textContent?.startsWith
 const openCards = () => toggles().filter((b) => b.getAttribute('aria-expanded') === 'true');
 const stat = (label: string) => screen.getByText(label).nextElementSibling?.textContent;
 
-describe('LexiconScreen (D25)', () => {
+describe('LexiconScreen (D25, scroll deck D29)', () => {
   beforeEach(() => localStorage.clear());
 
   it('shows the header, the 3 stats and the 10 cards in two sections; the dragon is decorative', () => {
@@ -42,30 +42,54 @@ describe('LexiconScreen (D25)', () => {
     expect(screen.getByText('Steps to reach a goal')).toBeInTheDocument();
   });
 
-  it('opens Loop by default, one card at a time; tapping the open card closes it', async () => {
-    const { user } = setup();
-    expect(openCards()).toHaveLength(1);
-    expect(openCards()[0]).toHaveTextContent('Loop');
-    const algorithm = toggle('Algorithm');
-    await user.click(algorithm);
-    expect(openCards()).toEqual([algorithm]);
-    const panel = document.getElementById(algorithm.getAttribute('aria-controls')!);
+  it('the first card is at the front (detailed) when the Lexicon opens', () => {
+    setup();
+    expect(openCards()).toEqual([toggle('Algorithm')]);
+    const panel = document.getElementById(toggle('Algorithm').getAttribute('aria-controls')!);
     expect(panel).toBeVisible();
-    await user.click(algorithm);
-    expect(openCards()).toHaveLength(0);
-    expect(panel).not.toBeVisible();
   });
 
-  it('only one card is open across both sections', async () => {
+  it('tapping a card brings it to the front, one card at a time; tapping it again keeps it', async () => {
     const { user } = setup();
+    const algorithm = document.getElementById(toggle('Algorithm').getAttribute('aria-controls')!);
+    const loop = toggle('Loop');
+    await user.click(loop);
+    expect(openCards()).toEqual([loop]);
+    expect(document.getElementById(loop.getAttribute('aria-controls')!)).toBeVisible();
+    expect(algorithm).not.toBeVisible();
+    await user.click(loop);
+    expect(openCards()).toEqual([loop]);
+  });
+
+  it('one front card across both sections; the shown section title follows it (D29)', async () => {
+    const { user } = setup();
+    const basic = screen.getByRole('heading', { level: 2, name: 'Basic concepts' });
+    const further = screen.getByRole('heading', { level: 2, name: 'Going further' });
+    expect(basic).not.toHaveClass('sr-only');
+    expect(further).toHaveClass('sr-only');
     await user.click(toggle('Function'));
     expect(openCards()).toEqual([toggle('Function')]);
+    expect(basic).toHaveClass('sr-only');
+    expect(further).not.toHaveClass('sr-only');
+  });
+
+  it('keyboard focus on a card brings it to the front', async () => {
+    const { user } = setup();
+    // From the focused h1: See all, Algorithm (title, round), Instruction…
+    await user.tab();
+    await user.tab();
+    await user.tab();
+    expect(screen.getByRole('button', { name: 'Algorithm learned' })).toHaveFocus();
+    expect(openCards()).toEqual([toggle('Algorithm')]);
+    await user.tab();
+    expect(toggle('Instruction')).toHaveFocus();
+    expect(openCards()).toEqual([toggle('Instruction')]);
   });
 
   it('the open card shows the explanation, program, result and the character pill', () => {
     setup();
-    const loop = LEXICON_CONCEPTS.find((c) => c.id === 'loop')!;
-    const panel = document.getElementById(toggle('Loop').getAttribute('aria-controls')!)!;
+    const loop = LEXICON_CONCEPTS.find((c) => c.id === 'algorithm')!;
+    const panel = document.getElementById(toggle('Algorithm').getAttribute('aria-controls')!)!;
     expect(panel.querySelector('pre code')?.textContent).toBe(loop.program);
     expect(within(panel).getByText(/^Result:/)).toBeInTheDocument();
     expect(within(panel).getByText(loop.character.name)).toBeInTheDocument();
@@ -82,22 +106,19 @@ describe('LexiconScreen (D25)', () => {
       version: 1,
       learned: ['algorithm'],
     });
-    // Ticking another concept leaves the open card alone.
-    expect(openCards()[0]).toHaveTextContent('Loop');
+    // Ticking leaves the front card where it is.
+    expect(openCards()).toEqual([toggle('Algorithm')]);
     await user.click(tick);
     expect(stat('Learned')).toBe('0 / 10');
   });
 
-  it('ticking the open concept closes its card, unticking does not reopen it', async () => {
-    const { user } = setup();
-    expect(openCards()[0]).toHaveTextContent('Loop');
+  it('tapping the round of a card below does not bring it to the front (the scroll does)', () => {
+    setup();
     const tick = screen.getByRole('button', { name: 'Loop learned' });
-    await user.click(tick);
+    // A tap (no keyboard focus, as on a phone).
+    fireEvent.click(tick);
     expect(tick).toHaveAttribute('aria-pressed', 'true');
-    expect(openCards()).toEqual([]);
-    await user.click(tick);
-    expect(tick).toHaveAttribute('aria-pressed', 'false');
-    expect(openCards()).toEqual([]);
+    expect(openCards()).toEqual([toggle('Algorithm')]);
   });
 
   it('loads saved progress', () => {
